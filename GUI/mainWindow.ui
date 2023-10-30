@@ -394,7 +394,7 @@
           <item row="3" column="2">
            <widget class="QComboBox" name="annularSheetBox">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <item>
              <property name="text">
@@ -442,7 +442,7 @@
           <item row="5" column="2">
            <widget class="QComboBox" name="outerSheetBox">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <item>
              <property name="text">
@@ -490,7 +490,7 @@
           <item row="2" column="2">
            <widget class="QComboBox" name="innerWallBox">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <item>
              <property name="text">
@@ -546,7 +546,7 @@
           <item row="4" column="2">
            <widget class="QComboBox" name="middleWallBox">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <item>
              <property name="text">
@@ -558,16 +558,11 @@
           <item row="1" column="2">
            <widget class="QComboBox" name="innerTubeBox">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <item>
              <property name="text">
               <string>Diameter [mm]</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Radius [mm]</string>
              </property>
             </item>
            </widget>
@@ -608,7 +603,7 @@
           <item row="6" column="2">
            <widget class="QComboBox" name="outerWallBox">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <item>
              <property name="text">

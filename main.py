@@ -219,8 +219,6 @@ class UI(QMainWindow):
         self.resutlLabels[10].setText(streamValuesString[1][4])
         self.resutlLabels[11].setText(streamValuesString[2][4])
 
-    def dimLess(self):
-        pass 
 
 if __name__ == '__main__':
     app = QApplication([])
