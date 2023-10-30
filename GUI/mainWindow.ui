@@ -6,12 +6,23 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>919</width>
-    <height>751</height>
+    <width>1034</width>
+    <height>776</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Segoe UI Semibold</family>
+   </font>
   </property>
   <property name="windowTitle">
    <string>FlowCalc</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -22,14 +33,14 @@
         <string>Triflow atomizer</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="Line" name="line">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_12">
@@ -42,45 +53,6 @@
             </property>
             <property name="text">
              <string>Results</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_4">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Inner Stream</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Sheet Stream</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_5">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Mass flow rate [kg/h]</string>
             </property>
            </widget>
           </item>
@@ -97,8 +69,8 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_6">
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_5">
             <property name="font">
              <font>
               <weight>75</weight>
@@ -106,7 +78,40 @@
              </font>
             </property>
             <property name="text">
-             <string>Flow velocity [m/s]</string>
+             <string>Mass flow rate [kg/h]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Sheet Stream</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Inner Stream</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="innerMFR">
+            <property name="text">
+             <string>-</string>
             </property>
            </widget>
           </item>
@@ -123,64 +128,104 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QLabel" name="label_27">
+          <item row="4" column="1">
+           <widget class="QLabel" name="outerMFR">
             <property name="text">
              <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_6">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Flow velocity [m/s]</string>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QLabel" name="label_28">
-            <property name="text">
-             <string>-</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QLabel" name="label_29">
-            <property name="text">
-             <string>-</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLabel" name="label_30">
+           <widget class="QLabel" name="sheetMFR">
             <property name="text">
              <string>-</string>
             </property>
            </widget>
           </item>
           <item row="3" column="2">
-           <widget class="QLabel" name="label_31">
-            <property name="text">
-             <string>-</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="2">
-           <widget class="QLabel" name="label_32">
-            <property name="text">
-             <string>-</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QLabel" name="label_33">
+           <widget class="QLabel" name="sheetVel">
             <property name="text">
              <string>-</string>
             </property>
            </widget>
           </item>
           <item row="3" column="3">
-           <widget class="QLabel" name="label_34">
+           <widget class="QLabel" name="sheetMom_flux">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QLabel" name="innerMom_flux">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QLabel" name="outerVel">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLabel" name="innerVel">
             <property name="text">
              <string>-</string>
             </property>
            </widget>
           </item>
           <item row="4" column="3">
-           <widget class="QLabel" name="label_35">
+           <widget class="QLabel" name="outerMom_flux">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLabel" name="label_26">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Momentum [kg m/s²]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QLabel" name="innerMom">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLabel" name="sheetMom">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLabel" name="outerMom">
             <property name="text">
              <string>-</string>
             </property>
@@ -188,15 +233,8 @@
           </item>
          </layout>
         </item>
-        <item row="3" column="0">
+        <item row="2" column="0">
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>Type</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="2">
            <widget class="QLabel" name="label_13">
             <property name="text">
@@ -204,10 +242,10 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QLabel" name="label_17">
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_16">
             <property name="text">
-             <string>Viscosity [mPa s]</string>
+             <string>Type</string>
             </property>
            </widget>
           </item>
@@ -221,20 +259,6 @@
             </property>
             <property name="text">
              <string>Liquid</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="4">
-           <widget class="QLabel" name="label_18">
-            <property name="text">
-             <string>Density [kg/m³]</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="5">
-           <widget class="QLabel" name="label_26">
-            <property name="text">
-             <string>Compressible</string>
             </property>
            </widget>
           </item>
@@ -252,6 +276,43 @@
             </property>
            </widget>
           </item>
+          <item row="1" column="4">
+           <widget class="QLabel" name="label_18">
+            <property name="text">
+             <string>Density [kg/m³]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="gasType">
+            <item>
+             <property name="text">
+              <string>Air</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="liquidType">
+            <item>
+             <property name="text">
+              <string>Water</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Glycerin Water Mixture</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QDoubleSpinBox" name="liquidTemp">
+            <property name="value">
+             <double>20.000000000000000</double>
+            </property>
+           </widget>
+          </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_15">
             <property name="font">
@@ -265,93 +326,79 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QComboBox" name="comboBox_4">
-            <item>
-             <property name="text">
-              <string>Water</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Glycerin Water Mixture</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QComboBox" name="comboBox_5">
-            <item>
-             <property name="text">
-              <string>Air</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
-          </item>
           <item row="3" column="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_5"/>
-          </item>
-          <item row="2" column="3">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_6"/>
-          </item>
-          <item row="3" column="3">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_7"/>
-          </item>
-          <item row="2" column="4">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_8"/>
+           <widget class="QDoubleSpinBox" name="gasTemp">
+            <property name="value">
+             <double>20.000000000000000</double>
+            </property>
+           </widget>
           </item>
           <item row="3" column="4">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_9"/>
+           <widget class="QDoubleSpinBox" name="gasDens"/>
+          </item>
+          <item row="2" column="4">
+           <widget class="QDoubleSpinBox" name="LiquidDens">
+            <property name="maximum">
+             <double>100000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QDoubleSpinBox" name="liquidVisc">
+            <property name="maximum">
+             <double>15000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>Viscosity [mPa s]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QDoubleSpinBox" name="gasVisc"/>
+          </item>
+          <item row="4" column="0" colspan="6">
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
           </item>
           <item row="2" column="5">
-           <widget class="QCheckBox" name="checkBox">
+           <widget class="QPushButton" name="calcLiq">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Water: Viscosity and density for given temperature&lt;/p&gt;&lt;p&gt;Water-Glycerin: Density for given temperature and density&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
-             <string/>
+             <string>Calculate Liquid</string>
             </property>
            </widget>
           </item>
           <item row="3" column="5">
-           <widget class="QCheckBox" name="checkBox_2">
+           <widget class="QPushButton" name="calcGas">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Air: Viscosity and density for given temperature&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
-             <string/>
+             <string>Calculate Gas</string>
             </property>
            </widget>
           </item>
          </layout>
         </item>
-        <item row="0" column="0">
-         <widget class="QGraphicsView" name="graphicsView"/>
-        </item>
-        <item row="2" column="0">
+        <item row="1" column="0">
          <layout class="QGridLayout" name="gridLayout_6">
           <item row="3" column="2">
            <widget class="QComboBox" name="annularSheetBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <item>
              <property name="text">
               <string>Width [mm]</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>inner Radius [mm]</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>outer Radius [mm]</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>inner Diameter [mm]</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>outer Diameter [mm]</string>
              </property>
             </item>
            </widget>
@@ -394,9 +441,12 @@
           </item>
           <item row="5" column="2">
            <widget class="QComboBox" name="outerSheetBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <item>
              <property name="text">
-              <string>Tickness [mm]</string>
+              <string>Width [mm]</string>
              </property>
             </item>
            </widget>
@@ -439,6 +489,9 @@
           </item>
           <item row="2" column="2">
            <widget class="QComboBox" name="innerWallBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <item>
              <property name="text">
               <string>Thickness [mm]</string>
@@ -462,12 +515,19 @@
           <item row="1" column="1">
            <widget class="QDoubleSpinBox" name="innerTube">
             <property name="value">
-             <double>5.000000000000000</double>
+             <double>3.000000000000000</double>
             </property>
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QDoubleSpinBox" name="middleWall"/>
+           <widget class="QDoubleSpinBox" name="middleWall">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="value">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
           </item>
           <item row="0" column="0" colspan="3">
            <widget class="QLabel" name="label_19">
@@ -485,6 +545,9 @@
           </item>
           <item row="4" column="2">
            <widget class="QComboBox" name="middleWallBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <item>
              <property name="text">
               <string>Thickness [mm]</string>
@@ -494,6 +557,9 @@
           </item>
           <item row="1" column="2">
            <widget class="QComboBox" name="innerTubeBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <item>
              <property name="text">
               <string>Diameter [mm]</string>
@@ -504,20 +570,18 @@
               <string>Radius [mm]</string>
              </property>
             </item>
-            <item>
-             <property name="text">
-              <string>Gap width [mm]</string>
-             </property>
-            </item>
            </widget>
           </item>
           <item row="2" column="1">
            <widget class="QDoubleSpinBox" name="innerWall">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="singleStep">
              <double>0.010000000000000</double>
             </property>
             <property name="value">
-             <double>0.000000000000000</double>
+             <double>0.100000000000000</double>
             </property>
            </widget>
           </item>
@@ -535,10 +599,17 @@
            </widget>
           </item>
           <item row="6" column="1">
-           <widget class="QDoubleSpinBox" name="outerWall"/>
+           <widget class="QDoubleSpinBox" name="outerWall">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
           </item>
           <item row="6" column="2">
            <widget class="QComboBox" name="outerWallBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <item>
              <property name="text">
               <string>inner Diameter [mm]</string>
@@ -548,10 +619,10 @@
           </item>
          </layout>
         </item>
-        <item row="5" column="0">
+        <item row="4" column="0">
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="2" column="3">
-           <widget class="QComboBox" name="comboBox_2">
+           <widget class="QComboBox" name="sheetStreamUnit">
             <item>
              <property name="text">
               <string>kg/h</string>
@@ -570,7 +641,7 @@
            </widget>
           </item>
           <item row="3" column="3">
-           <widget class="QComboBox" name="comboBox_3">
+           <widget class="QComboBox" name="outerStreamUnit">
             <item>
              <property name="text">
               <string>kg/h</string>
@@ -602,7 +673,10 @@
            </widget>
           </item>
           <item row="2" column="4">
-           <widget class="QRadioButton" name="radioButton_3">
+           <widget class="QRadioButton" name="sheetLiqTrue">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="text">
              <string>Liquid</string>
             </property>
@@ -615,7 +689,10 @@
            </widget>
           </item>
           <item row="2" column="5">
-           <widget class="QRadioButton" name="radioButton_4">
+           <widget class="QRadioButton" name="sheetGasTrue">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="text">
              <string>Gas</string>
             </property>
@@ -628,7 +705,10 @@
            </widget>
           </item>
           <item row="3" column="4">
-           <widget class="QRadioButton" name="radioButton_5">
+           <widget class="QRadioButton" name="outerLiqTrue">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="text">
              <string>Liquid</string>
             </property>
@@ -665,10 +745,17 @@
            </widget>
           </item>
           <item row="2" column="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+           <widget class="QDoubleSpinBox" name="sheetStreamValue">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+           </widget>
           </item>
           <item row="3" column="5">
-           <widget class="QRadioButton" name="radioButton_6">
+           <widget class="QRadioButton" name="outerGasTrue">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="text">
              <string>Gas</string>
             </property>
@@ -694,13 +781,24 @@
            </widget>
           </item>
           <item row="3" column="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+           <widget class="QDoubleSpinBox" name="outerStreamValue">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+           </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
+           <widget class="QDoubleSpinBox" name="innerStreamValue">
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+           </widget>
           </item>
           <item row="1" column="5">
-           <widget class="QRadioButton" name="radioButton_2">
+           <widget class="QRadioButton" name="innerGasTrue">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="text">
              <string>Gas</string>
             </property>
@@ -713,7 +811,7 @@
            </widget>
           </item>
           <item row="1" column="3">
-           <widget class="QComboBox" name="comboBox">
+           <widget class="QComboBox" name="innerStreamUnit">
             <item>
              <property name="text">
               <string>kg/h</string>
@@ -732,7 +830,10 @@
            </widget>
           </item>
           <item row="1" column="4">
-           <widget class="QRadioButton" name="radioButton">
+           <widget class="QRadioButton" name="innerLiqTrue">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="text">
              <string>Liquid</string>
             </property>
@@ -743,7 +844,7 @@
           </item>
          </layout>
         </item>
-        <item row="9" column="0">
+        <item row="10" column="0">
          <layout class="QGridLayout" name="gridLayout_7">
           <item row="1" column="4">
            <widget class="QLabel" name="label_49">
@@ -754,7 +855,7 @@
              </font>
             </property>
             <property name="text">
-             <string>GLR</string>
+             <string>total GLR</string>
             </property>
            </widget>
           </item>
@@ -798,16 +899,16 @@
            </widget>
           </item>
           <item row="2" column="5" rowspan="3">
-           <widget class="QLabel" name="label_51">
+           <widget class="QLabel" name="totalMom">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="2" column="4" rowspan="3">
-           <widget class="QLabel" name="label_50">
+           <widget class="QLabel" name="totalGLR">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
@@ -820,7 +921,7 @@
              </font>
             </property>
             <property name="text">
-             <string>Momentum flux ratio</string>
+             <string>total Momentum flux ratio</string>
             </property>
            </widget>
           </item>
@@ -852,65 +953,65 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QLabel" name="label_54">
+           <widget class="QLabel" name="sheetRe">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="2" column="3">
-           <widget class="QLabel" name="label_59">
+           <widget class="QLabel" name="innerOh">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="2" column="2">
-           <widget class="QLabel" name="label_56">
+           <widget class="QLabel" name="innerWe">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="3" column="2">
-           <widget class="QLabel" name="label_57">
+           <widget class="QLabel" name="sheetWe">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="3" column="3">
-           <widget class="QLabel" name="label_60">
+           <widget class="QLabel" name="sheetOh">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="4" column="2">
-           <widget class="QLabel" name="label_58">
+           <widget class="QLabel" name="outerWe">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="4" column="3">
-           <widget class="QLabel" name="label_61">
+           <widget class="QLabel" name="outerOh">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QLabel" name="label_55">
+           <widget class="QLabel" name="outerRe">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLabel" name="label_53">
+           <widget class="QLabel" name="innerRe">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
@@ -941,16 +1042,16 @@
            </widget>
           </item>
           <item row="2" column="6" rowspan="2">
-           <widget class="QLabel" name="label_44">
+           <widget class="QLabel" name="innerSheetGLR">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
           <item row="3" column="7" rowspan="2">
-           <widget class="QLabel" name="label_45">
+           <widget class="QLabel" name="outerSheetGLR">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
@@ -963,14 +1064,14 @@
              </font>
             </property>
             <property name="text">
-             <string>Gas to liquid ratio</string>
+             <string>GLR</string>
             </property>
            </widget>
           </item>
           <item row="3" column="9" rowspan="2">
-           <widget class="QLabel" name="label_47">
+           <widget class="QLabel" name="outerSheetMom">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
@@ -988,13 +1089,27 @@
            </widget>
           </item>
           <item row="2" column="8" rowspan="2">
-           <widget class="QLabel" name="label_46">
+           <widget class="QLabel" name="innerSheetMom">
             <property name="text">
-             <string>TextLabel</string>
+             <string>-</string>
             </property>
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="5" column="0">
+         <widget class="Line" name="line_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>Run</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -1012,7 +1127,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>919</width>
+     <width>1034</width>
      <height>21</height>
     </rect>
    </property>
@@ -1022,8 +1137,8 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

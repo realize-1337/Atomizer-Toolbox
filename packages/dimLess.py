@@ -1,30 +1,44 @@
 import math
 
-class dimLess():
-    def __init__(self, vel, rho, visc, Lc) -> None:
-        self.vel = vel
-        self.rho = rho
-        self.visc = visc
-        self.Lc = Lc
+def Re(vel, rho, Lc, visc):
+    '''
+    Returns Reynolds Number
+    '''
+    return vel*rho*Lc/visc
 
+def GLR(m1,m2):
+    '''
+    Returns Gas to Liquid Ratio
+    '''
+    return m1/m2
 
-    def GLR(self, m1, m2):
-        return m1/m2
+def We_aero(v_rel, rho, Lc, sigma):
+    '''
+    Returns Weber aero Number
+    '''
+    return v_rel**2*rho*Lc/sigma
 
-    def Re(self):
-        return self.vel*self.rho*self.Lc/self.visc
+def We(vel, rho, Lc, sigma):
+    '''
+    Returns Weber Number
+    '''
+    return vel**2*rho*Lc/sigma
 
-    def We_aero(self, v_rel, sigma):
-        return v_rel**2*self.rho*self.Lc/sigma
-        
-    def We(self, sigma):
-        return self.vel**2*self.rho*self.Lc/sigma
+def Oh(visc, sigma, rho, Lc):
+    '''
+    Returns Ohnesorge Number
+    '''
+    return visc/(math.sqrt(sigma*rho*Lc))
 
-    def Ohnesorge(self, sigma):
-        return self.visc/(math.sqrt(sigma*self.rho*self.Lc))
+def impuls(rho, vel, a):
+    '''
+    Returns Impuls
+    '''
+    return (rho*vel**2*a)
 
-    def impuls(self):
-        pass
+def IR(rho1, vel1, a1, rho2, vel2, a2):
+    '''
+    Returns Impuls Ratio
+    '''
+    return (impuls(rho1, vel1, a1)/impuls(rho2, vel2, a2))
 
-if __name__ == '__main__':
-    pass
