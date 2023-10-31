@@ -1,6 +1,8 @@
 import os
 import math
 import subprocess
+import json
+import ctypes
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
@@ -19,10 +21,18 @@ class UI(QMainWindow):
         super().__init__()
         self.ui = main()
         self.ui.setupUi(self)
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')):
+            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
+        self.path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')
         self.resutlLabels = self.createLabelList()
+        self.presetField()
         self.setCalcButtons()
         self.ui.pushButton.clicked.connect(self.readValues)
+        self.ui.pushButton_2.clicked.connect(self.calculator)
+        self.ui.loadPreset.clicked.connect(self.loadPreset)
+        self.ui.savePreset.clicked.connect(self.savePreset)
         self.tabOrder()
+        self.loadGlobalSettings()
 
     def tabOrder(self):
         order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.calcLiq, self.ui.gasTemp, self.ui.calcGas, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue, self.ui.pushButton]
@@ -350,10 +360,97 @@ class UI(QMainWindow):
             self.resutlLabels[25].setText('Error')
             self.resutlLabels[26].setText('Error')
 
-       
+    def calculator(self):
+        self.ui.outputLabel.setText('Berechnung läuft')
+        my_target = self.ui.input_my.value()
+        temp = self.ui.input_T.value()
+        print(my_target, temp)
 
+        calc = ca(temp, my_target)
+        try: 
+            result = "%.2f" % (calc.solve()*100)
+            output = f'<u>{result} wt-% </u> of glycerin are requiered to get a viscosity of {"%.0f" % my_target} mPa s at {temp} °C.'
+        except: output = '<br><br>This combination of viscosity and temperature is not possible!'
+        self.ui.outputLabel.setText(output)
 
+    def loadGlobalSettings(self):
+        path = os.path.join(self.path, 'global', 'global_settings.json')
+        if not os.path.exists(path): 
+            default = {
+                'lastFile': None
+            }
+            os.mkdir(os.path.join(self.path, 'global'))
+
+            FILE_ATTRIBUTE_HIDDEN = 0x02
+            ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
+            with open(rf'{path}', 'w+') as global_config:
+                json.dump(default, global_config)
+                self.lastFile = None
+        else:
+            with open(rf'{path}', 'r') as global_config:
+                lastFile = json.load(global_config)['lastFile']
+            try: self.loadPreset(lastFile)
+            except: pass
         
+    def loadPreset(self, path = None):
+        if not path: filename, null = QFileDialog.getOpenFileName(self, directory=self.path, filter='*.json', options=QFileDialog.Option.ReadOnly)
+        else: filename = path
+
+        with open(rf'{filename}', 'r') as read:
+            import_dict = json.load(read)
+        
+        for i in range(len(self.presetFields)):
+            self.presetFields[i].setValue(import_dict[f"{i}"])
+        
+        for i in range(len(self.presetDropdowns)):
+            self.presetDropdowns[i].setCurrentIndex(import_dict[f"{len(self.presetFields)+i}"])
+        
+        for i in range(len(self.presetRadio)):
+            self.presetRadio[i].setChecked(import_dict[f"{len(self.presetFields)+ len(self.presetDropdowns) +i}"])
+
+    def savePreset(self):
+        filename, null = QFileDialog.getSaveFileName(self, directory=self.path, filter='*.json')
+
+        export = {}
+        i = 0
+        for item in self.presetFields:
+            export[i] = item.value()
+            i += 1
+            
+        for item in self.presetDropdowns:
+            export[i] = item.currentIndex()
+            i += 1
+
+        for item in self.presetRadio:
+            export[i] = item.isChecked()
+            i += 1
+
+        self.export = export
+        if not filename:
+            return 0
+
+        print(filename)
+        with open(rf'{filename}', 'w+') as json_file:
+            json.dump(export, json_file)
+
+        export = {
+            'lastFile': filename
+        }
+
+        with open(rf"{os.path.join(self.path, 'global', 'global_settings.json')}", 'w+') as json_file:
+            json.dump(export, json_file)
+            self.lastFile = filename
+
+    def presetField(self):
+        fields = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.outerWall, self.ui.liquidTemp, self.ui.liquidVisc, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue]
+        self.presetFields = fields
+
+        dropDowns = [self.ui.innerTubeBox, self.ui.innerWallBox, self.ui.annularSheetBox, self.ui.middleWallBox, self.ui.outerSheetBox, self.ui.outerWallBox, self.ui.liquidType, self.ui.gasType, self.ui.innerStreamUnit, self.ui.sheetStreamUnit, self.ui.outerStreamUnit]
+        self.presetDropdowns = dropDowns
+      
+        radio = [self.ui.innerGasTrue, self.ui.innerLiqTrue, self.ui.sheetGasTrue, self.ui.sheetLiqTrue, self.ui.outerGasTrue, self.ui.outerLiqTrue]
+        self.presetRadio = radio    
+
 if __name__ == '__main__':
     app = QApplication([])
     app.setStyle('Fusion')
