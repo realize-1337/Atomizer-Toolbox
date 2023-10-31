@@ -26,8 +26,11 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="4" column="0">
+    <item row="1" column="0">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>Triflow atomizer</string>
@@ -67,6 +70,9 @@
             <property name="text">
              <string>Momentum flux [kg/(m s²)]</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -79,6 +85,9 @@
             </property>
             <property name="text">
              <string>Mass flow rate [kg/h]</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -113,6 +122,9 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="4" column="0">
@@ -133,6 +145,9 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="1" column="2">
@@ -146,12 +161,18 @@
             <property name="text">
              <string>Flow velocity [m/s]</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="3" column="1">
            <widget class="QLabel" name="sheetMFR">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -160,12 +181,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="3" column="3">
            <widget class="QLabel" name="sheetMom_flux">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -174,12 +201,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="4" column="2">
            <widget class="QLabel" name="outerVel">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -188,12 +221,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="4" column="3">
            <widget class="QLabel" name="outerMom_flux">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -208,12 +247,18 @@
             <property name="text">
              <string>Momentum [kg m/s²]</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="4">
            <widget class="QLabel" name="innerMom">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -222,12 +267,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="4" column="4">
            <widget class="QLabel" name="outerMom">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -514,6 +565,9 @@
           </item>
           <item row="1" column="1">
            <widget class="QDoubleSpinBox" name="innerTube">
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::UpDownArrows</enum>
+            </property>
             <property name="value">
              <double>3.000000000000000</double>
             </property>
@@ -603,7 +657,7 @@
           <item row="6" column="2">
            <widget class="QComboBox" name="outerWallBox">
             <property name="enabled">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <item>
              <property name="text">
@@ -852,6 +906,9 @@
             <property name="text">
              <string>total GLR</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -864,6 +921,9 @@
             </property>
             <property name="text">
              <string>Reynolds</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -878,6 +938,9 @@
             <property name="text">
              <string>Ohnesorge</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="1" column="2">
@@ -891,6 +954,9 @@
             <property name="text">
              <string>Weber</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="5" rowspan="3">
@@ -898,12 +964,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="4" rowspan="3">
            <widget class="QLabel" name="totalGLR">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -916,7 +988,10 @@
              </font>
             </property>
             <property name="text">
-             <string>total Momentum flux ratio</string>
+             <string>total Momentum flux ratio (MFR)</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -952,12 +1027,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="3">
            <widget class="QLabel" name="innerOh">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -966,12 +1047,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="3" column="2">
            <widget class="QLabel" name="sheetWe">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -980,12 +1067,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="4" column="2">
            <widget class="QLabel" name="outerWe">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -994,6 +1087,9 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="4" column="1">
@@ -1001,12 +1097,18 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="2" column="1">
            <widget class="QLabel" name="innerRe">
             <property name="text">
              <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -1041,6 +1143,9 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
           <item row="3" column="7" rowspan="2">
@@ -1048,18 +1153,8 @@
             <property name="text">
              <string>-</string>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="6" colspan="2">
-           <widget class="QLabel" name="label_38">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>GLR</string>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -1068,9 +1163,48 @@
             <property name="text">
              <string>-</string>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
            </widget>
           </item>
-          <item row="1" column="8" colspan="2">
+          <item row="2" column="8" rowspan="2">
+           <widget class="QLabel" name="innerSheetMom">
+            <property name="text">
+             <string>-</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="6">
+           <widget class="QLabel" name="label_38">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>GLI</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="7">
+           <widget class="QLabel" name="label_27">
+            <property name="text">
+             <string>GLO</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="8">
            <widget class="QLabel" name="label_48">
             <property name="font">
              <font>
@@ -1079,14 +1213,20 @@
              </font>
             </property>
             <property name="text">
-             <string>Momentum flux ratio</string>
+             <string>MFR inner</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
-          <item row="2" column="8" rowspan="2">
-           <widget class="QLabel" name="innerSheetMom">
+          <item row="1" column="9">
+           <widget class="QLabel" name="label_28">
             <property name="text">
-             <string>-</string>
+             <string>MFR outer</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -1110,8 +1250,20 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Tab 2</string>
+        <string>ViscoCalc</string>
        </attribute>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_29">
+          <property name="text">
+           <string>WORK IN PROGRESS</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>

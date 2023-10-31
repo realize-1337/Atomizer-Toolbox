@@ -24,7 +24,7 @@ def We(vel, rho, Lc, sigma):
     '''
     return vel**2*rho*Lc/sigma
 
-def Oh(visc, sigma, rho, Lc):
+def Oh(visc, rho, Lc, sigma):
     '''
     Returns Ohnesorge Number
     '''

@@ -1,9 +1,10 @@
 import os
+import math
 import subprocess
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
-from packages.dimLess import *
+import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
 UI_FILE = './GUI/mainWindow.ui'
@@ -21,7 +22,16 @@ class UI(QMainWindow):
         self.resutlLabels = self.createLabelList()
         self.setCalcButtons()
         self.ui.pushButton.clicked.connect(self.readValues)
+        self.tabOrder()
+
+    def tabOrder(self):
+        order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.calcLiq, self.ui.gasTemp, self.ui.calcGas, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue, self.ui.pushButton]
+        self.setTabOrder(order[0], order[1])
+        for i in range(1, len(order)):
+            self.setTabOrder(order[i-1], order[i])
         
+        #self.setTabOrder(order[-1], order[0])
+
     def setCalcButtons(self):
         self.ui.calcGas.clicked.connect(self.calcGas)
         self.ui.calcLiq.clicked.connect(self.calcLiq)
@@ -35,20 +45,25 @@ class UI(QMainWindow):
         self.ui.gasTemp.valueChanged.connect(self.calcGas)
 
     def calcLiq(self):
-        try: 
-            if self.ui.liquidType.currentText() == 'Water':
-                water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
-                self.ui.liquidVisc.setValue(water_.dynamic_viscosity*1000)
-                self.ui.LiquidDens.setValue(water_.density)
-            else: 
-                try: glycerinFraction = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).solve()
-                except: glycerinFraction = 0
-                rhoGly = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).rhoGlycerin()
-                water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
-                rhoMix = rhoGly*glycerinFraction + water_.density*(1-glycerinFraction)
-                self.ui.LiquidDens.setValue(rhoMix)
-        except: pass
-
+        
+        if self.ui.liquidType.currentText() == 'Water':
+            water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
+            self.ui.liquidVisc.setValue(water_.dynamic_viscosity*1000)
+            self.ui.LiquidDens.setValue(water_.density)
+            self.liqSurface = water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
+        else: 
+            try: glycerinFraction = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).solve()
+            except: glycerinFraction = 0
+            rhoGly = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).rhoGlycerin()
+            water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
+            rhoMix = rhoGly*glycerinFraction + water_.density*(1-glycerinFraction)
+            self.ui.LiquidDens.setValue(rhoMix)
+            surfaceGly = 0.06*self.ui.liquidTemp.value()+64.6
+            surfaceGly /= 1000
+            water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
+            surfaceMix = glycerinFraction*surfaceGly + (1-glycerinFraction)*water_ST
+            self.liqSurface = surfaceMix
+        
     def calcGas(self):
         try:
             if self.ui.gasType.currentText() == 'Air':
@@ -56,6 +71,7 @@ class UI(QMainWindow):
                 self.ui.gasVisc.setValue(air_.dynamic_viscosity*1000)
                 print(air_.dynamic_viscosity*1000)
                 self.ui.gasDens.setValue(air_.density)
+                self.gasSurface = air_.surface_tension
         except: pass
 
     def createLabelList(self):
@@ -78,14 +94,17 @@ class UI(QMainWindow):
         
 
         resutlLabels.append(self.ui.innerRe)
-        resutlLabels.append(self.ui.sheetRe)
-        resutlLabels.append(self.ui.outerRe)
         resutlLabels.append(self.ui.innerWe)
-        resutlLabels.append(self.ui.sheetWe)
-        resutlLabels.append(self.ui.outerWe)
         resutlLabels.append(self.ui.innerOh)
-        resutlLabels.append(self.ui.sheetOh)
+
+        resutlLabels.append(self.ui.sheetRe)
+        resutlLabels.append(self.ui.sheetWe)
         resutlLabels.append(self.ui.outerOh)
+    
+        resutlLabels.append(self.ui.outerRe)
+        resutlLabels.append(self.ui.outerWe)
+        resutlLabels.append(self.ui.sheetOh)
+        
 
         resutlLabels.append(self.ui.totalGLR)
         resutlLabels.append(self.ui.totalMom)
@@ -99,12 +118,18 @@ class UI(QMainWindow):
         return resutlLabels
 
     def readValues(self):
+        self.calcLiq()
+        self.calcGas()
         # Atomizer Geometry
+        self.Lc = []
         self.innerTube = self.ui.innerTube.value()/1000
+        self.Lc.append(self.innerTube)
         self.innerWall = self.ui.innerWall.value()/1000
         self.annularSheet = self.ui.annularSheet.value()/1000
+        self.Lc.append(self.annularSheet)
         self.middleWall = self.ui.middleWall.value()/1000
         self.outerSheet = self.ui.outerSheet.value()/1000
+        self.Lc.append(self.outerSheet)
         self.outerWall = self.ui.outerWall.value()/1000
         self.orifice()
 
@@ -152,10 +177,10 @@ class UI(QMainWindow):
                 dens = self.gasDens 
             else: dens = self.liqDens
             vel = mfr/dens/orifice
-            mom_flux = dens*vel**2*orifice
-            mom = dens*vel**2
+            mom = dens*vel**2*orifice
+            mom_flux = dens*vel**2
             print(orifice)
-            return [mfr, mfr_h, vel, mom_flux, mom]
+            return [mfr, mfr_h, vel, mom_flux, mom, type]
 
         i = 0
         for item in self.streams:
@@ -195,7 +220,7 @@ class UI(QMainWindow):
 
     def fillFirstResults(self):
         streamValuesString = [[0]*5 for i in range(3)]
-        for j in range(len(self.streamValues[0])):
+        for j in range(len(self.streamValues[0])-1):
             for i in range(3):
                 if self.streamValues[i][j] < 0.001:
                     streamValuesString[i][j] = "%.3e" % self.streamValues[i][j]
@@ -219,7 +244,116 @@ class UI(QMainWindow):
         self.resutlLabels[10].setText(streamValuesString[1][4])
         self.resutlLabels[11].setText(streamValuesString[2][4])
 
+        self.calcDimless()
 
+    def calcDimless(self):
+        # Re, We, Oh
+
+        rhos = {
+            'gas': self.gasDens,
+            'liquid': self.liqDens
+        }
+        visc = {
+            'gas': self.gasVisc,
+            'liquid': self.liqVisc
+        }
+        sigmas = {
+            'gas': self.liqSurface,
+            'liquid': self.liqSurface
+        }
+        
+        self.innerDimless = []
+        self.sheetDimless = []
+        self.outerDimless = []
+
+        self.innerDimless.append(dL.Re(self.streamValues[0][2], rhos[self.streamValues[0][5]], self.Lc[0], visc[self.streamValues[0][5]]))
+        self.sheetDimless.append(dL.Re(self.streamValues[1][2], rhos[self.streamValues[1][5]], self.Lc[1], visc[self.streamValues[1][5]]))
+        self.outerDimless.append(dL.Re(self.streamValues[2][2], rhos[self.streamValues[2][5]], self.Lc[2], visc[self.streamValues[2][5]]))
+        
+        self.innerDimless.append(dL.We(self.streamValues[0][2], rhos[self.streamValues[0][5]], self.Lc[0], sigmas[self.streamValues[0][5]]))
+        self.sheetDimless.append(dL.We(self.streamValues[1][2], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
+        self.outerDimless.append(dL.We(self.streamValues[2][2], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
+        
+        self.innerDimless.append(dL.Oh(visc[self.streamValues[0][5]], rhos[self.streamValues[0][5]], self.Lc[0], sigmas[self.streamValues[0][5]]))
+        self.sheetDimless.append(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
+        self.outerDimless.append(dL.Oh(visc[self.streamValues[2][5]], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
+
+        print(self.innerDimless)
+        print(self.sheetDimless)
+        print(self.outerDimless)
+
+        strings = []
+        for item in self.innerDimless:
+            if item < 0.01 or item > 1000:
+                strings.append("%.2e" % item)
+            else: 
+                strings.append("%.2f" % item)
+        
+        for item in self.sheetDimless:
+            if item < 0.01 or item > 1000:
+                strings.append("%.2e" % item)
+            else: 
+                strings.append("%.2f" % item)
+        
+        for item in self.outerDimless:
+            if item < 0.01 or item > 1000:
+                strings.append("%.2e" % item)
+            else: 
+                strings.append("%.2f" % item)
+
+
+        for i in range(len(strings)):
+            self.resutlLabels[12+i].setText(strings[i])
+
+        # GLR 
+
+        gasMF = 0
+        liqMF = 0
+        gasMom_flux = 0
+        liqMom_flux = 0
+        
+        for i in range(3):
+            if self.streamValues[i][-1] == 'gas':
+                gasMF += self.streamValues[i][0]
+                gasMom_flux += self.streamValues[i][3]
+            elif self.streamValues[i][-1] == 'liquid':
+                liqMF += self.streamValues[i][0]
+                liqMom_flux += self.streamValues[i][3]
+        
+        if liqMF != 0 and liqMom_flux != 0:
+            self.GLR_total = gasMF/liqMF
+            self.mom_flux_total = gasMom_flux/liqMom_flux
+            if self.streamValues[0][-1] == 'gas' and self.streamValues[1][-1] == 'liquid' and self.streamValues[2][-1] == 'gas':
+                self.GLI = self.streamValues[0][0]/self.streamValues[1][0]
+                self.GLO = self.streamValues[2][0]/self.streamValues[1][0]
+                self.mom_i = self.streamValues[0][3]/self.streamValues[1][3]
+                self.mom_o = self.streamValues[2][3]/self.streamValues[1][3]
+            else: 
+                self.GLI = 0
+                self.GLO = 0
+                self.mom_i = 0
+                self.mom_o = 0
+            
+
+            self.resutlLabels[21].setText("%.2f" % self.GLR_total)
+            self.resutlLabels[22].setText("%.2f" % self.mom_flux_total)
+            self.resutlLabels[23].setText("%.2f" % self.GLI)
+            self.resutlLabels[24].setText("%.2f" % self.GLO)
+            self.resutlLabels[25].setText("%.2f" % self.mom_i)
+            self.resutlLabels[26].setText("%.2f" % self.mom_o)
+        
+        else:
+            self.resutlLabels[21].setText('Error')
+            self.resutlLabels[22].setText('Error')
+            self.resutlLabels[23].setText('Error')
+            self.resutlLabels[24].setText('Error')
+            self.resutlLabels[25].setText('Error')
+            self.resutlLabels[26].setText('Error')
+
+       
+
+
+        
 if __name__ == '__main__':
     app = QApplication([])
     app.setStyle('Fusion')
