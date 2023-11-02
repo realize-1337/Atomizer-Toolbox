@@ -232,7 +232,9 @@ class UI(QMainWindow):
         streamValuesString = [[0]*5 for i in range(3)]
         for j in range(len(self.streamValues[0])-1):
             for i in range(3):
-                if self.streamValues[i][j] < 0.001:
+                if self.streamValues[i][j] < 0.01:
+                    streamValuesString[i][j] = "%.3e" % self.streamValues[i][j]
+                elif self.streamValues[i][j] > 1000:
                     streamValuesString[i][j] = "%.3e" % self.streamValues[i][j]
                 else: 
                     streamValuesString[i][j] = "%.3f" % self.streamValues[i][j]
