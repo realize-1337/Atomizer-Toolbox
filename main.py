@@ -31,6 +31,8 @@ class UI(QMainWindow):
         self.ui.pushButton_2.clicked.connect(self.calculator)
         self.ui.loadPreset.clicked.connect(self.loadPreset)
         self.ui.savePreset.clicked.connect(self.savePreset)
+        self.ui.resetValues.clicked.connect(self.resetValues)
+        self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
 
@@ -73,13 +75,14 @@ class UI(QMainWindow):
             water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
             surfaceMix = glycerinFraction*surfaceGly + (1-glycerinFraction)*water_ST
             self.liqSurface = surfaceMix
+
+        print(self.liqSurface)
         
     def calcGas(self):
         try:
             if self.ui.gasType.currentText() == 'Air':
                 air_ = Fluid(FluidsList.Air).with_state(Input.temperature(self.ui.gasTemp.value()), Input.pressure(101325))
                 self.ui.gasVisc.setValue(air_.dynamic_viscosity*1000)
-                print(air_.dynamic_viscosity*1000)
                 self.ui.gasDens.setValue(air_.density)
                 self.gasSurface = air_.surface_tension
         except: pass
@@ -189,7 +192,6 @@ class UI(QMainWindow):
             vel = mfr/dens/orifice
             mom = dens*vel**2*orifice
             mom_flux = dens*vel**2
-            print(orifice)
             return [mfr, mfr_h, vel, mom_flux, mom, type]
 
         i = 0
@@ -259,8 +261,6 @@ class UI(QMainWindow):
         self.calcDimless()
 
     def calcDimless(self):
-        # Re, We, Oh
-
         rhos = {
             'gas': self.gasDens,
             'liquid': self.liqDens
@@ -289,10 +289,6 @@ class UI(QMainWindow):
         self.innerDimless.append(dL.Oh(visc[self.streamValues[0][5]], rhos[self.streamValues[0][5]], self.Lc[0], sigmas[self.streamValues[0][5]]))
         self.sheetDimless.append(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
         self.outerDimless.append(dL.Oh(visc[self.streamValues[2][5]], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
-
-        print(self.innerDimless)
-        print(self.sheetDimless)
-        print(self.outerDimless)
 
         strings = []
         for item in self.innerDimless:
@@ -366,7 +362,6 @@ class UI(QMainWindow):
         self.ui.outputLabel.setText('Berechnung läuft')
         my_target = self.ui.input_my.value()
         temp = self.ui.input_T.value()
-        print(my_target, temp)
 
         calc = ca(temp, my_target)
         try: 
@@ -410,6 +405,9 @@ class UI(QMainWindow):
         for i in range(len(self.presetRadio)):
             self.presetRadio[i].setChecked(import_dict[f"{len(self.presetFields)+ len(self.presetDropdowns) +i}"])
 
+        list = filename.split('/')
+        self.ui.label_19.setText(f'Atomizer Properties (Preset: {list[-1][:-5]})')
+
     def savePreset(self):
         filename, null = QFileDialog.getSaveFileName(self, directory=self.path, filter='*.json')
 
@@ -431,7 +429,6 @@ class UI(QMainWindow):
         if not filename:
             return 0
 
-        print(filename)
         with open(rf'{filename}', 'w+') as json_file:
             json.dump(export, json_file)
 
@@ -445,13 +442,41 @@ class UI(QMainWindow):
 
     def presetField(self):
         fields = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.outerWall, self.ui.liquidTemp, self.ui.liquidVisc, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue]
+        defaults = [3, 0.1, 1, 0.1, 1, 0, 20, 1, 20, 0, 0, 0]
         self.presetFields = fields
+        self.presetFieldsDeafault = defaults
 
         dropDowns = [self.ui.innerTubeBox, self.ui.innerWallBox, self.ui.annularSheetBox, self.ui.middleWallBox, self.ui.outerSheetBox, self.ui.outerWallBox, self.ui.liquidType, self.ui.gasType, self.ui.innerStreamUnit, self.ui.sheetStreamUnit, self.ui.outerStreamUnit]
+        defaults = [0 for i in range(len(dropDowns))]
         self.presetDropdowns = dropDowns
+        self.presetDropdownsDefault = defaults
+
       
         radio = [self.ui.innerGasTrue, self.ui.innerLiqTrue, self.ui.sheetGasTrue, self.ui.sheetLiqTrue, self.ui.outerGasTrue, self.ui.outerLiqTrue]
+        defaults = [True, False, False, True, True, False]
         self.presetRadio = radio    
+        self.presetRadioDefault = defaults
+
+    def resetValues(self):
+        for i in range(len(self.presetFields)):
+            self.presetFields[i].setValue(self.presetFieldsDeafault[i])
+        
+        for i in range(len(self.presetDropdowns)):
+            self.presetDropdowns[i].setCurrentIndex(self.presetDropdownsDefault[i])
+        
+        for i in range(len(self.presetRadio)):
+            self.presetRadio[i].setChecked(self.presetRadioDefault[i])
+
+        self.calcLiq()
+        self.calcGas()
+
+    def removePresetTag(self):
+        fields = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.outerWall]
+        for item in fields:
+            item.valueChanged.connect(self.removeTag)
+   
+    def removeTag(self):
+            self.ui.label_19.setText('Atomizer Properties')
 
 if __name__ == '__main__':
     app = QApplication([])

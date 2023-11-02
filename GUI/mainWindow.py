@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1034, 776)
+        MainWindow.resize(1034, 789)
         font = QtGui.QFont()
         font.setFamily("Segoe UI Semibold")
         MainWindow.setFont(font)
@@ -664,7 +664,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "FlowCalc"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Atomizer Toolbox"))
         self.label_12.setText(_translate("MainWindow", "Results"))
         self.label_8.setText(_translate("MainWindow", "Momentum flux [kg/(m s²)]"))
         self.label_5.setText(_translate("MainWindow", "Mass flow rate [kg/h]"))
