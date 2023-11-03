@@ -15,7 +15,6 @@ subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 
 
-
 class UI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -200,17 +199,17 @@ class UI(QMainWindow):
             i += 1
             value, unit, type = item
             if unit == 'kg/h':
-                item[0] /= 3600
+                value /= 3600
             elif unit == 'g/s':
-                item[0] /= 1000
+                value /= 1000
             elif unit == 'm/s':
-                item[0] *= area
+                value *= area
                 if type == 'gas':
-                    item[0] *= self.gasDens
+                    value *= self.gasDens
                 else:
-                    item[0] *= self.liqDens 
+                    value *= self.liqDens 
 
-            self.streamValues.append(velCalc(item[0], area, type))
+            self.streamValues.append(velCalc(value, area, type))
 
         self.fillFirstResults()
 
@@ -229,6 +228,7 @@ class UI(QMainWindow):
             1: self.liquidArea,
             2: self.outerArea
         }
+        print(self.orificeDict)
 
     def fillFirstResults(self):
         streamValuesString = [[0]*5 for i in range(3)]
