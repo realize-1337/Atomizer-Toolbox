@@ -9,9 +9,9 @@ from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/mainWindow.ui'
+# PY_FILE = './GUI/mainWindow.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 
 
@@ -374,7 +374,7 @@ class UI(QMainWindow):
         path = os.path.join(self.path, 'global', 'global_settings.json')
         if not os.path.exists(path): 
             default = {
-                'lastFile': None
+                'lastFile': 'empty__'
             }
             os.mkdir(os.path.join(self.path, 'global'))
 
@@ -383,6 +383,7 @@ class UI(QMainWindow):
             with open(rf'{path}', 'w+') as global_config:
                 json.dump(default, global_config)
                 self.lastFile = None
+            self.resetValues()
         else:
             with open(rf'{path}', 'r') as global_config:
                 lastFile = json.load(global_config)['lastFile']
@@ -391,10 +392,15 @@ class UI(QMainWindow):
         
     def loadPreset(self, path = None):
         if not path: filename, null = QFileDialog.getOpenFileName(self, directory=self.path, filter='*.json', options=QFileDialog.Option.ReadOnly)
+        elif path == 'empty__': return 0
         else: filename = path
 
-        with open(rf'{filename}', 'r') as read:
-            import_dict = json.load(read)
+        try: 
+            with open(rf'{filename}', 'r') as read:
+                import_dict = json.load(read)
+        except: 
+            print('File not found')
+            return 0
         
         for i in range(len(self.presetFields)):
             self.presetFields[i].setValue(import_dict[f"{i}"])
