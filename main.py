@@ -3,6 +3,7 @@ import math
 import subprocess
 import json
 import ctypes
+import pandas as pd
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
@@ -34,6 +35,44 @@ class UI(QMainWindow):
         self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
+        
+    def liqAndGasDF(self):
+        liqAndGas = pd.DataFrame()
+        liquidData = {
+            'type': ['Liquid'],
+            'Surface Tension [mN/m]': [self.liqSurface*1000],
+            'Density [mg/m³]': [self.liqDens],
+            'Viscosity [mPa s]': [self.liqSurface*1000],
+            'Temperature [°C]': [self.ui.liquidTemp.value()]
+        }
+        newRow = pd.DataFrame(liquidData)
+        liqAndGas = pd.concat([liqAndGas, newRow], ignore_index=True)
+
+        gasData = {
+        'type': ['Gas'],
+        'Density [mg/m³]': [self.gasDens],
+        'Temperature [°C]': [self.ui.gasTemp.value()]
+        }
+        newRow = pd.DataFrame(gasData)
+        liqAndGas = pd.concat([liqAndGas, newRow], ignore_index=True)
+        liqAndGas = liqAndGas.set_index('type')
+
+        return liqAndGas
+
+    def GeometryDF(self):
+        geometry = {
+            'type': ['Geometry'],
+            'Inner Tube Diameter [mm]': [self.innerTube*1000],
+            'Inner Wall Thickness [mm]': [self.innerWall*1000],
+            'Middle Sheet Thickness [mm]': [self.annularSheet*1000],
+            'Middle Wall Thickness [mm]': [self.middleWall*1000],
+            'Outer Sheet Thickness [mm]': [self.outerSheet*1000],
+            'Inner Area [mm²]': [self.innerArea*1000**2],
+            'Middle Sheet Area [mm²]': [self.liquidArea*1000**2],
+            'Outer Sheet Area [mm²]': [self.outerArea*1000**2],
+        }
+        newRow = pd.DataFrame(data=geometry).set_index('type')
+        return newRow
 
     def tabOrder(self):
         order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.calcLiq, self.ui.gasTemp, self.ui.calcGas, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue, self.ui.pushButton]
@@ -60,6 +99,7 @@ class UI(QMainWindow):
         if self.ui.liquidType.currentText() == 'Water':
             water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
             self.ui.liquidVisc.setValue(water_.dynamic_viscosity*1000)
+            self.liqDens = water_.density
             self.ui.LiquidDens.setValue(water_.density)
             self.liqSurface = water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
         else: 
@@ -69,6 +109,7 @@ class UI(QMainWindow):
             water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
             rhoMix = rhoGly*glycerinFraction + water_.density*(1-glycerinFraction)
             self.ui.LiquidDens.setValue(rhoMix)
+            self.liqDens = rhoMix
             surfaceGly = 0.06*self.ui.liquidTemp.value()+64.6
             surfaceGly /= 1000
             water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
@@ -83,7 +124,9 @@ class UI(QMainWindow):
                 air_ = Fluid(FluidsList.Air).with_state(Input.temperature(self.ui.gasTemp.value()), Input.pressure(101325))
                 self.ui.gasVisc.setValue(air_.dynamic_viscosity*1000)
                 self.ui.gasDens.setValue(air_.density)
+                self.gasDens = air_.density
                 self.gasSurface = air_.surface_tension
+                
         except: pass
 
     def createLabelList(self):
@@ -214,6 +257,7 @@ class UI(QMainWindow):
         self.fillFirstResults()
 
     def orifice(self):
+        
         self.innerArea = math.pi/4*self.innerTube**2
         self.innerAreaWithWall = math.pi*(self.innerTube/2+self.innerWall)**2
 
@@ -258,6 +302,20 @@ class UI(QMainWindow):
         self.resutlLabels[10].setText(streamValuesString[1][4])
         self.resutlLabels[11].setText(streamValuesString[2][4])
 
+        def StreamDF():
+            dict = {
+                'type': ['inner Stream', 'middle Stream', 'outer Stream'],
+                'Type': [self.streamValues[0][-1].capitalize(), self.streamValues[1][-1].capitalize(), self.streamValues[2][-1].capitalize()],
+                'Orifce [mm²]': [self.innerArea*1000**2, self.liquidArea*1000**2, self.outerArea*1000**2],
+                'Mass Flow Rate [kg/h]': [self.streamValues[0][1], self.streamValues[1][1], self.streamValues[2][1]],
+                'Flow Velocity [m/s]': [self.streamValues[0][2], self.streamValues[1][2], self.streamValues[2][2]],
+                'Momentum Flux [kg/(m s²)]': [self.streamValues[0][3], self.streamValues[1][3], self.streamValues[2][3]],
+                'Momentum [kg m/s²]': [self.streamValues[0][3], self.streamValues[1][3], self.streamValues[2][3]]
+            }
+            
+            return pd.DataFrame(dict).set_index('type')
+
+        self.StreamDf = StreamDF()
         self.calcDimless()
 
     def calcDimless(self):
@@ -289,6 +347,19 @@ class UI(QMainWindow):
         self.innerDimless.append(dL.Oh(visc[self.streamValues[0][5]], rhos[self.streamValues[0][5]], self.Lc[0], sigmas[self.streamValues[0][5]]))
         self.sheetDimless.append(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
         self.outerDimless.append(dL.Oh(visc[self.streamValues[2][5]], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
+
+        def ReWeOhDF():
+            dict = {
+                'type': ['inner Stream', 'middle Stream', 'outer Stream'], 
+                'Orifce [mm²]': [self.innerArea*1000**2, self.liquidArea*1000**2, self.outerArea*1000**2],
+                'Reynolds': [self.innerDimless[0], self.sheetDimless[0], self.outerDimless[0]],
+                'Weber': [self.innerDimless[1], self.sheetDimless[1], self.outerDimless[1]],
+                'Ohnesorge': [self.innerDimless[2], self.sheetDimless[2], self.outerDimless[2]]
+            }
+
+            return pd.DataFrame(dict).set_index('type')
+
+        self.ReOhWeDf = ReWeOhDF()
 
         strings = []
         for item in self.innerDimless:
@@ -327,7 +398,9 @@ class UI(QMainWindow):
             elif self.streamValues[i][-1] == 'liquid':
                 liqMF += self.streamValues[i][0]
                 liqMom_flux += self.streamValues[i][3]
-        
+    
+        self.RatiosDf = pd.DataFrame(columns=['GLR', 'GLI', 'GLO', 'Momentum Flux Ratio', 'Inner Momentum Flux Ratio', 'Outer Momentum Flux Ratio'])
+
         if liqMF != 0 and liqMom_flux != 0:
             self.GLR_total = gasMF/liqMF
             self.mom_flux_total = gasMom_flux/liqMom_flux
@@ -336,20 +409,29 @@ class UI(QMainWindow):
                 self.GLO = self.streamValues[2][0]/self.streamValues[1][0]
                 self.mom_i = self.streamValues[0][3]/self.streamValues[1][3]
                 self.mom_o = self.streamValues[2][3]/self.streamValues[1][3]
+
+                dict = {
+                    'GLR': [self.GLR_total],
+                    'GLI': [self.GLI],
+                    'GLO': [self.GLO],
+                    'Momentum Flux Ratio': [self.mom_flux_total],
+                    'Inner Momentum Flux Ratio': [self.mom_i],
+                    'Outer Momentum Flux Ratio': [self.mom_o],
+                }
+                self.RatiosDf = pd.DataFrame(dict)
             else: 
                 self.GLI = 0
                 self.GLO = 0
                 self.mom_i = 0
                 self.mom_o = 0
-            
-
+                  
             self.resutlLabels[21].setText("%.2f" % self.GLR_total)
             self.resutlLabels[22].setText("%.2f" % self.mom_flux_total)
             self.resutlLabels[23].setText("%.2f" % self.GLI)
             self.resutlLabels[24].setText("%.2f" % self.GLO)
             self.resutlLabels[25].setText("%.2f" % self.mom_i)
             self.resutlLabels[26].setText("%.2f" % self.mom_o)
-        
+
         else:
             self.resutlLabels[21].setText('Error')
             self.resutlLabels[22].setText('Error')
@@ -357,6 +439,8 @@ class UI(QMainWindow):
             self.resutlLabels[24].setText('Error')
             self.resutlLabels[25].setText('Error')
             self.resutlLabels[26].setText('Error')
+
+        self.getAllDfs()
 
     def calculator(self):
         self.ui.outputLabel.setText('Berechnung läuft')
@@ -377,6 +461,8 @@ class UI(QMainWindow):
                 'lastFile': 'empty__'
             }
             os.mkdir(os.path.join(self.path, 'global'))
+            if not os.path.exists(os.path.join(self.path, 'global', 'share')):
+                os.mkdir(os.path.join(self.path, 'global', 'share'))
 
             FILE_ATTRIBUTE_HIDDEN = 0x02
             ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
@@ -483,6 +569,26 @@ class UI(QMainWindow):
    
     def removeTag(self):
             self.ui.label_19.setText('Atomizer Properties')
+
+    def getAllDfs(self):
+        dfs = {
+            'Liquid and Gas Properties': self.liqAndGasDF(),
+            'Atomizer Geometry': self.GeometryDF(),
+            'Stream Properties': self.StreamDf,
+            'Dimensionless Numbers': self.ReOhWeDf,
+            'Common Ratios': self.RatiosDf
+        }
+
+        if not os.path.exists(os.path.join(self.path, 'global', 'share')):
+            os.mkdir(os.path.join(self.path, 'global', 'share'))
+        if not os.path.exists(os.path.join(self.path, 'global', 'presets')):
+            os.mkdir(os.path.join(self.path, 'global', 'presets'))
+
+        for k,v in dfs.items():
+            print (v)
+            with open(os.path.join(self.path, 'global', 'share', f'{k}_share.json'), 'w+') as file:
+                v.to_json(file)
+            print('\n')
 
 if __name__ == '__main__':
     app = QApplication([])
