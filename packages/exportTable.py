@@ -74,7 +74,7 @@ class DeleteDialog(QDialog):
         self.reject()
 
 class ColumnChanger(QDialog):
-    def __init__(self, index, ui, col):
+    def __init__(self, index, ui:QDialog, col:bool):
         super().__init__()
         self.index = index
         self.ui = ui
@@ -101,7 +101,21 @@ class ColumnChanger(QDialog):
         layout.addWidget(save_button)
         layout.addWidget(discard_button)
         layout.addWidget(delete_button)
+        innerLayout = QHBoxLayout()
+        if self.col:
+            text_1 = 'Move Left'
+            text_2 = 'Move Right'
+        else: 
+            text_1 = 'Move Up'
+            text_2 = 'Move Down'
+        left_up_button = QPushButton(text_1, self)
+        left_up_button.clicked.connect(self.left_up)
+        right_down_button = QPushButton(text_2, self)
+        right_down_button.clicked.connect(self.right_down)
+        innerLayout.addWidget(left_up_button)
+        innerLayout.addWidget(right_down_button)
 
+        layout.addLayout(innerLayout)
         self.setLayout(layout)
 
     def saveClicked(self):
@@ -122,6 +136,17 @@ class ColumnChanger(QDialog):
                 self.ui.removeColumn(self.index)
             else: self.ui.removeRow(self.index)
             self.reject()
+
+    def left_up(self):
+        if self.col:
+            rowCount = self.ui.rowCount()
+            print(rowCount)
+        print('LU')
+        pass
+
+    def right_down(self):
+        print('RD')
+        pass
 
 class SaveDialog(QDialog):
     def __init__(self, items:list, main):
@@ -229,6 +254,7 @@ class UI(QDialog):
         self.loadButtons()
         self.createLoadList()
         self.savedCheck = True
+        
 
     def headers(self):
         try: self.ui.tableWidget.horizontalHeader().sectionDoubleClicked.disconnect()
