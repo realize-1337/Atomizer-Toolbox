@@ -4,16 +4,18 @@ import subprocess
 import json
 import ctypes
 import pandas as pd
+from functools import partial
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
+from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
+import packages.exportTable as ex
 
 
 class UI(QMainWindow):
@@ -32,9 +34,15 @@ class UI(QMainWindow):
         self.ui.loadPreset.clicked.connect(self.loadPreset)
         self.ui.savePreset.clicked.connect(self.savePreset)
         self.ui.resetValues.clicked.connect(self.resetValues)
+        self.ui.cpToclip.clicked.connect(self.toClip)
+        self.ui.cellToClip.clicked.connect(self.cellToClip)
+        self.ui.actionEdit_and_Create_Export_Presets.triggered.connect(self.createExportPresets)
+        self.ui.actionAbout.triggered.connect(self.about)
+        self.ui.actionGo_to_default_path.triggered.connect(self.openPath)
         self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
+        self.loadStyles()
         
     def liqAndGasDF(self):
         liqAndGas = pd.DataFrame()
@@ -79,8 +87,6 @@ class UI(QMainWindow):
         self.setTabOrder(order[0], order[1])
         for i in range(1, len(order)):
             self.setTabOrder(order[i-1], order[i])
-        
-        #self.setTabOrder(order[-1], order[0])
 
     def setCalcButtons(self):
         self.ui.calcGas.clicked.connect(self.calcGas)
@@ -456,23 +462,29 @@ class UI(QMainWindow):
 
     def loadGlobalSettings(self):
         path = os.path.join(self.path, 'global', 'global_settings.json')
-        if not os.path.exists(path): 
-            default = {
-                'lastFile': 'empty__'
-            }
-            os.mkdir(os.path.join(self.path, 'global'))
-            if not os.path.exists(os.path.join(self.path, 'global', 'share')):
-                os.mkdir(os.path.join(self.path, 'global', 'share'))
+        if not os.path.exists(path):
+            try: 
+                default = {
+                    'lastFile': 'empty__',
+                    'lastExport': 'empty__'
+                }
+                if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
+                if not os.path.exists(os.path.join(self.path, 'global', 'share')):
+                    os.mkdir(os.path.join(self.path, 'global', 'share'))
 
-            FILE_ATTRIBUTE_HIDDEN = 0x02
-            ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
-            with open(rf'{path}', 'w+') as global_config:
-                json.dump(default, global_config)
-                self.lastFile = None
-            self.resetValues()
+                FILE_ATTRIBUTE_HIDDEN = 0x02
+                ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
+                with open(rf'{path}', 'w+') as global_config:
+                    json.dump(default, global_config)
+                    self.lastFile = 'empty__'
+                    self.lastExport = 'empty__'
+                self.resetValues()
+            except: pass
         else:
             with open(rf'{path}', 'r') as global_config:
-                lastFile = json.load(global_config)['lastFile']
+                dict = json.load(global_config)
+                lastFile = dict['lastFile']
+                self.lastExport = dict['lastExport']
             try: self.loadPreset(lastFile)
             except: pass
         
@@ -500,6 +512,16 @@ class UI(QMainWindow):
         list = filename.split('/')
         self.ui.label_19.setText(f'Atomizer Properties (Preset: {list[-1][:-5]})')
 
+        export = {
+            'lastFile': filename,
+            'lastExport': self.lastExport
+        }
+
+        with open(rf"{os.path.join(self.path, 'global', 'global_settings.json')}", 'w+') as json_file:
+            json.dump(export, json_file)
+            self.lastFile = filename
+
+
     def savePreset(self):
         filename, null = QFileDialog.getSaveFileName(self, directory=self.path, filter='*.json')
 
@@ -525,7 +547,8 @@ class UI(QMainWindow):
             json.dump(export, json_file)
 
         export = {
-            'lastFile': filename
+            'lastFile': filename,
+            'lastExport': self.lastExport
         }
 
         with open(rf"{os.path.join(self.path, 'global', 'global_settings.json')}", 'w+') as json_file:
@@ -589,6 +612,162 @@ class UI(QMainWindow):
             with open(os.path.join(self.path, 'global', 'share', f'{k}_share.json'), 'w+') as file:
                 v.to_json(file)
             print('\n')
+
+    def loadStyles(self):
+        self.ui.exportStyleBox.clear()
+        
+        self.ui.exportStyleBox.addItem('Select Export Style')
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets')):
+            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets'))
+        items = os.listdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets'))
+        self.ui.exportStyleBox.addItems(items)
+        if self.lastExport != 'empty__':
+            if self.lastExport in items:
+                self.ui.exportStyleBox.setCurrentText(self.lastExport)
+
+    def generateExport(self):
+        style = self.ui.exportStyleBox.currentText()
+        if style == 'Select Export Style':
+            return None
+        else:
+            self.lastExport = style
+            with open(os.path.join(self.path, 'global', 'global_settings.json'), 'r') as file:
+                dict = json.load(file)
+                dict['lastExport'] = self.lastExport
+
+            with open(os.path.join(self.path, 'global', 'global_settings.json'), 'w+') as file:
+                json.dump(dict, file)
+
+            path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets', style)
+            files = os.listdir(path)
+
+            dicts = []
+            for item in files:
+                with open(os.path.join(path, item), 'r') as file:
+                    dicts.append(json.load(file))
+
+            dfs = {
+                'Liquid and Gas Properties': self.liqAndGasDF(),
+                'Atomizer Geometry': self.GeometryDF(),
+                'Stream Properties': self.StreamDf,
+                'Dimensionless Numbers': self.ReOhWeDf,
+                'Common Ratios': self.RatiosDf
+            }
+
+            valueDict = {}
+            for key, value in dicts[0].items():
+                innerDict = {}
+                for k, v in value.items():
+                    if type(v) == list:
+                        innerDict[k] = dfs[v[0]][v[1]][v[2]]
+                    elif type(v) == None:
+                        innerDict[k] = None
+                    else: innerDict[k] = v
+                valueDict[key] = innerDict
+            
+            hheader = [v for k,v in dicts[1].items()]
+            # hheader = enumerate(hheader)
+            # hheader = dict(hheader)
+            vheader = [v for k,v in dicts[2].items()]
+
+            df = pd.DataFrame(valueDict).transpose()
+            df = df.rename(columns=dicts[1])
+            df['vert'] = pd.Series(vheader).values
+            df = df.set_index('vert')
+            df = df.fillna('')
+            return df
+
+    def generateCells(self):
+        style = self.ui.exportStyleBox.currentText()
+        if style == 'Select Export Style':
+            return None
+        path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets', style)
+        files = os.listdir(path)
+
+        dicts = []
+        for item in files:
+            with open(os.path.join(path, item), 'r') as file:
+                dicts.append(json.load(file))
+
+        dfs = {
+            'Liquid and Gas Properties': self.liqAndGasDF(),
+            'Atomizer Geometry': self.GeometryDF(),
+            'Stream Properties': self.StreamDf,
+            'Dimensionless Numbers': self.ReOhWeDf,
+            'Common Ratios': self.RatiosDf
+        }
+
+        valueDict = {}
+        for key, value in dicts[0].items():
+            innerDict = {}
+            for k, v in value.items():
+                if type(v) == list:
+                    innerDict[k] = f"{v[1]} : {v[2]}"
+                elif type(v) == None:
+                    innerDict[k] = None
+                else: innerDict[k] = v
+            valueDict[key] = innerDict
+        
+        hheader = [v for k,v in dicts[1].items()]
+        vheader = [v for k,v in dicts[2].items()]
+        
+        vert = pd.DataFrame(vheader)
+        df = pd.DataFrame(valueDict)
+        df = df.rename(columns=dicts[1])
+        df['vert'] = vheader
+        df = df.set_index('vert')
+        df = df.fillna('')
+        return df
+
+    def toClip(self):
+        df = self.generateExport()
+        if type(df) == type(pd.DataFrame()):
+            df = self.replace(df)
+            if self.ui.headerCheck.isChecked() == True:
+                df.to_clipboard(decimal=',', sep='\t')
+            else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+            self.changeColor(self.ui.cpToclip, 'green', 2000)
+        else:
+            self.changeColor(self.ui.exportStyleBox, 'red', 1000)
+            return None
+
+    def cellToClip(self):
+        df = self.generateCells()
+        if df:
+            if self.ui.headerCheck.isChecked() == True:
+                df.to_clipboard(decimal=',', sep='\t')
+            else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+            self.changeColor(self.ui.cellToClip, 'green')
+        else:
+            self.changeColor(self.ui.exportStyleBox, 'red', 1000)
+            return None
+        
+    def replace(self, df):
+        if self.ui.radioComma.isChecked() == True:
+            df = df.applymap(lambda x: str(x).replace('.', ','))
+        else: 
+            df = df.applymap(lambda x: str(x))
+        return df
+    
+    def changeColor(self, button, color, duration):
+        self.color_timer = QTimer()
+        self.color_timer.timeout.connect(partial(self.resetColor, button))
+        button.setStyleSheet(f'background-color: {color};')
+        self.color_timer.start(duration)  # 2000 milliseconds (2 seconds)
+
+    def resetColor(self, button):
+        button.setStyleSheet('')
+        self.color_timer.stop()
+
+    def createExportPresets(self):
+        ex.callInside()
+        self.loadStyles()
+
+    def about(self):
+        QMessageBox.information(self, 'About', 'Created by David Märker')
+
+    def openPath(self):
+        subprocess.Popen(rf'explorer /select,"{self.path}"')
 
 if __name__ == '__main__':
     app = QApplication([])

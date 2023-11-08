@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1034</width>
-    <height>789</height>
+    <height>886</height>
    </rect>
   </property>
   <property name="font">
@@ -36,13 +36,6 @@
         <string>Triflow atomizer</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="7" column="0">
-         <widget class="Line" name="line">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
         <item row="9" column="0">
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0" colspan="2">
@@ -914,6 +907,96 @@
           </item>
          </layout>
         </item>
+        <item row="12" column="0">
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="2" column="2" colspan="2">
+           <widget class="QPushButton" name="cpToExcel">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Export to Excel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="headerCheck">
+            <property name="text">
+             <string>Export with header and row names?</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QRadioButton" name="radioPoint">
+            <property name="text">
+             <string>Decimal Point</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_4</string>
+            </attribute>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QRadioButton" name="radioComma">
+            <property name="text">
+             <string>Decimal Comma</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_4</string>
+            </attribute>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QPushButton" name="cellToClip">
+            <property name="text">
+             <string>Copy Cell Names to Clipboard</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" colspan="2">
+           <widget class="QPushButton" name="cpToclip">
+            <property name="text">
+             <string>Copy to Clipboard</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2" colspan="3">
+           <widget class="QComboBox" name="exportStyleBox">
+            <item>
+             <property name="text">
+              <string>Select Export Style</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <widget class="QPushButton" name="cellToExcel">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Copy Cell Names to Clipboard</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="7" column="0">
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
         <item row="10" column="0">
          <layout class="QGridLayout" name="gridLayout_7">
           <item row="1" column="4">
@@ -1267,6 +1350,13 @@
           </property>
          </widget>
         </item>
+        <item row="11" column="0">
+         <widget class="Line" name="line_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tab_2">
@@ -1349,8 +1439,38 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuSetting">
+    <property name="title">
+     <string>Setting</string>
+    </property>
+    <addaction name="actionEdit_and_Create_Export_Presets"/>
+   </widget>
+   <widget class="QMenu" name="menuInfo">
+    <property name="title">
+     <string>Info</string>
+    </property>
+    <addaction name="actionGo_to_default_path"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuSetting"/>
+   <addaction name="menuInfo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionEdit_and_Create_Export_Presets">
+   <property name="text">
+    <string>Edit and Create Export Presets</string>
+   </property>
+  </action>
+  <action name="actionGo_to_default_path">
+   <property name="text">
+    <string>Go to default path</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
@@ -1358,5 +1478,6 @@
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_4"/>
  </buttongroups>
 </ui>
