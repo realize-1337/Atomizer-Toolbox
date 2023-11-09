@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import copy
 currentDir = os.path.dirname(__file__)
 parentDir = os.path.dirname(currentDir)
 sys.path.append(parentDir)
@@ -11,20 +12,19 @@ import pandas as pd
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
-
-UI_FILE = './GUI/tableExport.ui'
-PY_FILE = './GUI/tableExport.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/tableExport.ui'
+# PY_FILE = './GUI/tableExport.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.tableExport import Ui_Dialog as main
 
 class DeleteDialog(QDialog):
-    def __init__(self, items:list, path):
+    def __init__(self, items:list, path, main):
         super().__init__()
         self.items = items
         self.path = path
+        self.main = main
         self.initUI()
         
- 
     def initUI(self):
         layout = QVBoxLayout()
         self.line_input = QLineEdit(self)
@@ -66,6 +66,10 @@ class DeleteDialog(QDialog):
                 for file in files: os.remove(os.path.join(self.path, dc[1], file))
                 os.rmdir(os.path.join(self.path, dc[1]))
                 QMessageBox.information(self, 'Success', f'Successfully deleted preset {dc[1]}')
+                self.main.createLoadList()
+                self.main.ui.tableWidget.clear()
+                self.main.ui.tableWidget.setRowCount(0)
+                self.main.ui.tableWidget.setColumnCount(0)
                 self.accept()
         else:
             self.setEnabled(True)
@@ -74,14 +78,14 @@ class DeleteDialog(QDialog):
         self.reject()
 
 class ColumnChanger(QDialog):
-    def __init__(self, index, ui:QDialog, col:bool):
+    def __init__(self, index, ui:QTableWidget, col:bool, main:QDialog):
         super().__init__()
         self.index = index
         self.ui = ui
         self.col = col
+        self.main = main
         self.initUI()
         
-
     def initUI(self):
         layout = QVBoxLayout()
 
@@ -108,15 +112,31 @@ class ColumnChanger(QDialog):
         else: 
             text_1 = 'Move Up'
             text_2 = 'Move Down'
-        left_up_button = QPushButton(text_1, self)
-        left_up_button.clicked.connect(self.left_up)
-        right_down_button = QPushButton(text_2, self)
-        right_down_button.clicked.connect(self.right_down)
-        innerLayout.addWidget(left_up_button)
-        innerLayout.addWidget(right_down_button)
+        self.left_up_button = QPushButton(text_1, self)
+        self.left_up_button.clicked.connect(partial(self.move, -1))
+        self.right_down_button = QPushButton(text_2, self)
+        self.right_down_button.clicked.connect(partial(self.move, 1))
+        innerLayout.addWidget(self.left_up_button)
+        innerLayout.addWidget(self.right_down_button)
+
+        self.checkBorders()
 
         layout.addLayout(innerLayout)
         self.setLayout(layout)
+
+    def checkBorders(self):
+        if self.index == 0: self.left_up_button.setDisabled(True)
+        else: self.left_up_button.setEnabled(True)
+
+        if self.col: 
+            trigger = bool(self.index == self.ui.columnCount()-1)
+            self.line_input.setText(self.ui.horizontalHeaderItem(self.index).text())
+        else: 
+            trigger = bool(self.index == self.ui.rowCount()-1)
+            self.line_input.setText(self.ui.verticalHeaderItem(self.index).text())
+
+        if trigger: self.right_down_button.setDisabled(True)
+        else: self.right_down_button.setEnabled(True)
 
     def saveClicked(self):
         input_text = self.line_input.text()
@@ -137,16 +157,80 @@ class ColumnChanger(QDialog):
             else: self.ui.removeRow(self.index)
             self.reject()
 
-    def left_up(self):
+    def move(self, dir:int):
         if self.col:
-            rowCount = self.ui.rowCount()
-            print(rowCount)
-        print('LU')
-        pass
+            print('Col')
+            target = self.index + dir
+            
+            header_index:QTableWidgetItem = self.ui.horizontalHeaderItem(self.index).clone()
+            header_target:QTableWidgetItem = self.ui.horizontalHeaderItem(target).clone()
+            
+            self.ui.setHorizontalHeaderItem(target, header_index)
+            self.ui.setHorizontalHeaderItem(self.index, header_target)
 
-    def right_down(self):
-        print('RD')
-        pass
+            for i in range(self.ui.rowCount()):
+                box_index:QComboBox = self.ui.cellWidget(i, self.index)
+                box_target:QComboBox = self.ui.cellWidget(i, target)
+                box_index.disconnect()
+                box_target.disconnect()
+                index_index = box_index.currentIndex()
+                index_target = box_index.currentIndex()
+                text_index = box_index.currentText()
+                text_target = box_target.currentText()
+                customtext_index = box_index.itemText(box_index.count()-1)
+                customtext_target = box_target.itemText(box_target.count()-1)
+                customdata_index = box_index.itemData(box_index.count()-1)
+                customdata_target = box_target.itemData(box_target.count()-1)
+                box_index.removeItem(box_index.count()-1)
+                box_target.removeItem(box_target.count()-1)
+                box_index.addItem(f'{customtext_target}', customdata_target)
+                box_target.addItem(f'{customtext_index}', customdata_index)
+                box_target.setCurrentIndex(index_index)
+                box_target.setCurrentText(text_index)
+                box_index.setCurrentIndex(index_target)
+                box_index.setCurrentText(text_target)
+                box_index.currentTextChanged.connect(partial(self.main.editbox, box_index))
+                box_target.currentTextChanged.connect(partial(self.main.editbox, box_target))
+            self.index = target
+            self.checkBorders()
+            print(f'Done: New Index {self.index}')
+        else:
+            print('Row')
+            target = self.index + dir
+            colCount = self.ui.columnCount()
+
+            header_index:QTableWidgetItem = self.ui.verticalHeaderItem(self.index).clone()
+            header_target:QTableWidgetItem = self.ui.verticalHeaderItem(target).clone()
+            
+            self.ui.setVerticalHeaderItem(target, header_index)
+            self.ui.setVerticalHeaderItem(self.index, header_target)
+
+            for i in range(colCount):
+                box_index:QComboBox = self.ui.cellWidget(self.index, i)
+                box_target:QComboBox = self.ui.cellWidget(target, i)
+                box_index.disconnect()
+                box_target.disconnect()
+                index_index = box_index.currentIndex()
+                index_target = box_index.currentIndex()
+                text_index = box_index.currentText()
+                text_target = box_target.currentText()
+                customtext_index = box_index.itemText(box_index.count()-1)
+                customtext_target = box_target.itemText(box_target.count()-1)
+                customdata_index = box_index.itemData(box_index.count()-1)
+                customdata_target = box_target.itemData(box_target.count()-1)
+                box_index.removeItem(box_index.count()-1)
+                box_target.removeItem(box_target.count()-1)
+                box_index.addItem(f'{customtext_target}', customdata_target)
+                box_target.addItem(f'{customtext_index}', customdata_index)
+                box_target.setCurrentIndex(index_index)
+                box_target.setCurrentText(text_index)
+                box_index.setCurrentIndex(index_target)
+                box_index.setCurrentText(text_target)
+                box_index.currentTextChanged.connect(partial(self.main.editbox, box_index))
+                box_target.currentTextChanged.connect(partial(self.main.editbox, box_target))
+            self.index = target
+            self.checkBorders()
+            print(f'Done: New Index {self.index}')
 
 class SaveDialog(QDialog):
     def __init__(self, items:list, main):
@@ -255,7 +339,6 @@ class UI(QDialog):
         self.createLoadList()
         self.savedCheck = True
         
-
     def headers(self):
         try: self.ui.tableWidget.horizontalHeader().sectionDoubleClicked.disconnect()
         except: pass
@@ -265,12 +348,12 @@ class UI(QDialog):
         self.ui.tableWidget.verticalHeader().sectionDoubleClicked.connect(self.changeVHeader)
         
     def changeHeader(self, index):
-        dialog = ColumnChanger(index, self.ui.tableWidget, col=True)
+        dialog = ColumnChanger(index, self.ui.tableWidget, col=True, main=self)
         dialog.setWindowTitle(f'Edit Column {index+1}')
         dialog.exec()
         
     def changeVHeader(self, index):
-        dialog = ColumnChanger(index, self.ui.tableWidget, col=False)
+        dialog = ColumnChanger(index, self.ui.tableWidget, col=False, main=self)
         dialog.setWindowTitle(f'Edit Row {index+1}')
         dialog.exec()
         # app.exec()
@@ -287,6 +370,9 @@ class UI(QDialog):
                 but.clicked.connect(self.deletePreset)
             if t == 'Close':
                 but.clicked.connect(self.close)
+            if t == 'Save All':
+                but.setText('Clear')
+                but.clicked.connect(self.clear)
 
     def addRow(self):
         row_count = self.ui.tableWidget.rowCount()
@@ -296,6 +382,7 @@ class UI(QDialog):
             box = self.createCombobox()
             box.currentTextChanged.connect(partial(self.editbox, box))
             self.ui.tableWidget.setCellWidget(row_count, i, box)
+        self.ui.tableWidget.setVerticalHeaderItem(row_count, QTableWidgetItem(f'{row_count+1}'))
         self.headers()
         self.savedCheck = False
        
@@ -307,6 +394,7 @@ class UI(QDialog):
             box = self.createCombobox()
             box.currentTextChanged.connect(partial(self.editbox, box))
             self.ui.tableWidget.setCellWidget(i, col_count, box)
+        self.ui.tableWidget.setHorizontalHeaderItem(col_count, QTableWidgetItem(f'{col_count+1}'))
         self.headers()
         self.savedCheck = False
     
@@ -441,9 +529,21 @@ class UI(QDialog):
 
     def deletePreset(self):
         items = os.listdir(self.PresetPath)
-        dialog = DeleteDialog(items, self.PresetPath)
+        dialog = DeleteDialog(items, self.PresetPath, main=self)
         dialog.setWindowTitle(f'Delete Presets')
         dialog.exec()
+
+    def clear(self):
+        if not self.savedCheck:
+            response = QMessageBox.question(self, 'Are you sure', 'Do you really want to clear the table without saving?')
+            if response == QMessageBox.StandardButton.Yes:
+                self.ui.tableWidget.clear()
+                self.ui.tableWidget.setRowCount(0)
+                self.ui.tableWidget.setColumnCount(0)
+        else: 
+            self.ui.tableWidget.clear()
+            self.ui.tableWidget.setRowCount(0)
+            self.ui.tableWidget.setColumnCount(0)
 
 
 def call():

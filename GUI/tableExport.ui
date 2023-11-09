@@ -78,7 +78,7 @@
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open - Load File from Dropdown&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="standardButtons">
-              <set>QDialogButtonBox::Close|QDialogButtonBox::Open|QDialogButtonBox::Save</set>
+              <set>QDialogButtonBox::Close|QDialogButtonBox::Open|QDialogButtonBox::Save|QDialogButtonBox::SaveAll</set>
              </property>
             </widget>
            </item>

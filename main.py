@@ -1,9 +1,11 @@
 import os
+import sys
 import math
 import subprocess
 import json
 import ctypes
 import pandas as pd
+import pyperclip as pc
 from functools import partial
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
@@ -446,6 +448,16 @@ class UI(QMainWindow):
             self.resutlLabels[25].setText('Error')
             self.resutlLabels[26].setText('Error')
 
+            dict = {
+                    'GLR': ['--'],
+                    'GLI': ['--'],
+                    'GLO': ['--'],
+                    'Momentum Flux Ratio': ['--'],
+                    'Inner Momentum Flux Ratio': ['--'],
+                    'Outer Momentum Flux Ratio': ['--'],
+                }
+            self.RatiosDf = pd.DataFrame(dict)
+
         self.getAllDfs()
 
     def calculator(self):
@@ -645,6 +657,9 @@ class UI(QMainWindow):
                 with open(os.path.join(path, item), 'r') as file:
                     dicts.append(json.load(file))
 
+            if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
+                self.readValues()
+
             dfs = {
                 'Liquid and Gas Properties': self.liqAndGasDF(),
                 'Atomizer Geometry': self.GeometryDF(),
@@ -671,8 +686,8 @@ class UI(QMainWindow):
 
             df = pd.DataFrame(valueDict).transpose()
             df = df.rename(columns=dicts[1])
-            df['vert'] = pd.Series(vheader).values
-            df = df.set_index('vert')
+            df[''] = pd.Series(vheader).values
+            df = df.set_index('')
             df = df.fillna('')
             return df
 
@@ -687,6 +702,9 @@ class UI(QMainWindow):
         for item in files:
             with open(os.path.join(path, item), 'r') as file:
                 dicts.append(json.load(file))
+
+        if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
+            self.readValues()
 
         dfs = {
             'Liquid and Gas Properties': self.liqAndGasDF(),
@@ -710,12 +728,11 @@ class UI(QMainWindow):
         hheader = [v for k,v in dicts[1].items()]
         vheader = [v for k,v in dicts[2].items()]
         
-        vert = pd.DataFrame(vheader)
-        df = pd.DataFrame(valueDict)
+        df = pd.DataFrame(valueDict).transpose()
         df = df.rename(columns=dicts[1])
-        df['vert'] = vheader
-        df = df.set_index('vert')
-        df = df.fillna('')
+        df[''] = pd.Series(vheader).values
+        df = df.set_index('')
+        # df = df.fillna('\t')
         return df
 
     def toClip(self):
@@ -732,11 +749,11 @@ class UI(QMainWindow):
 
     def cellToClip(self):
         df = self.generateCells()
-        if df:
+        if type(df) == type(pd.DataFrame()):
             if self.ui.headerCheck.isChecked() == True:
                 df.to_clipboard(decimal=',', sep='\t')
             else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
-            self.changeColor(self.ui.cellToClip, 'green')
+            self.changeColor(self.ui.cellToClip, 'green', 1000)
         else:
             self.changeColor(self.ui.exportStyleBox, 'red', 1000)
             return None
@@ -746,8 +763,38 @@ class UI(QMainWindow):
             df = df.applymap(lambda x: str(x).replace('.', ','))
         else: 
             df = df.applymap(lambda x: str(x))
+        print(df)
         return df
     
+    @staticmethod
+    def DfToClip(df:pd.DataFrame, deciaml:str = ',', sep:str = '\t', index:bool = True, header:bool = True):
+        cols = df.columns
+        rows = df.index
+        df.fillna('')
+
+        df = df.applymap(lambda x: str(x).replace('.', ',') if x.isnumeric else x)
+
+        if header: lines = [cols.values]
+        else: lines = []
+        i = 0
+        for item in df.iterrows():
+            line = []
+            if index: line.append(rows.values[i])
+            i += 1
+            for i in range(item.__len__()):
+                line.append(item[1].iloc[i])
+            lines.append(line)
+
+        out = ''
+        for item in lines:
+            for i in item:
+                out += f'{i}{sep}'
+            out += '\n'
+        
+        out = out[:-2]
+        pc.copy(out)
+        return out
+
     def changeColor(self, button, color, duration):
         self.color_timer = QTimer()
         self.color_timer.timeout.connect(partial(self.resetColor, button))
@@ -769,8 +816,8 @@ class UI(QMainWindow):
         subprocess.Popen(rf'explorer /select,"{self.path}"')
 
 if __name__ == '__main__':
-    app = QApplication([])
+    app = QApplication(sys.argv)
     app.setStyle('Fusion')
     window = UI()
     window.show()
-    app.exec()
+    sys.exit(app.exec())
