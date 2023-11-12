@@ -52,7 +52,7 @@ class UI(QMainWindow):
             'type': ['Liquid'],
             'Surface Tension [mN/m]': [self.liqSurface*1000],
             'Density [mg/m³]': [self.liqDens],
-            'Viscosity [mPa s]': [self.liqSurface*1000],
+            'Viscosity [mPa s]': [self.liqVisc*1000],
             'Temperature [°C]': [self.ui.liquidTemp.value()]
         }
         newRow = pd.DataFrame(liquidData)
