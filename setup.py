@@ -63,6 +63,4 @@ except subprocess.CalledProcessError as e:
         specFile.writelines(lines[1:])
     subprocess.run(runSpec)
 except subprocess.CalledProcessError as e:
-    raise SystemExit(e) 
-
-    
+    raise SystemExit(e)

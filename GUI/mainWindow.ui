@@ -435,18 +435,6 @@
         </item>
         <item row="1" column="0">
          <layout class="QGridLayout" name="gridLayout_6">
-          <item row="5" column="2">
-           <widget class="QComboBox" name="middleWallBox">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <item>
-             <property name="text">
-              <string>Thickness [mm]</string>
-             </property>
-            </item>
-           </widget>
-          </item>
           <item row="0" column="0" colspan="3">
            <widget class="QLabel" name="label_19">
             <property name="font">
@@ -461,7 +449,19 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
+          <item row="4" column="2">
+           <widget class="QComboBox" name="middleWallBox">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <item>
+             <property name="text">
+              <string>Thickness [mm]</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="4" column="1">
            <widget class="QDoubleSpinBox" name="middleWall">
             <property name="enabled">
              <bool>true</bool>
@@ -471,7 +471,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="1" column="0">
            <widget class="QLabel" name="label_20">
             <property name="font">
              <font>
@@ -484,7 +484,14 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="6" column="1">
+           <widget class="QDoubleSpinBox" name="outerWall">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
            <widget class="QDoubleSpinBox" name="innerTube">
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::UpDownArrows</enum>
@@ -494,14 +501,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
-           <widget class="QDoubleSpinBox" name="outerWall">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
+          <item row="2" column="1">
            <widget class="QDoubleSpinBox" name="innerWall">
             <property name="enabled">
              <bool>true</bool>
@@ -514,7 +514,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="0">
+          <item row="6" column="0">
            <widget class="QLabel" name="label_25">
             <property name="font">
              <font>
@@ -527,31 +527,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="2">
-           <widget class="QComboBox" name="outerWallBox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <item>
-             <property name="text">
-              <string>inner Diameter [mm]</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QComboBox" name="innerTubeBox">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <item>
-             <property name="text">
-              <string>Diameter [mm]</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="4" column="2">
+          <item row="3" column="2">
            <widget class="QComboBox" name="annularSheetBox">
             <property name="enabled">
              <bool>true</bool>
@@ -563,7 +539,7 @@
             </item>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="4" column="0">
            <widget class="QLabel" name="label_23">
             <property name="font">
              <font>
@@ -576,29 +552,31 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="2">
-           <widget class="QComboBox" name="outerSheetBox">
+          <item row="1" column="2">
+           <widget class="QComboBox" name="innerTubeBox">
             <property name="enabled">
              <bool>true</bool>
             </property>
             <item>
              <property name="text">
-              <string>Width [mm]</string>
+              <string>Diameter [mm]</string>
              </property>
             </item>
            </widget>
           </item>
-          <item row="6" column="1">
-           <widget class="QDoubleSpinBox" name="outerSheet">
-            <property name="singleStep">
-             <double>0.010000000000000</double>
+          <item row="6" column="2">
+           <widget class="QComboBox" name="outerWallBox">
+            <property name="enabled">
+             <bool>false</bool>
             </property>
-            <property name="value">
-             <double>1.000000000000000</double>
-            </property>
+            <item>
+             <property name="text">
+              <string>inner Diameter [mm]</string>
+             </property>
+            </item>
            </widget>
           </item>
-          <item row="6" column="0">
+          <item row="5" column="0">
            <widget class="QLabel" name="label_24">
             <property name="font">
              <font>
@@ -611,7 +589,17 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="5" column="1">
+           <widget class="QDoubleSpinBox" name="outerSheet">
+            <property name="singleStep">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
            <widget class="QLabel" name="label_21">
             <property name="font">
              <font>
@@ -624,7 +612,19 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="2">
+          <item row="5" column="2">
+           <widget class="QComboBox" name="outerSheetBox">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <item>
+             <property name="text">
+              <string>Width [mm]</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="2">
            <widget class="QComboBox" name="innerWallBox">
             <property name="enabled">
              <bool>true</bool>
@@ -636,7 +636,7 @@
             </item>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="3" column="0">
            <widget class="QLabel" name="label_22">
             <property name="font">
              <font>
@@ -649,34 +649,13 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
+          <item row="3" column="1">
            <widget class="QDoubleSpinBox" name="annularSheet">
             <property name="singleStep">
              <double>0.010000000000000</double>
             </property>
             <property name="value">
              <double>0.500000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="loadPreset">
-            <property name="text">
-             <string>Load Preset</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QPushButton" name="savePreset">
-            <property name="text">
-             <string>Save Current as Preset</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QPushButton" name="resetValues">
-            <property name="text">
-             <string>Reset Values</string>
             </property>
            </widget>
           </item>
@@ -1441,7 +1420,7 @@
    </property>
    <widget class="QMenu" name="menuSetting">
     <property name="title">
-     <string>Setting</string>
+     <string>Export</string>
     </property>
     <addaction name="actionEdit_and_Create_Export_Presets"/>
    </widget>
@@ -1452,6 +1431,15 @@
     <addaction name="actionGo_to_default_path"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad_Presets"/>
+    <addaction name="actionSave_Presets"/>
+    <addaction name="actionReset_Values"/>
+   </widget>
+   <addaction name="menuFile"/>
    <addaction name="menuSetting"/>
    <addaction name="menuInfo"/>
   </widget>
@@ -1471,13 +1459,37 @@
     <string>About</string>
    </property>
   </action>
+  <action name="actionLoad_Presets">
+   <property name="text">
+    <string>Load Presets</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSave_Presets">
+   <property name="text">
+    <string>Save Presets</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionReset_Values">
+   <property name="text">
+    <string>Reset Values</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
