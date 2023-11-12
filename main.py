@@ -668,24 +668,19 @@ class UI(QMainWindow):
                 'Common Ratios': self.RatiosDf
             }
 
-            valueDict = {}
+            df = pd.DataFrame(columns=dicts[1])
             for key, value in dicts[0].items():
-                innerDict = {}
+                innerList = []
                 for k, v in value.items():
                     if type(v) == list:
-                        innerDict[k] = dfs[v[0]][v[1]][v[2]]
+                        innerList.append(dfs[v[0]][v[1]][v[2]])
                     elif type(v) == None:
-                        innerDict[k] = None
-                    else: innerDict[k] = v
-                valueDict[key] = innerDict
-            
-            hheader = [v for k,v in dicts[1].items()]
-            # hheader = enumerate(hheader)
-            # hheader = dict(hheader)
-            vheader = [v for k,v in dicts[2].items()]
+                        innerList.append(None)
+                    else: 
+                        innerList.append(v)
+                df.loc[len(df)] = innerList
 
-            df = pd.DataFrame(valueDict).transpose()
-            df = df.rename(columns=dicts[1])
+            vheader = [v for k,v in dicts[2].items()]
             df[''] = pd.Series(vheader).values
             df = df.set_index('')
             df = df.fillna('')
@@ -713,26 +708,23 @@ class UI(QMainWindow):
             'Dimensionless Numbers': self.ReOhWeDf,
             'Common Ratios': self.RatiosDf
         }
-
-        valueDict = {}
+       
+        df = pd.DataFrame(columns=dicts[1])
         for key, value in dicts[0].items():
-            innerDict = {}
+            innerList = []
             for k, v in value.items():
                 if type(v) == list:
-                    innerDict[k] = f"{v[1]} : {v[2]}"
+                    innerList.append(f"{v[1]} : {v[2]}")
                 elif type(v) == None:
-                    innerDict[k] = None
-                else: innerDict[k] = v
-            valueDict[key] = innerDict
-        
-        hheader = [v for k,v in dicts[1].items()]
+                    innerList.append(None)
+                else: 
+                    innerList.append(v)
+            df.loc[len(df)] = innerList
+
         vheader = [v for k,v in dicts[2].items()]
-        
-        df = pd.DataFrame(valueDict).transpose()
-        df = df.rename(columns=dicts[1])
         df[''] = pd.Series(vheader).values
         df = df.set_index('')
-        # df = df.fillna('\t')
+        df = df.fillna('')
         return df
 
     def toClip(self):
