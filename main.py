@@ -28,7 +28,7 @@ class UI(QMainWindow):
         if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')):
             os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
         self.path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')
-        self.resutlLabels = self.createLabelList()
+        self.resultLabels = self.createLabelList()
         self.presetField()
         self.setCalcButtons()
         self.ui.pushButton.clicked.connect(self.readValues)
@@ -121,8 +121,9 @@ class UI(QMainWindow):
             rhoMix = rhoGly*glycerinFraction + water_.density*(1-glycerinFraction)
             self.ui.LiquidDens.setValue(rhoMix)
             self.liqDens = rhoMix
-            surfaceGly = 0.06*self.ui.liquidTemp.value()+64.6
+            surfaceGly = round(0.06*self.ui.liquidTemp.value()+64.6, 10)
             surfaceGly /= 1000
+            
             water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
             surfaceMix = glycerinFraction*surfaceGly + (1-glycerinFraction)*water_ST
             self.liqSurface = surfaceMix
@@ -297,21 +298,21 @@ class UI(QMainWindow):
                     streamValuesString[i][j] = "%.3f" % self.streamValues[i][j]
             
 
-        self.resutlLabels[0].setText(streamValuesString[0][1])
-        self.resutlLabels[1].setText(streamValuesString[1][1])
-        self.resutlLabels[2].setText(streamValuesString[2][1])
+        self.resultLabels[0].setText(streamValuesString[0][1])
+        self.resultLabels[1].setText(streamValuesString[1][1])
+        self.resultLabels[2].setText(streamValuesString[2][1])
 
-        self.resutlLabels[3].setText(streamValuesString[0][2])
-        self.resutlLabels[4].setText(streamValuesString[1][2])
-        self.resutlLabels[5].setText(streamValuesString[2][2])
+        self.resultLabels[3].setText(streamValuesString[0][2])
+        self.resultLabels[4].setText(streamValuesString[1][2])
+        self.resultLabels[5].setText(streamValuesString[2][2])
         
-        self.resutlLabels[6].setText(streamValuesString[0][3])
-        self.resutlLabels[7].setText(streamValuesString[1][3])
-        self.resutlLabels[8].setText(streamValuesString[2][3])
+        self.resultLabels[6].setText(streamValuesString[0][3])
+        self.resultLabels[7].setText(streamValuesString[1][3])
+        self.resultLabels[8].setText(streamValuesString[2][3])
         
-        self.resutlLabels[9].setText(streamValuesString[0][4])
-        self.resutlLabels[10].setText(streamValuesString[1][4])
-        self.resutlLabels[11].setText(streamValuesString[2][4])
+        self.resultLabels[9].setText(streamValuesString[0][4])
+        self.resultLabels[10].setText(streamValuesString[1][4])
+        self.resultLabels[11].setText(streamValuesString[2][4])
 
         def StreamDF():
             dict = {
@@ -393,7 +394,7 @@ class UI(QMainWindow):
 
 
         for i in range(len(strings)):
-            self.resutlLabels[12+i].setText(strings[i])
+            self.resultLabels[12+i].setText(strings[i])
 
         # GLR 
 
@@ -436,20 +437,22 @@ class UI(QMainWindow):
                 self.mom_i = 0
                 self.mom_o = 0
                   
-            self.resutlLabels[21].setText("%.2f" % self.GLR_total)
-            self.resutlLabels[22].setText("%.2f" % self.mom_flux_total)
-            self.resutlLabels[23].setText("%.2f" % self.GLI)
-            self.resutlLabels[24].setText("%.2f" % self.GLO)
-            self.resutlLabels[25].setText("%.2f" % self.mom_i)
-            self.resutlLabels[26].setText("%.2f" % self.mom_o)
+            self.resultLabels[21].setText("%.2f" % self.GLR_total)
+            self.resultLabels[22].setText("%.2f" % self.mom_flux_total)
+            self.resultLabels[23].setText("%.2f" % self.GLI)
+            self.resultLabels[24].setText("%.2f" % self.GLO)
+            self.resultLabels[25].setText("%.2f" % self.mom_i)
+            self.resultLabels[26].setText("%.2f" % self.mom_o)
 
+            self.changeColor(self.ui.pushButton, 'green', 1000)
         else:
-            self.resutlLabels[21].setText('Error')
-            self.resutlLabels[22].setText('Error')
-            self.resutlLabels[23].setText('Error')
-            self.resutlLabels[24].setText('Error')
-            self.resutlLabels[25].setText('Error')
-            self.resutlLabels[26].setText('Error')
+            self.resultLabels[21].setText('Error')
+            self.resultLabels[22].setText('Error')
+            self.resultLabels[23].setText('Error')
+            self.resultLabels[24].setText('Error')
+            self.resultLabels[25].setText('Error')
+            self.resultLabels[26].setText('Error')
+            self.changeColor(self.ui.pushButton, 'red', 1000)
 
             dict = {
                     'GLR': ['--'],
@@ -462,7 +465,7 @@ class UI(QMainWindow):
             self.RatiosDf = pd.DataFrame(dict)
 
         self.getAllDfs()
-
+        
     def calculator(self):
         self.ui.outputLabel.setText('Berechnung läuft')
         my_target = self.ui.input_my.value()
@@ -624,8 +627,9 @@ class UI(QMainWindow):
         for k,v in dfs.items():
             print (v)
             with open(os.path.join(self.path, 'global', 'share', f'{k}_share.json'), 'w+') as file:
-                v.to_json(file)
+                v.to_json(file, default_handler=float)
             print('\n')
+          
 
     def loadStyles(self):
         self.ui.exportStyleBox.clear()
