@@ -34,7 +34,7 @@ class Calculator():
         g = self.calcMy_g()
         al = math.log(self.my/g, math.e)/math.log(w/g, math.e)
         result = (math.sqrt(a**2*(b-al+1)**2-2*a*b*al*(b+al-1)+b**2*al**2)+a*(b-al+1)+b*al-2*b) / (2*(a*b+a-b))
-        if result <= 1 or result <= 0:
+        if result <= 1 and result >= 0:
             return result
         else: return ValueError
 
