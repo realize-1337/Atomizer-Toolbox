@@ -441,7 +441,7 @@ class Ui_MainWindow(object):
         self.cpToExcel.setObjectName("cpToExcel")
         self.gridLayout_9.addWidget(self.cpToExcel, 2, 2, 1, 2)
         self.headerCheck = QtWidgets.QCheckBox(parent=self.tab)
-        self.headerCheck.setChecked(True)
+        self.headerCheck.setChecked(False)
         self.headerCheck.setObjectName("headerCheck")
         self.gridLayout_9.addWidget(self.headerCheck, 0, 1, 1, 1)
         self.radioPoint = QtWidgets.QRadioButton(parent=self.tab)

@@ -556,10 +556,5 @@ def call():
     app.exec()
     sys.exit(app.exec())
 
-def callInside():
-    app = QtWidgets.QApplication(sys.argv)
-    ui = UI(app)
-    ui.exec()
-
 if __name__ == '__main__':
     call()

@@ -630,7 +630,6 @@ class UI(QMainWindow):
                 v.to_json(file, default_handler=float)
             print('\n')
           
-
     def loadStyles(self):
         self.ui.exportStyleBox.clear()
         
@@ -803,9 +802,11 @@ class UI(QMainWindow):
     def resetColor(self, button):
         button.setStyleSheet('')
         self.color_timer.stop()
+        self.ui.pushButton.setStyleSheet('')
 
     def createExportPresets(self):
-        ex.callInside()
+        ui = ex.UI(self)
+        ui.exec()
         self.loadStyles()
 
     def about(self):
