@@ -13,9 +13,9 @@ from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 
@@ -88,14 +88,18 @@ class UI(QMainWindow):
         return newRow
 
     def tabOrder(self):
-        order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.calcLiq, self.ui.gasTemp, self.ui.calcGas, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue, self.ui.pushButton]
+        order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue, self.ui.pushButton]
         self.setTabOrder(order[0], order[1])
         for i in range(1, len(order)):
             self.setTabOrder(order[i-1], order[i])
 
     def setCalcButtons(self):
-        self.ui.calcGas.clicked.connect(self.calcGas)
-        self.ui.calcLiq.clicked.connect(self.calcLiq)
+        # self.ui.calcGas.clicked.connect(self.calcGas)
+        # self.ui.calcLiq.clicked.connect(self.calcLiq)
+        self.ui.liquidVisc.textChanged.connect(self.calcLiq)
+        self.ui.liquidTemp.textChanged.connect(self.calcLiq)
+        self.ui.gasTemp.textChanged.connect(self.calcGas)
+        self.ui.liquidType.currentTextChanged.connect(self.calcLiq)
 
         self.calcLiq()
         self.calcGas()
@@ -113,18 +117,26 @@ class UI(QMainWindow):
             self.liqDens = water_.density
             self.ui.LiquidDens.setValue(water_.density)
             self.liqSurface = water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
+            self.ui.liquidVisc.setStyleSheet('')
+            self.ui.pushButton.setEnabled(True)
         else: 
             try: 
                 glycerinFraction = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).solve()
                 if glycerinFraction == ValueError: raise ValueError
             except ValueError: 
                 glycerinFraction = 0
-                self.changeColor(self.ui.calcLiq, 'red', 1000)
-                QMessageBox.warning(self, 'ERROR', 'This viscosity is not possible!')
+                # QMessageBox.warning(self, 'ERROR', 'This viscosity is not possible!')
             rhoGly = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).rhoGlycerin()
             water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
             rhoMix = rhoGly*glycerinFraction + water_.density*(1-glycerinFraction)
-            self.ui.LiquidDens.setValue(rhoMix)
+            if glycerinFraction != 0: 
+                self.ui.LiquidDens.setValue(rhoMix)
+                self.ui.liquidVisc.setStyleSheet('')
+                self.ui.pushButton.setEnabled(True)
+            else: 
+                self.ui.LiquidDens.setValue(1)
+                self.ui.liquidVisc.setStyleSheet('background-color: red;')
+                self.ui.pushButton.setDisabled(True)
             self.liqDens = rhoMix
             surfaceGly = round(0.06*self.ui.liquidTemp.value()+64.6, 10)
             surfaceGly /= 1000
@@ -132,8 +144,6 @@ class UI(QMainWindow):
             water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
             surfaceMix = glycerinFraction*surfaceGly + (1-glycerinFraction)*water_ST
             self.liqSurface = surfaceMix
-
-        print(self.liqSurface)
         
     def calcGas(self):
         try:

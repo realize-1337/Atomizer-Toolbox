@@ -306,20 +306,6 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="0" colspan="6">
-           <widget class="QLabel" name="label_11">
-            <property name="font">
-             <font>
-              <pointsize>12</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Fluid Properties</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="4">
            <widget class="QLabel" name="label_18">
             <property name="text">
@@ -404,30 +390,24 @@
           <item row="3" column="3">
            <widget class="QDoubleSpinBox" name="gasVisc"/>
           </item>
-          <item row="4" column="0" colspan="6">
+          <item row="4" column="0" colspan="5">
            <widget class="Line" name="line_3">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
-          <item row="2" column="5">
-           <widget class="QPushButton" name="calcLiq">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Water: Viscosity and density for given temperature&lt;/p&gt;&lt;p&gt;Water-Glycerin: Density for given temperature and density&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <item row="0" column="0" colspan="5">
+           <widget class="QLabel" name="label_11">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
             </property>
             <property name="text">
-             <string>Calculate Liquid</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="5">
-           <widget class="QPushButton" name="calcGas">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Air: Viscosity and density for given temperature&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Calculate Gas</string>
+             <string>Fluid Properties</string>
             </property>
            </widget>
           </item>
@@ -1487,9 +1467,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
