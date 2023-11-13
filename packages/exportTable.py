@@ -413,6 +413,7 @@ class UI(QDialog):
                         nameK = f'{name} : {key}'
                         box.addItem(nameK, [name_, k, key])
                 else: box.addItem(name, [name_, k, 0])
+            box.insertSeparator(99999)
         box.addItem('NULL', None)
         box.addItem('Custom Input', '')
         return box

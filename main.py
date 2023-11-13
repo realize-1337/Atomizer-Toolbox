@@ -80,9 +80,9 @@ class UI(QMainWindow):
             'Middle Sheet Thickness [mm]': [self.annularSheet*1000],
             'Middle Wall Thickness [mm]': [self.middleWall*1000],
             'Outer Sheet Thickness [mm]': [self.outerSheet*1000],
-            'Inner Area [mm²]': [self.innerArea*1000**2],
-            'Middle Sheet Area [mm²]': [self.liquidArea*1000**2],
-            'Outer Sheet Area [mm²]': [self.outerArea*1000**2],
+            'Inner Orifice [mm²]': [self.innerArea*1000**2],
+            'Middle Orifice [mm²]': [self.liquidArea*1000**2],
+            'Outer Orifice [mm²]': [self.outerArea*1000**2],
         }
         newRow = pd.DataFrame(data=geometry).set_index('type')
         return newRow
@@ -114,8 +114,13 @@ class UI(QMainWindow):
             self.ui.LiquidDens.setValue(water_.density)
             self.liqSurface = water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
         else: 
-            try: glycerinFraction = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).solve()
-            except: glycerinFraction = 0
+            try: 
+                glycerinFraction = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).solve()
+                if glycerinFraction == ValueError: raise ValueError
+            except ValueError: 
+                glycerinFraction = 0
+                self.changeColor(self.ui.calcLiq, 'red', 1000)
+                QMessageBox.warning(self, 'ERROR', 'This viscosity is not possible!')
             rhoGly = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).rhoGlycerin()
             water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
             rhoMix = rhoGly*glycerinFraction + water_.density*(1-glycerinFraction)
@@ -163,16 +168,17 @@ class UI(QMainWindow):
         resutlLabels.append(self.ui.innerRe)
         resutlLabels.append(self.ui.innerWe)
         resutlLabels.append(self.ui.innerOh)
+        self.ui.innerOh.setHidden(True)
 
         resutlLabels.append(self.ui.sheetRe)
         resutlLabels.append(self.ui.sheetWe)
         resutlLabels.append(self.ui.outerOh)
+        self.ui.outerOh.setHidden(True)
     
         resutlLabels.append(self.ui.outerRe)
         resutlLabels.append(self.ui.outerWe)
         resutlLabels.append(self.ui.sheetOh)
         
-
         resutlLabels.append(self.ui.totalGLR)
         resutlLabels.append(self.ui.totalMom)
         resutlLabels.append(self.ui.innerSheetGLR)
@@ -220,21 +226,30 @@ class UI(QMainWindow):
         unit = self.ui.innerStreamUnit.currentText()
         if self.ui.innerGasTrue.isChecked():
             type = 'gas'
-        else: type = 'liquid'
+            self.ui.innerOh.setHidden(True)
+        else: 
+            type = 'liquid'
+            self.ui.innerOh.setHidden(False)
         self.streams.append([value, unit, type])
 
         value = self.ui.sheetStreamValue.value()
         unit = self.ui.sheetStreamUnit.currentText()
         if self.ui.sheetGasTrue.isChecked():
             type = 'gas'
-        else: type = 'liquid'
+            self.ui.sheetOh.setHidden(True)
+        else: 
+            type = 'liquid'
+            self.ui.sheetOh.setHidden(False)
         self.streams.append([value, unit, type])
 
         value = self.ui.outerStreamValue.value()
         unit = self.ui.outerStreamUnit.currentText()
         if self.ui.outerGasTrue.isChecked():
             type = 'gas'
-        else: type = 'liquid'
+            self.ui.outerOh.setHidden(True)
+        else: 
+            type = 'liquid'
+            self.ui.outerOh.setHidden(False)
         self.streams.append([value, unit, type])
 
         self.streamValues = []
@@ -318,11 +333,10 @@ class UI(QMainWindow):
             dict = {
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'],
                 'Type': [self.streamValues[0][-1].capitalize(), self.streamValues[1][-1].capitalize(), self.streamValues[2][-1].capitalize()],
-                'Orifce [mm²]': [self.innerArea*1000**2, self.liquidArea*1000**2, self.outerArea*1000**2],
                 'Mass Flow Rate [kg/h]': [self.streamValues[0][1], self.streamValues[1][1], self.streamValues[2][1]],
                 'Flow Velocity [m/s]': [self.streamValues[0][2], self.streamValues[1][2], self.streamValues[2][2]],
                 'Momentum Flux [kg/(m s²)]': [self.streamValues[0][3], self.streamValues[1][3], self.streamValues[2][3]],
-                'Momentum [kg m/s²]': [self.streamValues[0][3], self.streamValues[1][3], self.streamValues[2][3]]
+                'Momentum [kg m/s²]': [self.streamValues[0][4], self.streamValues[1][4], self.streamValues[2][4]]
             }
             
             return pd.DataFrame(dict).set_index('type')
@@ -363,7 +377,6 @@ class UI(QMainWindow):
         def ReWeOhDF():
             dict = {
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'], 
-                'Orifce [mm²]': [self.innerArea*1000**2, self.liquidArea*1000**2, self.outerArea*1000**2],
                 'Reynolds': [self.innerDimless[0], self.sheetDimless[0], self.outerDimless[0]],
                 'Weber': [self.innerDimless[1], self.sheetDimless[1], self.outerDimless[1]],
                 'Ohnesorge': [self.innerDimless[2], self.sheetDimless[2], self.outerDimless[2]]
@@ -429,6 +442,7 @@ class UI(QMainWindow):
                     'Momentum Flux Ratio': [self.mom_flux_total],
                     'Inner Momentum Flux Ratio': [self.mom_i],
                     'Outer Momentum Flux Ratio': [self.mom_o],
+                    'Total Gas Momentum [kg m/s²]': [self.streamValues[0][4]+self.streamValues[2][4]]
                 }
                 self.RatiosDf = pd.DataFrame(dict)
             else: 
@@ -461,6 +475,7 @@ class UI(QMainWindow):
                     'Momentum Flux Ratio': ['--'],
                     'Inner Momentum Flux Ratio': ['--'],
                     'Outer Momentum Flux Ratio': ['--'],
+                    'Total Gas Momentum [kg m/s²]': ['--']
                 }
             self.RatiosDf = pd.DataFrame(dict)
 
