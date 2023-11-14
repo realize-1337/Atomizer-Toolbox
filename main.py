@@ -13,9 +13,9 @@ from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 
@@ -30,12 +30,9 @@ class UI(QMainWindow):
         self.path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')
         self.resultLabels = self.createLabelList()
         self.presetField()
-        self.setCalcButtons()
-        self.ui.pushButton.clicked.connect(self.readValues)
+        # self.setCalcButtons()
+        self.enableAutoCalc()
         self.ui.pushButton_2.clicked.connect(self.calculator)
-        # self.ui.loadPreset.clicked.connect(self.loadPreset)
-        # self.ui.savePreset.clicked.connect(self.savePreset)
-        # self.ui.resetValues.clicked.connect(self.resetValues)
         self.ui.cpToclip.clicked.connect(self.toClip)
         self.ui.cellToClip.clicked.connect(self.cellToClip)
         self.ui.actionEdit_and_Create_Export_Presets.triggered.connect(self.createExportPresets)
@@ -88,10 +85,13 @@ class UI(QMainWindow):
         return newRow
 
     def tabOrder(self):
-        order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue, self.ui.pushButton]
+        order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.liquidVisc, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.innerStreamUnit, self.ui.sheetStreamValue, self.ui.sheetStreamUnit, self.ui.outerStreamValue, self.ui.outerStreamUnit, self.ui.cpToclip]
         self.setTabOrder(order[0], order[1])
+        self.setTabOrder(order[-1], order[0])
         for i in range(1, len(order)):
             self.setTabOrder(order[i-1], order[i])
+        
+        
 
     def setCalcButtons(self):
         # self.ui.calcGas.clicked.connect(self.calcGas)
@@ -105,9 +105,24 @@ class UI(QMainWindow):
         self.calcGas()
         
     def enableAutoCalc(self):
-        self.ui.liquidTemp.valueChanged.connect(self.calcLiq)
-        self.ui.liquidVisc.valueChanged.connect(self.calcLiqDens)
-        self.ui.gasTemp.valueChanged.connect(self.calcGas)
+        # self.ui.liquidTemp.valueChanged.connect(self.calcLiq)
+        # self.ui.liquidVisc.valueChanged.connect(self.calcLiqDens)
+        # self.ui.gasTemp.valueChanged.connect(self.calcGas)
+        self.ui.liquidTemp.valueChanged.connect(self.readValues)
+        self.ui.liquidVisc.valueChanged.connect(self.readValues)
+        self.ui.gasTemp.valueChanged.connect(self.readValues)
+        self.ui.innerTube.valueChanged.connect(self.readValues)
+        self.ui.innerWall.valueChanged.connect(self.readValues)
+        self.ui.annularSheet.valueChanged.connect(self.readValues)
+        self.ui.middleWall.valueChanged.connect(self.readValues)
+        self.ui.outerSheet.valueChanged.connect(self.readValues)
+        self.ui.outerWall.valueChanged.connect(self.readValues)
+        self.ui.innerStreamValue.valueChanged.connect(self.readValues)
+        self.ui.sheetStreamValue.valueChanged.connect(self.readValues)
+        self.ui.outerStreamValue.valueChanged.connect(self.readValues)
+        self.ui.innerStreamUnit.currentTextChanged.connect(self.readValues)
+        self.ui.sheetStreamUnit.currentTextChanged.connect(self.readValues)
+        self.ui.outerStreamUnit.currentTextChanged.connect(self.readValues)
 
     def calcLiq(self):
         
@@ -118,7 +133,7 @@ class UI(QMainWindow):
             self.ui.LiquidDens.setValue(water_.density)
             self.liqSurface = water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
             self.ui.liquidVisc.setStyleSheet('')
-            self.ui.pushButton.setEnabled(True)
+            check =  True
         else: 
             try: 
                 glycerinFraction = ca(self.ui.liquidTemp.value(), self.ui.liquidVisc.value()).solve()
@@ -132,11 +147,11 @@ class UI(QMainWindow):
             if glycerinFraction != 0: 
                 self.ui.LiquidDens.setValue(rhoMix)
                 self.ui.liquidVisc.setStyleSheet('')
-                self.ui.pushButton.setEnabled(True)
+                check =  True
             else: 
                 self.ui.LiquidDens.setValue(1)
                 self.ui.liquidVisc.setStyleSheet('background-color: red;')
-                self.ui.pushButton.setDisabled(True)
+                check = False
             self.liqDens = rhoMix
             surfaceGly = round(0.06*self.ui.liquidTemp.value()+64.6, 10)
             surfaceGly /= 1000
@@ -144,6 +159,7 @@ class UI(QMainWindow):
             water_ST = 235.8e-3*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15))**1.256*(1-0.625*((water_.critical_temperature-self.ui.liquidTemp.value())/(water_.critical_temperature+273.15)))
             surfaceMix = glycerinFraction*surfaceGly + (1-glycerinFraction)*water_ST
             self.liqSurface = surfaceMix
+        return check
         
     def calcGas(self):
         try:
@@ -153,8 +169,10 @@ class UI(QMainWindow):
                 self.ui.gasDens.setValue(air_.density)
                 self.gasDens = air_.density
                 self.gasSurface = air_.surface_tension
-                
-        except: pass
+                return True
+        except: 
+            pass
+            return False
 
     def createLabelList(self):
         resutlLabels = []
@@ -201,8 +219,7 @@ class UI(QMainWindow):
         return resutlLabels
 
     def readValues(self):
-        self.calcLiq()
-        self.calcGas()
+        if not self.calcLiq() or not self.calcGas(): return 0
         # Atomizer Geometry
         self.Lc = []
         self.innerTube = self.ui.innerTube.value()/1000
@@ -309,7 +326,7 @@ class UI(QMainWindow):
             1: self.liquidArea,
             2: self.outerArea
         }
-        print(self.orificeDict)
+        # print(self.orificeDict)
 
     def fillFirstResults(self):
         streamValuesString = [[0]*5 for i in range(3)]
@@ -468,7 +485,6 @@ class UI(QMainWindow):
             self.resultLabels[25].setText("%.2f" % self.mom_i)
             self.resultLabels[26].setText("%.2f" % self.mom_o)
 
-            self.changeColor(self.ui.pushButton, 'green', 1000)
         else:
             self.resultLabels[21].setText('Error')
             self.resultLabels[22].setText('Error')
@@ -476,7 +492,6 @@ class UI(QMainWindow):
             self.resultLabels[24].setText('Error')
             self.resultLabels[25].setText('Error')
             self.resultLabels[26].setText('Error')
-            self.changeColor(self.ui.pushButton, 'red', 1000)
 
             dict = {
                     'GLR': ['--'],
@@ -650,10 +665,10 @@ class UI(QMainWindow):
             os.mkdir(os.path.join(self.path, 'global', 'presets'))
 
         for k,v in dfs.items():
-            print (v)
+            # print (v)
             with open(os.path.join(self.path, 'global', 'share', f'{k}_share.json'), 'w+') as file:
                 v.to_json(file, default_handler=float)
-            print('\n')
+            # print('\n')
           
     def loadStyles(self):
         self.ui.exportStyleBox.clear()
@@ -786,7 +801,7 @@ class UI(QMainWindow):
             df = df.applymap(lambda x: str(x).replace('.', ','))
         else: 
             df = df.applymap(lambda x: str(x))
-        print(df)
+        # print(df)
         return df
     
     @staticmethod
@@ -827,7 +842,6 @@ class UI(QMainWindow):
     def resetColor(self, button):
         button.setStyleSheet('')
         self.color_timer.stop()
-        self.ui.pushButton.setStyleSheet('')
 
     def createExportPresets(self):
         ui = ex.UI(self)

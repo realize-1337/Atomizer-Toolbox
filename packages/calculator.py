@@ -8,7 +8,6 @@ class Calculator():
         self.T = targetTemp
         self.my = targetViscosity
         
-
     def calcMy_g(self):
         return 12100*math.exp((-1233+self.T)*self.T/(9900+70*self.T))
 

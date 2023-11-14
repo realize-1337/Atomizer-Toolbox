@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1034</width>
-    <height>886</height>
+    <height>885</height>
    </rect>
   </property>
   <property name="font">
@@ -36,7 +36,143 @@
         <string>Triflow atomizer</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="9" column="0">
+        <item row="2" column="0">
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_13">
+            <property name="text">
+             <string>Temperature [°C]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>Type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_14">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Liquid</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="4">
+           <widget class="QLabel" name="label_18">
+            <property name="text">
+             <string>Density [kg/m³]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="gasType">
+            <item>
+             <property name="text">
+              <string>Air</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="liquidType">
+            <item>
+             <property name="text">
+              <string>Water</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Glycerin Water Mixture</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QDoubleSpinBox" name="liquidTemp">
+            <property name="value">
+             <double>20.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_15">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Gas</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QDoubleSpinBox" name="gasTemp">
+            <property name="value">
+             <double>20.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QDoubleSpinBox" name="gasDens"/>
+          </item>
+          <item row="2" column="4">
+           <widget class="QDoubleSpinBox" name="LiquidDens">
+            <property name="maximum">
+             <double>100000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <widget class="QDoubleSpinBox" name="liquidVisc">
+            <property name="maximum">
+             <double>15000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>Viscosity [mPa s]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QDoubleSpinBox" name="gasVisc"/>
+          </item>
+          <item row="4" column="0" colspan="5">
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="5">
+           <widget class="QLabel" name="label_11">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Fluid Properties</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="7" column="0">
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_12">
@@ -272,142 +408,6 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="2" column="0">
-         <layout class="QGridLayout" name="gridLayout_5">
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_13">
-            <property name="text">
-             <string>Temperature [°C]</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>Type</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_14">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Liquid</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="4">
-           <widget class="QLabel" name="label_18">
-            <property name="text">
-             <string>Density [kg/m³]</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QComboBox" name="gasType">
-            <item>
-             <property name="text">
-              <string>Air</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QComboBox" name="liquidType">
-            <item>
-             <property name="text">
-              <string>Water</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Glycerin Water Mixture</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QDoubleSpinBox" name="liquidTemp">
-            <property name="value">
-             <double>20.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_15">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Gas</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QDoubleSpinBox" name="gasTemp">
-            <property name="value">
-             <double>20.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="4">
-           <widget class="QDoubleSpinBox" name="gasDens"/>
-          </item>
-          <item row="2" column="4">
-           <widget class="QDoubleSpinBox" name="LiquidDens">
-            <property name="maximum">
-             <double>100000.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QDoubleSpinBox" name="liquidVisc">
-            <property name="maximum">
-             <double>15000.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="QLabel" name="label_17">
-            <property name="text">
-             <string>Viscosity [mPa s]</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="3">
-           <widget class="QDoubleSpinBox" name="gasVisc"/>
-          </item>
-          <item row="4" column="0" colspan="5">
-           <widget class="Line" name="line_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0" colspan="5">
-           <widget class="QLabel" name="label_11">
-            <property name="font">
-             <font>
-              <pointsize>12</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Fluid Properties</string>
             </property>
            </widget>
           </item>
@@ -866,39 +866,29 @@
           </item>
          </layout>
         </item>
-        <item row="12" column="0">
+        <item row="10" column="0">
          <layout class="QGridLayout" name="gridLayout_9">
-          <item row="2" column="2" colspan="2">
-           <widget class="QPushButton" name="cpToExcel">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
+          <item row="1" column="3" colspan="2">
+           <widget class="QPushButton" name="cpToclip">
             <property name="text">
-             <string>Export to Excel</string>
+             <string>Copy to Clipboard</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
-           <widget class="QCheckBox" name="headerCheck">
-            <property name="text">
-             <string>Export with header and row names?</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
+          <item row="0" column="3" colspan="3">
+           <widget class="QComboBox" name="exportStyleBox">
+            <item>
+             <property name="text">
+              <string>Select Export Style</string>
+             </property>
+            </item>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QRadioButton" name="radioPoint">
+          <item row="1" column="5">
+           <widget class="QPushButton" name="cellToClip">
             <property name="text">
-             <string>Decimal Point</string>
+             <string>Copy Cell Names to Clipboard</string>
             </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-            <attribute name="buttonGroup">
-             <string notr="true">buttonGroup_4</string>
-            </attribute>
            </widget>
           </item>
           <item row="1" column="1">
@@ -914,49 +904,32 @@
             </attribute>
            </widget>
           </item>
-          <item row="1" column="4">
-           <widget class="QPushButton" name="cellToClip">
+          <item row="1" column="2">
+           <widget class="QRadioButton" name="radioPoint">
             <property name="text">
-             <string>Copy Cell Names to Clipboard</string>
+             <string>Decimal Point</string>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="2" colspan="2">
-           <widget class="QPushButton" name="cpToclip">
-            <property name="text">
-             <string>Copy to Clipboard</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2" colspan="3">
-           <widget class="QComboBox" name="exportStyleBox">
-            <item>
-             <property name="text">
-              <string>Select Export Style</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="4">
-           <widget class="QPushButton" name="cellToExcel">
-            <property name="enabled">
+            <property name="checked">
              <bool>false</bool>
             </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_4</string>
+            </attribute>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="2">
+           <widget class="QCheckBox" name="headerCheck">
             <property name="text">
-             <string>Copy Cell Names to Clipboard</string>
+             <string>Export with header and row names?</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
          </layout>
         </item>
-        <item row="7" column="0">
-         <widget class="Line" name="line">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
+        <item row="8" column="0">
          <layout class="QGridLayout" name="gridLayout_7">
           <item row="1" column="4">
            <widget class="QLabel" name="label_49">
@@ -1302,14 +1275,7 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>Run</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="0">
+        <item row="9" column="0">
          <widget class="Line" name="line_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -1467,9 +1433,9 @@
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
