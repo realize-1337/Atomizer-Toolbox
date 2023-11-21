@@ -13,9 +13,9 @@ from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/mainWindow.ui'
+# PY_FILE = './GUI/mainWindow.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 
@@ -91,8 +91,6 @@ class UI(QMainWindow):
         for i in range(1, len(order)):
             self.setTabOrder(order[i-1], order[i])
         
-        
-
     def setCalcButtons(self):
         # self.ui.calcGas.clicked.connect(self.calcGas)
         # self.ui.calcLiq.clicked.connect(self.calcLiq)
@@ -232,6 +230,10 @@ class UI(QMainWindow):
         self.Lc.append(self.outerSheet)
         self.outerWall = self.ui.outerWall.value()/1000
         self.orifice()
+
+        check = [self.innerTube, self.annularSheet, self.outerSheet]
+        for item in check: 
+            if item == 0: return 0
 
         # Fluid Properties
         ## Liquid
