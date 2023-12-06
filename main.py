@@ -1,15 +1,19 @@
+import av
 import os
 import sys
 import math
 import subprocess
 import json
 import ctypes
+import numpy as np
+from PIL import Image
 import pandas as pd
 import pyperclip as pc
 from functools import partial
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
+from PyQt6.QtGui import QPixmap
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
@@ -18,7 +22,57 @@ from pyfluids import Fluid, FluidsList, Input
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
+import logging
 
+class WorkerSignals(QObject):
+    finished = pyqtSignal() 
+
+class Worker(QRunnable):
+
+    def __init__(self, items:tuple, path, filetype):
+        super().__init__()
+        self.index, self.frame = items
+        self.path = path
+        self.filetype = filetype
+        self.signals = WorkerSignals()
+
+    def run(self):
+        frame = self.frame
+        frame = frame.reformat(format='gray')
+        img = frame.to_image()
+
+        # pil_image.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{index}.jpg'))
+        img.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{self.index}.{self.filetype}'))
+        self.signals.finished.emit()
+
+class WorkerSignalsConversion(QObject):
+    finishedConversion = pyqtSignal() 
+
+class WorkerConversion(QRunnable):
+    def __init__(self, file, filetype, keep=True, compression=False):
+        super().__init__()
+        self.file = file
+        self.keep = keep
+        self.compression = compression
+        self.filetype = filetype
+        self.signals = WorkerSignalsConversion()
+
+    def run(self):
+        container = av.open(self.file)
+        path = os.path.dirname(self.file)
+        logging.info('Working on it.')
+        for index, frame in enumerate(container.decode(video=0)):
+            frame = frame.reformat(format='gray')
+            img = frame.to_image()
+            if self.compression:
+                img.save(os.path.join(path, f'frame_{index}.{self.filetype}'), compression="jpeg")
+            else: img.save(os.path.join(path, f'frame_{index}.{self.filetype}'))
+            self.signals.finishedConversion.emit()
+        container.close()
+        if not self.keep:
+            os.remove(self.file)
+
+        
 
 class UI(QMainWindow):
     def __init__(self):
@@ -41,6 +95,10 @@ class UI(QMainWindow):
         self.ui.actionReset_Values.triggered.connect(self.resetValues)
         self.ui.actionAbout.triggered.connect(self.about)
         self.ui.actionGo_to_default_path.triggered.connect(self.openPath)
+        self.ui.loadInput.clicked.connect(self.loadInput)
+        self.ui.selectFolderConverter.clicked.connect(self.convertFolder)
+        self.ui.runConversion.clicked.connect(self.runConversion)
+        self.lastFolder = r'C:\Users\david\Desktop\1_20_17,2'
         self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
@@ -855,6 +913,113 @@ class UI(QMainWindow):
 
     def openPath(self):
         subprocess.Popen(rf'explorer /select,"{self.path}"')
+
+    # FREQUENCY ANALYSIS
+
+    def load_cine_into_graphics_view(self):
+        graphics_view = self.ui.graphicsView
+        scene = QGraphicsScene()
+        id = self.ui.picID.value()
+        pixmap = QPixmap(os.path.join(self.path, 'global', f'frame_{id}.jpg'))
+        
+        if not pixmap.isNull():
+            item = scene.addPixmap(pixmap)
+            graphics_view.setScene(scene)
+            graphics_view.fitInView(item, aspectRatioMode=1)
+        else:
+            print("Failed to load image.") 
+
+    def loadInput(self):
+        if not self.lastFolder:
+            filename, null = QFileDialog.getOpenFileName(self, filter='*.cine', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        else:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.lastFolder, filter='*.cine', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+
+        if filename.endswith('.cine'):
+            print('working')
+            print(filename)
+
+            self.ui.cineLoadBar.setValue(0)
+            container:av.ContainerFormat = av.open(filename)
+            if not os.path.exists(os.path.join(self.path, 'global', 'currentCine')):
+                os.mkdir(os.path.join(self.path, 'global', 'currentCine'))
+            items = []
+            for index, frame in enumerate(container.decode(video=0)):
+                items.append((index, frame))
+            
+            print('Decode Done')
+            container.close()                
+            self.run_threads(items)
+            
+    def threadComplete(self):
+        logging.info('Thread finished')
+        self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
+
+    def run_threads(self, items):
+        threads = []
+        threadpool = QThreadPool.globalInstance()
+        for item in items:
+            worker = Worker(item, self.path, 'jpg')
+            worker.signals.finished.connect(self.threadComplete)
+            threadpool.start(worker)
+
+    def convertFolder(self):
+        file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        print(file)
+        # Find every .cine in folder
+
+        items = []
+        for root, dir, files in os.walk(file):
+            if files:
+                for item in files: 
+                    if item.endswith('.cine'):
+                        items.append(os.path.join(root.replace('/','\\'), item))
+        print(items)
+        self.ui.listWidget.clear()
+        item_text = QListWidgetItem()
+        item_text.setText(f'Found {len(items)} .cine files\n')
+        self.ui.listWidget.addItem(item_text)
+
+        for item in items:
+            listItem = QListWidgetItem()
+            listItem.setText(item.replace(r'\\', '/'))
+            self.ui.listWidget.addItem(listItem)
+        self.cineItems = items
+
+    def runConversion(self):
+        # if 'cineItems' not in globals(): return
+        if not self.cineItems: return
+        self.run_threadsConversion(self.cineItems)
+        
+    def threadCompleteConversion(self):
+        logging.info('Thread finished')
+        self.ui.cineBarConversion.setValue(self.ui.cineBarConversion.value() + 1)
+
+    def run_threadsConversion(self, items):
+        print('Working on it!')
+        threadpool = QThreadPool.globalInstance()
+        if self.ui.keepCine.isChecked(): keep = True
+        else: keep = False
+        
+        self.ui.cineBarConversion.setMaximum(len(items)*1001)
+        self.ui.cineBarConversion.setValue(0)
+        style = self.ui.styleBox.currentText()
+
+        for item in items:
+            if style == '.tiff uncompressed':
+                worker = WorkerConversion(item, 'tiff', keep)
+            elif style == '.tiff compressed':
+                worker = WorkerConversion(item, 'tiff', keep, True)
+            elif style == '.png':
+                worker = WorkerConversion(item, 'png', keep)
+            elif style == '.jpeg':
+                worker = WorkerConversion(item, 'jpeg', keep)
+            else:
+                worker = WorkerConversion(item, 'tiff', keep)
+            worker.signals.finishedConversion.connect(self.threadCompleteConversion)
+            threadpool.start(worker)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
