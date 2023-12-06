@@ -12,14 +12,14 @@ import pyperclip as pc
 from functools import partial
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
+from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import logging
@@ -72,8 +72,6 @@ class WorkerConversion(QRunnable):
         if not self.keep:
             os.remove(self.file)
 
-        
-
 class UI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -97,6 +95,15 @@ class UI(QMainWindow):
         self.ui.actionGo_to_default_path.triggered.connect(self.openPath)
         self.ui.loadInput.clicked.connect(self.loadInput)
         self.ui.selectFolderConverter.clicked.connect(self.convertFolder)
+        self.ui.nextPic.clicked.connect(self.nextPic)
+        self.ui.prevPic.clicked.connect(self.prevPic)
+        self.ui.plus10.clicked.connect(self.next10Pic)
+        self.ui.minus10.clicked.connect(self.prev10Pic)
+        self.ui.lineDown.clicked.connect(self.moveLineDown)
+        self.ui.lineUp.clicked.connect(self.moveLineUp)
+        self.ui.line10Down.clicked.connect(self.moveLine10Down)
+        self.ui.line10Up.clicked.connect(self.moveLine10Up)
+        self.ui.picID.valueChanged.connect(self.load_image_into_graphics_view)
         self.ui.runConversion.clicked.connect(self.runConversion)
         self.lastFolder = r'C:\Users\david\Desktop\1_20_17,2'
         self.removePresetTag()
@@ -916,18 +923,71 @@ class UI(QMainWindow):
 
     # FREQUENCY ANALYSIS
 
-    def load_cine_into_graphics_view(self):
-        graphics_view = self.ui.graphicsView
+    def nextPic(self):
+        self.ui.picID.setValue(self.ui.picID.value()+1)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def prevPic(self):
+        self.ui.picID.setValue(self.ui.picID.value()-1)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def next10Pic(self):
+        self.ui.picID.setValue(self.ui.picID.value()+10)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def prev10Pic(self):
+        self.ui.picID.setValue(self.ui.picID.value()-10)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def checkButtonState(self):
+        count = 0
+        for root, dir, files in os.walk(os.path.join(self.path, 'global', 'currentCine')):
+            count += len(files)
+        self.ui.picID.setMaximum(count-1)
+        # if self.ui.picID.value() == count-1: self.ui.nextPic.setDisabled(True)
+        # else: self.ui.nextPic.setEnabled(True)
+
+        # if self.ui.picID.value() == 0: self.ui.prevPic.setDisabled(True)
+        # else: self.ui.prevPic.setEnabled(True)
+
+    def load_image_into_graphics_view(self):
         scene = QGraphicsScene()
         id = self.ui.picID.value()
-        pixmap = QPixmap(os.path.join(self.path, 'global', f'frame_{id}.jpg'))
+        pixmap = QPixmap(os.path.join(self.path, 'global', 'currentCine', f'frame_{id}.jpeg'))
         
         if not pixmap.isNull():
             item = scene.addPixmap(pixmap)
-            graphics_view.setScene(scene)
-            graphics_view.fitInView(item, aspectRatioMode=1)
+            self.ui.graphicsView.setScene(scene)
+            # self.ui.graphicsView.fitInView(item, aspectRatioMode=1)
+            self.ui.graphicsView.fitInView(item)
         else:
-            print("Failed to load image.") 
+            print("Failed to load image.")
+
+        # pen = QPen(QColor(0, 135, 108)) # KIT COLOR
+        pen = QPen(QColor(0, 0, 0)) # BLACK
+        self.line_y = 100
+        self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
+        self.line.setZValue(1) 
+
+    def moveLineUp(self):
+        self.line_y -= 1
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+    
+    def moveLineDown(self):
+        self.line_y += 1
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+    
+    def moveLine10Up(self):
+        self.line_y -= 10
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+    
+    def moveLine10Down(self):
+        self.line_y += 10
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
 
     def loadInput(self):
         if not self.lastFolder:
@@ -945,6 +1005,8 @@ class UI(QMainWindow):
             container:av.ContainerFormat = av.open(filename)
             if not os.path.exists(os.path.join(self.path, 'global', 'currentCine')):
                 os.mkdir(os.path.join(self.path, 'global', 'currentCine'))
+            for item_ in os.listdir(os.path.join(self.path, 'global', 'currentCine')):
+                os.remove(os.path.join(self.path, 'global', 'currentCine', item_))
             items = []
             for index, frame in enumerate(container.decode(video=0)):
                 items.append((index, frame))
@@ -956,14 +1018,17 @@ class UI(QMainWindow):
     def threadComplete(self):
         logging.info('Thread finished')
         self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
+        self.checkButtonState()
 
     def run_threads(self, items):
         threads = []
         threadpool = QThreadPool.globalInstance()
         for item in items:
-            worker = Worker(item, self.path, 'jpg')
+            worker = Worker(item, self.path, 'jpeg')
             worker.signals.finished.connect(self.threadComplete)
             threadpool.start(worker)
+    
+    # Cine to Picture
 
     def convertFolder(self):
         file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))

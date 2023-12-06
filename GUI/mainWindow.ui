@@ -29,7 +29,7 @@
     <item row="1" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1353,7 +1353,7 @@
       </widget>
       <widget class="QWidget" name="tab_3">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <attribute name="title">
         <string>Frequency Analysis</string>
@@ -1361,13 +1361,6 @@
        <layout class="QGridLayout" name="gridLayout_11">
         <item row="0" column="0">
          <layout class="QGridLayout" name="gridLayout_10">
-          <item row="2" column="2">
-           <widget class="QPushButton" name="clearRef">
-            <property name="text">
-             <string>Clear Ref</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="2">
            <widget class="QPushButton" name="clearInput">
             <property name="text">
@@ -1375,48 +1368,17 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QGraphicsView" name="graphicsView"/>
+          <item row="2" column="2">
+           <widget class="QPushButton" name="clearRef">
+            <property name="text">
+             <string>Clear Ref</string>
+            </property>
+           </widget>
           </item>
           <item row="1" column="1">
            <widget class="QPushButton" name="loadInput">
             <property name="text">
              <string>Load Input</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QPushButton" name="pushButton">
-            <property name="font">
-             <font>
-              <family>Arial</family>
-              <pointsize>11</pointsize>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>↓</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="loadRef">
-            <property name="text">
-             <string>Load Ref</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QPushButton" name="pushButton_5">
-            <property name="font">
-             <font>
-              <family>Arial</family>
-              <pointsize>11</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>↑</string>
             </property>
            </widget>
           </item>
@@ -1436,6 +1398,52 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="loadRef">
+            <property name="text">
+             <string>Load Ref</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QGraphicsView" name="graphicsView"/>
+          </item>
+          <item row="3" column="1">
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QPushButton" name="lineUp">
+              <property name="text">
+               <string>Line Up</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="lineDown">
+              <property name="text">
+               <string>Line Down</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="2">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QPushButton" name="line10Up">
+              <property name="text">
+               <string>Line 10 Up</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="line10Down">
+              <property name="text">
+               <string>Line 10 Down</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
          </layout>
         </item>
         <item row="3" column="0">
@@ -1450,6 +1458,13 @@
         </item>
         <item row="1" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="minus10">
+            <property name="text">
+             <string>- 10</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QPushButton" name="prevPic">
             <property name="text">
@@ -1471,6 +1486,13 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="plus10">
+            <property name="text">
+             <string>+ 10</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
         <item row="2" column="0">
@@ -1479,6 +1501,9 @@
            <widget class="QLabel" name="label_31">
             <property name="text">
              <string>Frame rate [fps]</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -1656,9 +1681,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
