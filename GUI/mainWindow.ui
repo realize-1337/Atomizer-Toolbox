@@ -29,7 +29,7 @@
     <item row="1" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1617,6 +1617,8 @@
      <string>Export</string>
     </property>
     <addaction name="actionEdit_and_Create_Export_Presets"/>
+    <addaction name="actionSetup_Bulk_Export"/>
+    <addaction name="actionBulk_Generate"/>
    </widget>
    <widget class="QMenu" name="menuInfo">
     <property name="title">
@@ -1677,12 +1679,22 @@
     <string>Ctrl+R</string>
    </property>
   </action>
+  <action name="actionBulk_Generate">
+   <property name="text">
+    <string>Generate Bulk Export</string>
+   </property>
+  </action>
+  <action name="actionSetup_Bulk_Export">
+   <property name="text">
+    <string>Setup Bulk Export</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_2"/>
  </buttongroups>

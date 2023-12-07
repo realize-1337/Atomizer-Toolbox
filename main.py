@@ -17,11 +17,12 @@ from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/mainWindow.ui'
+# PY_FILE = './GUI/mainWindow.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
+import packages.bulkExport as bulkex
 import logging
 
 class WorkerSignals(QObject):
@@ -88,6 +89,8 @@ class UI(QMainWindow):
         self.ui.cpToclip.clicked.connect(self.toClip)
         self.ui.cellToClip.clicked.connect(self.cellToClip)
         self.ui.actionEdit_and_Create_Export_Presets.triggered.connect(self.createExportPresets)
+        self.ui.actionBulk_Generate.triggered.connect(self.bulkCalc)
+        self.ui.actionSetup_Bulk_Export.triggered.connect(self.bulkExport)
         self.ui.actionLoad_Presets.triggered.connect(self.loadPreset)
         self.ui.actionSave_Presets.triggered.connect(self.savePreset)
         self.ui.actionReset_Values.triggered.connect(self.resetValues)
@@ -921,6 +924,46 @@ class UI(QMainWindow):
     def openPath(self):
         subprocess.Popen(rf'explorer /select,"{self.path}"')
 
+    def bulkCalc(self):
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export', 'bulk.json')): return
+        with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export', 'bulk.json'), 'r') as file:
+            data = json.load(file)
+        inner = data['inner']
+        liq = data['middle']
+        outer = data['outer']
+        file = data['export']
+        self.ui.innerStreamUnit.setCurrentText(data['innerUnit'])
+        self.ui.sheetStreamUnit.setCurrentText(data['middleUnit'])
+        self.ui.outerStreamUnit.setCurrentText(data['outerUnit'])
+        df = pd.DataFrame()
+        for l in liq:
+            for i in inner:
+                for o in outer:
+                    self.ui.innerStreamValue.setValue(i)
+                    self.ui.sheetStreamValue.setValue(l)
+                    self.ui.outerStreamValue.setValue(o)
+                    self.readValues()
+                    df0 = self.generateExport()
+                    if type(df) == type(pd.DataFrame()):
+                        # df0:pd.DataFrame = self.replace(df0)
+                        df = pd.concat([df, df0])
+                    else:
+                        self.changeColor(self.ui.exportStyleBox, 'red', 1000)
+                        return
+        try: 
+            with pd.ExcelWriter(file, mode='w') as writer:
+                df.to_excel(writer)
+        except PermissionError: 
+            QMessageBox.information(self, 'Error', f'Make sure to close {file}')
+        except: 
+            self.changeColor(self.ui.exportStyleBox, 'red', 1000)
+            return None
+        self.changeColor(self.ui.exportStyleBox, 'green', 1000)
+
+    def bulkExport(self):
+        self.bulk = bulkex.UI(self)
+        self.bulk.exec()
+        
     # FREQUENCY ANALYSIS
 
     def nextPic(self):

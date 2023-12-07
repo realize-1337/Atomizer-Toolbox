@@ -809,7 +809,13 @@ class Ui_MainWindow(object):
         self.actionSave_Presets.setObjectName("actionSave_Presets")
         self.actionReset_Values = QtGui.QAction(parent=MainWindow)
         self.actionReset_Values.setObjectName("actionReset_Values")
+        self.actionBulk_Generate = QtGui.QAction(parent=MainWindow)
+        self.actionBulk_Generate.setObjectName("actionBulk_Generate")
+        self.actionSetup_Bulk_Export = QtGui.QAction(parent=MainWindow)
+        self.actionSetup_Bulk_Export.setObjectName("actionSetup_Bulk_Export")
         self.menuSetting.addAction(self.actionEdit_and_Create_Export_Presets)
+        self.menuSetting.addAction(self.actionSetup_Bulk_Export)
+        self.menuSetting.addAction(self.actionBulk_Generate)
         self.menuInfo.addAction(self.actionGo_to_default_path)
         self.menuInfo.addAction(self.actionAbout)
         self.menuFile.addAction(self.actionLoad_Presets)
@@ -820,7 +826,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuInfo.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -961,6 +967,8 @@ class Ui_MainWindow(object):
         self.actionSave_Presets.setShortcut(_translate("MainWindow", "Ctrl+S"))
         self.actionReset_Values.setText(_translate("MainWindow", "Reset Values"))
         self.actionReset_Values.setShortcut(_translate("MainWindow", "Ctrl+R"))
+        self.actionBulk_Generate.setText(_translate("MainWindow", "Generate Bulk Export"))
+        self.actionSetup_Bulk_Export.setText(_translate("MainWindow", "Setup Bulk Export"))
 
 
 if __name__ == "__main__":
