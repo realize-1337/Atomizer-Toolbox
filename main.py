@@ -108,7 +108,7 @@ class UI(QMainWindow):
         self.ui.line10Up.clicked.connect(self.moveLine10Up)
         self.ui.picID.valueChanged.connect(self.load_image_into_graphics_view)
         self.ui.runConversion.clicked.connect(self.runConversion)
-        self.lastFolder = r'C:\Users\david\Desktop\1_20_17,2'
+        # self.lastFolder = r'C:\Users\david\Desktop\1_20_17,2'
         self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
@@ -931,7 +931,10 @@ class UI(QMainWindow):
         inner = data['inner']
         liq = data['middle']
         outer = data['outer']
-        file = data['export']
+        try: file = data['export'].replace('/', '\\')
+        except: 
+            QMessageBox.information(self, 'Error', f'Make sure to set an output')
+            return
         self.ui.innerStreamUnit.setCurrentText(data['innerUnit'])
         self.ui.sheetStreamUnit.setCurrentText(data['middleUnit'])
         self.ui.outerStreamUnit.setCurrentText(data['outerUnit'])

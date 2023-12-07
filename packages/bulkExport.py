@@ -48,7 +48,8 @@ class UI(QDialog):
         self.ui.innerUnit.setCurrentText(data['innerUnit'])
         self.ui.middleUnit.setCurrentText(data['middleUnit'])
         self.ui.outerUnit.setCurrentText(data['outerUnit'])
-        self.ui.currentFile.setText(data['export'].replace('/', '\\'))
+        try: self.ui.currentFile.setText(data['export'].replace('/', '\\'))
+        except: self.ui.currentFile.setText('Please select file or folder')
         
 
     def send(self):
