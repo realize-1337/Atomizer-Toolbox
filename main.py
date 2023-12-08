@@ -1078,6 +1078,9 @@ class UI(QMainWindow):
 
     def convertFolder(self):
         file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        self.ui.runConversion.setEnabled(True)
+        self.ui.runConversion.setText('Run')
+        self.ui.styleBox.setEnabled(True)
         print(file)
         # Find every .cine in folder
 
@@ -1117,6 +1120,9 @@ class UI(QMainWindow):
         self.ui.cineBarConversion.setMaximum(len(items)*1001)
         self.ui.cineBarConversion.setValue(0)
         style = self.ui.styleBox.currentText()
+        self.ui.runConversion.setDisabled(True)
+        self.ui.runConversion.setText('Running ...')
+        self.ui.styleBox.setDisabled(True)
 
         for item in items:
             if style == '.tiff uncompressed':

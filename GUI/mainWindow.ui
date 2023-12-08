@@ -1551,12 +1551,15 @@
           <item>
            <widget class="QLabel" name="label_32">
             <property name="text">
-             <string>Keep Cine Files?</string>
+             <string>Keep Cine Files? (Option disabled. Cine file will NOT be deleted)</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="keepCine">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -1693,9 +1696,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
