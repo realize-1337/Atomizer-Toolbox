@@ -931,7 +931,10 @@ class UI(QMainWindow):
         inner = data['inner']
         liq = data['middle']
         outer = data['outer']
-        try: file = data['export'].replace('/', '\\')
+        try: 
+            file = data['export'].replace('/', '\\')
+            if '/' in file:
+                file.replace('/', '\\')
         except: 
             QMessageBox.information(self, 'Error', f'Make sure to set an output')
             return
