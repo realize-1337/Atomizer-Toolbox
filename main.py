@@ -956,6 +956,8 @@ class UI(QMainWindow):
         try: 
             with pd.ExcelWriter(file, mode='w') as writer:
                 df.to_excel(writer)
+                df = self.replace(df)
+                df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
         except PermissionError: 
             QMessageBox.information(self, 'Error', f'Make sure to close {file}')
         except: 
