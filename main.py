@@ -10,19 +10,24 @@ from PIL import Image
 import pandas as pd
 import pyperclip as pc
 from functools import partial
+import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
+from packages.freqAnalysis import freq
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
+from skimage import io, color, filters, morphology
+import plotly.graph_objs as go
+# from scipy.fft import fft, fftfreq
 import logging
 
 class WorkerSignals(QObject):
@@ -43,7 +48,50 @@ class Worker(QRunnable):
         img = frame.to_image()
 
         # pil_image.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{index}.jpg'))
-        img.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{self.index}.{self.filetype}'))
+        img.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{"%04d" % self.index}.{self.filetype}'))
+        self.signals.finished.emit()
+
+class FreqSignals(QObject):
+    push = pyqtSignal(tuple)
+    finished = pyqtSignal() 
+
+class FreqWorker(QRunnable):
+
+    def __init__(self, index, file, ref, x_start:int, x_end:int, y:int, refImage=None):
+        super().__init__()
+        self.path = file
+        self.id = index
+        self.signals = FreqSignals()
+        self.x_start = x_start
+        self.x_end = x_end
+        self.y = y
+        self.ref = refImage
+
+    def correction(self, image):
+        # if self.ref == None: return
+        mw = np.mean(image)
+        pic_cor = image.astype(float)/self.ref.astype(float) * mw
+
+        return np.uint8(pic_cor)
+
+
+    def run(self):
+        image = io.imread(self.path)
+        self.correction(image)
+        gray = color.rgb2gray(image)
+
+        threshold = filters.threshold_otsu(gray)
+        binary = gray <= threshold
+
+        black_pixel_count = len(binary[binary == 0])
+        min_pix = black_pixel_count / 2
+
+        binary_edit = morphology.remove_small_objects(binary, min_size=round(min_pix))
+
+        line = binary_edit[self.y, self.x_start:self.x_end]
+
+        tup = (self.id, np.sum(line))
+        self.signals.push.emit(tup)
         self.signals.finished.emit()
 
 class WorkerSignalsConversion(QObject):
@@ -66,8 +114,8 @@ class WorkerConversion(QRunnable):
             frame = frame.reformat(format='gray')
             img = frame.to_image()
             if self.compression:
-                img.save(os.path.join(path, f'frame_{index}.{self.filetype}'), compression="jpeg")
-            else: img.save(os.path.join(path, f'frame_{index}.{self.filetype}'))
+                img.save(os.path.join(path, f'frame_{"%04d" % index}.{self.filetype}'), compression="jpeg")
+            else: img.save(os.path.join(path, f'frame_{"%04d" % index}.{self.filetype}'))
             self.signals.finishedConversion.emit()
         container.close()
         if not self.keep:
@@ -102,13 +150,22 @@ class UI(QMainWindow):
         self.ui.prevPic.clicked.connect(self.prevPic)
         self.ui.plus10.clicked.connect(self.next10Pic)
         self.ui.minus10.clicked.connect(self.prev10Pic)
+        self.ui.LLL.clicked.connect(self.moveLLL)
+        self.ui.LLR.clicked.connect(self.moveLLR)
+        self.ui.RLL.clicked.connect(self.moveRLL)
+        self.ui.RLR.clicked.connect(self.moveRLR)
         self.ui.lineDown.clicked.connect(self.moveLineDown)
         self.ui.lineUp.clicked.connect(self.moveLineUp)
         self.ui.line10Down.clicked.connect(self.moveLine10Down)
         self.ui.line10Up.clicked.connect(self.moveLine10Up)
         self.ui.picID.valueChanged.connect(self.load_image_into_graphics_view)
+        self.ui.loadFolder.clicked.connect(self.loadFolder)
         self.ui.runConversion.clicked.connect(self.runConversion)
-        # self.lastFolder = r'C:\Users\david\Desktop\1_20_17,2'
+        self.ui.freqRun.clicked.connect(self.createFreqList)
+        self.ui.clearRef.clicked.connect(self.showFFTArray)
+        self.ui.loadRef.clicked.connect(self.loadRef)
+        self.lastMode = None
+        self.lastFolder = None
         self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
@@ -1006,9 +1063,14 @@ class UI(QMainWindow):
         # else: self.ui.prevPic.setEnabled(True)
 
     def load_image_into_graphics_view(self):
+        if not self.lastMode: return
+        elif self.lastMode == 'cine': self.load_cine_into_graphics_view()
+        else: self.load_folder_into_graphics_view(self.currentPathFreq)
+        
+    def load_cine_into_graphics_view(self):
         scene = QGraphicsScene()
         id = self.ui.picID.value()
-        pixmap = QPixmap(os.path.join(self.path, 'global', 'currentCine', f'frame_{id}.jpeg'))
+        pixmap = QPixmap(os.path.join(self.path, 'global', 'currentCine', f'frame_{"%04d" % id}.jpeg'))
         
         if not pixmap.isNull():
             item = scene.addPixmap(pixmap)
@@ -1019,10 +1081,43 @@ class UI(QMainWindow):
             print("Failed to load image.")
 
         # pen = QPen(QColor(0, 135, 108)) # KIT COLOR
-        pen = QPen(QColor(0, 0, 0)) # BLACK
+        pen = QPen(QColor(0, 0, 255)) # BLACK
         self.line_y = 100
         self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
         self.line.setZValue(1) 
+
+        self.line_x1 = 400
+        self.line_x2 = pixmap.width() - 400
+        self.linex1 = scene.addLine(self.line_x1, 0, self.line_x1, pixmap.height(), pen)
+        self.linex2 = scene.addLine(self.line_x2, 0, self.line_x2, pixmap.height(), pen)
+        self.linex1.setZValue(1)
+        self.linex2.setZValue(1)
+
+    def load_folder_into_graphics_view(self, path, name='frame_', type='.png'):
+        scene = QGraphicsScene()
+        id = self.ui.picID.value()
+        pixmap = QPixmap(os.path.join(path, f'frame_{"%04d" % id}{type}'))
+        
+        if not pixmap.isNull():
+            item = scene.addPixmap(pixmap)
+            self.ui.graphicsView.setScene(scene)
+            # self.ui.graphicsView.fitInView(item, aspectRatioMode=1)
+            self.ui.graphicsView.fitInView(item)
+        else:
+            print("Failed to load image.")
+
+        # pen = QPen(QColor(0, 135, 108)) # KIT COLOR
+        pen = QPen(QColor(0, 0, 255)) # BLACK
+        self.line_y = 100
+        self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
+        self.line.setZValue(1) 
+
+        self.line_x1 = 400
+        self.line_x2 = pixmap.width() - 400
+        self.linex1 = scene.addLine(self.line_x1, 0, self.line_x1, pixmap.height(), pen)
+        self.linex2 = scene.addLine(self.line_x2, 0, self.line_x2, pixmap.height(), pen)
+        self.linex1.setZValue(1)
+        self.linex2.setZValue(1)
 
     def moveLineUp(self):
         self.line_y -= 1
@@ -1039,6 +1134,22 @@ class UI(QMainWindow):
     def moveLine10Down(self):
         self.line_y += 10
         self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+
+    def moveLLL(self):
+        self.line_x1 -= 10
+        self.linex1.setLine(self.line_x1, 0, self.line_x1, self.linex1.line().y2())
+    
+    def moveLLR(self):
+        self.line_x1 += 10
+        self.linex1.setLine(self.line_x1, 0, self.line_x1, self.linex1.line().y2())
+    
+    def moveRLL(self):
+        self.line_x2 -= 10
+        self.linex2.setLine(self.line_x2, 0, self.line_x2, self.linex2.line().y2())
+    
+    def moveRLR(self):
+        self.line_x2 += 10
+        self.linex2.setLine(self.line_x2, 0, self.line_x2, self.linex2.line().y2())
 
     def loadInput(self):
         if not self.lastFolder:
@@ -1063,13 +1174,34 @@ class UI(QMainWindow):
                 items.append((index, frame))
             
             print('Decode Done')
-            container.close()                
+            container.close()
+            self.lastMode = 'cine'                
             self.run_threads(items)
+
+    def loadFolder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            types = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0]) or x.endswith(types[1]) or x.endswith(types[2]) or x.endswith(types[3]) or x.endswith(types[4])]
+            if len(files) > 1:
+                self.currentPathFreq = folder
+                self.lastMode = 'folder'
+            else: 
+                self.currentPathFreq = None
+                return
+            
+            self.load_image_into_graphics_view()
             
     def threadComplete(self):
         logging.info('Thread finished')
         self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
         self.checkButtonState()
+
+    def freqThreadComplete(self):
+        logging.info('Thread finished')
+        self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
+        if self.ui.cineLoadBar.value() == self.ui.cineLoadBar.maximum()-1:
+            self.showFFTArray()
 
     def run_threads(self, items):
         threads = []
@@ -1079,6 +1211,76 @@ class UI(QMainWindow):
             worker.signals.finished.connect(self.threadComplete)
             threadpool.start(worker)
     
+    def makeFFTList(self, value):
+        self.FFTList[value[0], 1] = value[1]
+        # print(self.FFTList)
+
+    def createFreqList(self):
+        if self.lastMode == None: return
+        elif self.lastMode == 'cine': 
+            path = os.path.join(self.path, 'global', 'currentCine')
+            type = '.jpeg'
+        else: 
+            path = self.currentPathFreq
+            type = '.png'
+
+        files = [os.path.join(path, x) for x in os.listdir(path) if x.endswith(type)]
+        if len(files) == 0: return
+
+        threadpool = QThreadPool.globalInstance()
+        self.FFTList = np.zeros((len(files), 2))
+        self.FFTList[:, 0] = np.linspace(0, len(files) - 1, len(files))
+        print(self.FFTList)
+        i = 0
+        # ref = r'M:\Duese_4\Wasser\Oben_fern_ref.tif'
+        ref = self.ui.currentRef.text()
+        x_start = int(self.linex1.line().x1())
+        x_end = int(self.linex2.line().x1())
+        y = int(self.line.line().y1())
+        self.ui.cineLoadBar.setMaximum(len(files))
+        self.ui.cineLoadBar.setValue(0)
+        try:
+            refImage = io.imread(ref)
+        except:
+            QMessageBox.information(self, 'Error', 'Please select reference image')
+            return
+        for file in files:
+            worker = FreqWorker(i, file, ref, x_start, x_end, y, refImage)
+            i += 1
+            worker.signals.push.connect(self.makeFFTList)
+            worker.signals.finished.connect(self.threadComplete)
+            threadpool.start(worker)
+    
+    def loadRef(self):
+        if not self.lastFolder:
+            filename, null = QFileDialog.getOpenFileName(self, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        else:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.lastFolder, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        
+        if not filename: return
+        self.ui.currentRef.setText(filename)
+
+    def showFFTArray(self):
+        try:
+            print(self.FFTList)
+        except: return
+        x_values = self.FFTList[:, 0]  
+        y_values = self.FFTList[:, 1]  
+        Fs = self.ui.frameRate.value()  
+        T = 1 / Fs 
+
+        t = np.arange(0, len(x_values)) * T * 1000  
+        NFFT = 2**np.ceil(np.log2(len(x_values)))  
+        Y = np.fft.fft(y_values, int(NFFT)) / len(x_values)
+        f = Fs / 2 * np.linspace(0, 1, int(NFFT / 2) + 1)
+
+        trace = go.Scatter(x=f[1:], y=(2*np.abs(Y[1:int(NFFT / 2) + 1])), mode='lines', name='FFT')
+        layout = go.Layout(title='Single-Sided Amplitude Spectrum of y(t)', xaxis=dict(title='Frequency (Hz)'), yaxis=dict(title='|Y(f)|'))
+        fig = go.Figure(data=[trace], layout=layout)
+        fig.show()
+
     # Cine to Picture
 
     def convertFolder(self):

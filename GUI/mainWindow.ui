@@ -26,7 +26,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
+    <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
        <number>0</number>
@@ -1362,9 +1362,9 @@
         <item row="0" column="0">
          <layout class="QGridLayout" name="gridLayout_10">
           <item row="1" column="2">
-           <widget class="QPushButton" name="clearInput">
+           <widget class="QPushButton" name="loadFolder">
             <property name="text">
-             <string>Clear Input</string>
+             <string>Load Folder</string>
             </property>
            </widget>
           </item>
@@ -1378,7 +1378,7 @@
           <item row="1" column="1">
            <widget class="QPushButton" name="loadInput">
             <property name="text">
-             <string>Load Input</string>
+             <string>Load Cine</string>
             </property>
            </widget>
           </item>
@@ -1411,45 +1411,106 @@
           <item row="3" column="1">
            <layout class="QVBoxLayout" name="verticalLayout">
             <item>
-             <widget class="QPushButton" name="lineUp">
-              <property name="text">
-               <string>Line Up</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="lineDown">
-              <property name="text">
-               <string>Line Down</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_3">
+              <item>
+               <widget class="QPushButton" name="lineUp">
+                <property name="text">
+                 <string>Line Up</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="lineDown">
+                <property name="text">
+                 <string>Line Down</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="Line" name="line">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="LLL">
+                <property name="text">
+                 <string>Left Line
+&lt;&lt;</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="LLR">
+                <property name="text">
+                 <string>Left Line
+&gt;&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </item>
           <item row="3" column="2">
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
-             <widget class="QPushButton" name="line10Up">
-              <property name="text">
-               <string>Line 10 Up</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="line10Down">
-              <property name="text">
-               <string>Line 10 Down</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_8">
+              <item>
+               <widget class="QPushButton" name="line10Up">
+                <property name="text">
+                 <string>Line 10 Up</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="line10Down">
+                <property name="text">
+                 <string>Line 10 Down</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="Line" name="line_5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="RLL">
+                <property name="text">
+                 <string>Right Line 
+&lt;&lt;</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="RLR">
+                <property name="text">
+                 <string>Right Line
+&gt;&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="currentRef">
+            <property name="text">
+             <string>Select Reference File</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
         <item row="3" column="0">
          <widget class="QPushButton" name="freqRun">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>Run</string>
@@ -1696,8 +1757,8 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
  </buttongroups>
