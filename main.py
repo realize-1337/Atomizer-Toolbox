@@ -71,23 +71,24 @@ class FreqWorker(QRunnable):
     def correction(self, image):
         # if self.ref == None: return
         mw = np.mean(image)
-        pic_cor = image.astype(float)/self.ref.astype(float) * mw
-
-        return np.uint8(pic_cor)
+        pic_cor = np.uint8((np.double(self.ref) / np.double(image)) * mw)
+        return pic_cor
 
 
     def run(self):
         image = io.imread(self.path)
         self.correction(image)
         gray = color.rgb2gray(image)
+        normalized_gray = (gray - gray.min()) / (gray.max() - gray.min())
 
-        threshold = filters.threshold_otsu(gray)
-        binary = gray <= threshold
+        threshold = 1-filters.threshold_otsu(normalized_gray)
+        print(threshold)
 
-        black_pixel_count = len(binary[binary == 0])
-        min_pix = black_pixel_count / 2
+        binary_image = normalized_gray > threshold
 
-        binary_edit = morphology.remove_small_objects(binary, min_size=round(min_pix))
+        minPix = len(np.where(binary_image == 0)[0]) / 2
+
+        binary_edit = morphology.remove_small_objects(binary_image, min_size=round(minPix))
 
         line = binary_edit[self.y, self.x_start:self.x_end]
 
@@ -207,28 +208,6 @@ class DropletsWorker(QRunnable):
         
         if refSize != 1: unit = 'μm'
         else: unit = 'px'
-
-        # fig, axs = plt.subplots(len(diameters), 3, figsize=(12, 6*len(diameters)))
-        # for i, ax in enumerate(axs):
-        #     fileName = items[i].split("\\")[1]
-        #     ax[0].text(0.5, 0.5, f'Largest Droplet\n{"%.2f" % diameters[i]} {unit}\n {fileName}', ha='center', va='center', fontsize=12)
-        #     ax[0].axis('off')
-        #     ax[1].imshow(cv2.cvtColor(results[i], cv2.COLOR_BGR2RGB))
-        #     ax[1].set_title(f'Highlighted Circle')
-        #     ax[2].imshow(threshholds[i], cmap='gray')
-        #     ax[2].set_title('Thresholded Image')
-        
-        # fig, axs = plt.subplots(len(diameters), 1, figsize=(12, 6*len(diameters)))
-        # for i, ax in enumerate(axs):
-        #     fileName = items[i].split("\\")[1]
-        #     ax.imshow(cv2.cvtColor(results[i], cv2.COLOR_BGR2RGB))
-        #     ax.set_title(f'Largest Droplet \t {"%.2f" % diameters[i]} {unit} \t {fileName}')
-    
-
-        # plt.tight_layout()
-        # if not export.endswith('.pdf'):
-        #     export += '.pdf'
-        # plt.savefig(export)
 
         figs = []
         for i in range(len(diameters)):
@@ -1375,6 +1354,7 @@ class UI(QMainWindow):
         x_start = int(self.linex1.line().x1())
         x_end = int(self.linex2.line().x1())
         y = int(self.line.line().y1())
+        print(x_start, x_end, y)
         self.ui.cineLoadBar.setMaximum(len(files))
         self.ui.cineLoadBar.setValue(0)
         try:
@@ -1408,14 +1388,14 @@ class UI(QMainWindow):
         y_values = self.FFTList[:, 1]  
         Fs = self.ui.frameRate.value()  
         T = 1 / Fs 
-
-        t = np.arange(0, len(x_values)) * T * 1000  
+        print(np.mean(y_values))
+        # t = np.arange(0, len(x_values)) * T * 1000  
         NFFT = 2**np.ceil(np.log2(len(x_values)))  
         Y = np.fft.fft(y_values, int(NFFT)) / len(x_values)
         f = Fs / 2 * np.linspace(0, 1, int(NFFT / 2) + 1)
 
-        trace = go.Scatter(x=f[1:], y=(2*np.abs(Y[1:int(NFFT / 2) + 1])), mode='lines', name='FFT')
-        layout = go.Layout(title='Single-Sided Amplitude Spectrum of y(t)', xaxis=dict(title='Frequency (Hz)'), yaxis=dict(title='|Y(f)|'))
+        trace = go.Scatter(x=f[1:], y=(2*np.abs(Y[1:int(NFFT/2)+1])), mode='lines', name='FFT')
+        layout = go.Layout(title=f'Single-Sided Amplitude Spectrum of y(t)\n{self.currentPathFreq}', xaxis=dict(title='Frequency (Hz)'), yaxis=dict(title='|Y(f)|'))
         fig = go.Figure(data=[trace], layout=layout)
         fig.show()
 
