@@ -11,6 +11,7 @@ import pandas as pd
 import pyperclip as pc
 from functools import partial
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
@@ -26,8 +27,8 @@ from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
 from skimage import io, color, filters, morphology
+import cv2
 import plotly.graph_objs as go
-# from scipy.fft import fft, fftfreq
 import logging
 
 class WorkerSignals(QObject):
@@ -121,6 +122,139 @@ class WorkerConversion(QRunnable):
         if not self.keep:
             os.remove(self.file)
 
+class DropletsSignals(QObject):
+    push = pyqtSignal(tuple)
+    finished = pyqtSignal() 
+
+class DropletsWorker(QRunnable):
+
+    def __init__(self, path, refImage_gray, threshold:int=40, circ:float=0.6, scale:float = 1):
+        super().__init__()
+        self.signals = DropletsSignals()
+        self.path = path
+        self.refImage = refImage_gray
+        self.threshold = threshold
+        self.circ = circ
+        self.scale = scale
+
+    def getImage(self):
+        droplets_img = cv2.imread(self.path)
+        self.droplets_gray = cv2.cvtColor(droplets_img, cv2.COLOR_BGR2GRAY)
+        diff_img = cv2.absdiff(self.droplets_gray, self.refImage)
+        return diff_img
+    
+    def getContours(self, diff_img):
+        _, self.thresholded_img = cv2.threshold(diff_img, self.threshold, 255, cv2.THRESH_BINARY)
+        # contours, _ = cv2.findContours(self.thresholded_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(self.thresholded_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        round_contours = []
+        circularity_threshold = self.circ
+        for contour in contours:
+            perimeter = cv2.arcLength(contour, True)
+            area = cv2.contourArea(contour)
+            if perimeter > 0:
+                circularity = (4 * 3.1416 * area) / (perimeter * perimeter)
+                if circularity > circularity_threshold:
+                    round_contours.append(contour)
+
+        return round_contours
+
+    def findLargestRound(self, round_contours):
+        largest_area = 0
+        for contour in round_contours:
+            area = cv2.contourArea(contour)
+            if area > largest_area:
+                largest_area = area
+                largest_contour = contour
+
+        try:
+            (x, y), radius = cv2.minEnclosingCircle(largest_contour)
+        except:
+            x = 0
+            y = 0 
+            radius = 0
+
+        return x, y, radius
+    
+    def generateImage(self, x:int, y:int, radius:int):
+        circle_img = np.zeros_like(self.droplets_gray)
+        if radius < 6:
+            radius *= 6
+        cv2.circle(circle_img, (int(x), int(y)), int(radius), (255, 255, 255), 2)
+        result_img = cv2.cvtColor(self.droplets_gray, cv2.COLOR_GRAY2BGR)
+        result_img = cv2.addWeighted(result_img, 1, cv2.cvtColor(circle_img, cv2.COLOR_GRAY2BGR), 0.5, 0)
+        return result_img
+
+    def generateReport(self, items:list, export):
+        '''
+        Items must be a list of paths in the order of diameter size.
+        The length is not relevant, however, i might come with a significant performace drawback.
+        '''
+        threshholds = []
+        results = []
+        diameters = []
+        refSize = self.scale
+        for item in items:
+            self.path = item
+            diff_img = self.getImage()
+            round_contours = self.getContours(diff_img)
+            x, y, radius = self.findLargestRound(round_contours)
+            diameters.append(2*radius/refSize*10**3)
+            threshholds.append(self.thresholded_img)
+            results.append(self.generateImage(x, y, radius+0.15*radius))
+
+        
+        if refSize != 1: unit = 'μm'
+        else: unit = 'px'
+
+        # fig, axs = plt.subplots(len(diameters), 3, figsize=(12, 6*len(diameters)))
+        # for i, ax in enumerate(axs):
+        #     fileName = items[i].split("\\")[1]
+        #     ax[0].text(0.5, 0.5, f'Largest Droplet\n{"%.2f" % diameters[i]} {unit}\n {fileName}', ha='center', va='center', fontsize=12)
+        #     ax[0].axis('off')
+        #     ax[1].imshow(cv2.cvtColor(results[i], cv2.COLOR_BGR2RGB))
+        #     ax[1].set_title(f'Highlighted Circle')
+        #     ax[2].imshow(threshholds[i], cmap='gray')
+        #     ax[2].set_title('Thresholded Image')
+        
+        # fig, axs = plt.subplots(len(diameters), 1, figsize=(12, 6*len(diameters)))
+        # for i, ax in enumerate(axs):
+        #     fileName = items[i].split("\\")[1]
+        #     ax.imshow(cv2.cvtColor(results[i], cv2.COLOR_BGR2RGB))
+        #     ax.set_title(f'Largest Droplet \t {"%.2f" % diameters[i]} {unit} \t {fileName}')
+    
+
+        # plt.tight_layout()
+        # if not export.endswith('.pdf'):
+        #     export += '.pdf'
+        # plt.savefig(export)
+
+        figs = []
+        for i in range(len(diameters)):
+            fileName = items[i].split("\\")[1]
+            fig, axs = plt.subplots(2, 1, figsize=(12, 12))
+            axs[0].imshow(cv2.cvtColor(results[i], cv2.COLOR_BGR2RGB))
+            axs[0].set_title(f'#{i+1} \t {"%.2f" % diameters[i]} {unit} \t {fileName}')
+            axs[1].imshow(threshholds[i], cmap='gray')
+            axs[1].set_title(f'Thresholded Image \t threshold: {self.threshold} \t circularity: {self.circ}')
+            plt.tight_layout()
+            figs.append(fig)
+
+        with PdfPages(export) as pdf:
+            for fig in figs:
+                pdf.savefig(fig)
+                plt.close(fig)
+
+
+    def run(self):
+        diff_img = self.getImage()
+        round_contours = self.getContours(diff_img)
+        x, y, radius = self.findLargestRound(round_contours)
+        push_ = (self.path, radius*2/self.scale*10**3)
+        self.signals.push.emit(push_)
+        self.signals.finished.emit()
+
 class UI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -164,6 +298,10 @@ class UI(QMainWindow):
         self.ui.freqRun.clicked.connect(self.createFreqList)
         self.ui.clearRef.clicked.connect(self.showFFTArray)
         self.ui.loadRef.clicked.connect(self.loadRef)
+        self.ui.dropFolder.clicked.connect(self.loadDropletFolder)
+        self.ui.dropletRun.clicked.connect(self.dropletRun)
+        self.ui.dropletRef.clicked.connect(self.loadDropletRef)
+        self.ui.dropletGenerateReport.clicked.connect(self.generateReport)
         self.lastMode = None
         self.lastFolder = None
         self.removePresetTag()
@@ -1345,6 +1483,131 @@ class UI(QMainWindow):
             worker.signals.finishedConversion.connect(self.threadCompleteConversion)
             threadpool.start(worker)
 
+    # Droplet analysis
+    
+    def loadDropletFolder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            types = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0]) or x.endswith(types[1]) or x.endswith(types[2]) or x.endswith(types[3]) or x.endswith(types[4])]
+            if len(files) > 1:
+                self.currentDropletPath = folder
+                self.ui.label_33.setText(folder)
+                self.dropletFiles = files
+            else: 
+                self.currentDropletPath = None
+                self.ui.label_33.setText('Make sure to select folder with images inside')
+
+    def loadDropletRef(self):
+        if not self.lastFolder:
+            filename, null = QFileDialog.getOpenFileName(self, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        else:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.lastFolder, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        
+        if not filename: return
+        self.dropletRefpath = filename
+        self.ui.label_34.setText(filename)
+
+    def dropletPush(self, tup:tuple):
+        path, dia = tup
+        self.dropletItems.append((path, dia))
+        # self.ui.dropletTable.setSortingEnabled(True)
+        row = self.ui.dropletTable.rowCount()
+        self.ui.dropletTable.insertRow(row)
+        pathItem = QTableWidgetItem(path)
+        self.ui.dropletTable.setItem(row, 0, pathItem)
+        diaItem = QTableWidgetItem(f'{dia}')
+        diaItem.setData(1, dia)
+        self.ui.dropletTable.setItem(row, 1, diaItem)
+        self.sortDropletTable('d')
+
+    def dropletFinished(self):
+        self.ui.dropletProgress.setValue(self.ui.dropletProgress.value() + 1)
+        if self.ui.dropletProgress.value() >= len(self.dropletFiles):
+            self.ui.dropletGenerateReport.setEnabled(True)
+            self.ui.dropletRun.setText('Run')
+            self.ui.dropletRun.disconnect()
+            self.ui.dropletRun.clicked.connect(self.dropletRun)
+
+    def sortDropletTable(self, order='auto'):
+        items = []
+        for row in range(self.ui.dropletTable.rowCount()):
+            items.append((self.ui.dropletTable.item(row, 0).text(), self.ui.dropletTable.item(row, 1).text()))
+
+        if order == 'auto':
+            sortedData = sorted(items, key=lambda x: float(x[1]), reverse=True)
+
+            if sortedData[0][1] > items[-1][1]: order = 'a'
+            else: order = 'd'
+        
+        if order == 'd': sortedData = sorted(items, key=lambda x: float(x[1]), reverse=True)
+        elif order == 'a': sortedData = sorted(items, key=lambda x: float(x[1]), reverse=False)
+        else: sortedData = sorted(items, key=lambda x: float(x[1]), reverse=False)
+        
+        # print(sortedData)
+        self.ui.dropletTable.clearContents()
+        self.ui.dropletTable.setRowCount(0)
+        for i, (path, dia) in enumerate(sortedData):
+            self.ui.dropletTable.insertRow(i)
+            pathItem = QTableWidgetItem(path)
+            diaItem = QTableWidgetItem(f'{dia}')
+            self.ui.dropletTable.setItem(i, 0, pathItem)
+            self.ui.dropletTable.setItem(i, 1, diaItem)
+
+    def generateReport(self):
+        background_img = cv2.imread(self.ui.label_34.text())
+        background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
+        export = os.path.join(self.ui.label_33.text(), 'droplet_report.pdf')
+        items = []
+        for i in range(10):
+            items.append(self.ui.dropletTable.item(i, 0).text())
+
+        worker = DropletsWorker(None, background_gray, self.ui.threshold.value(), self.ui.circ.value(), self.ui.dropletScale.value())
+        try: worker.generateReport(items, export)
+        except:
+            QMessageBox.information(self, 'Error', 'Make sure to close existing Export PDF!')
+            return
+        os.startfile(export)
+
+
+    def dropletRun(self):
+        try:
+            if not self.dropletRefpath: return
+            if not self.currentDropletPath: return
+            if not self.dropletFiles: return
+        except: return
+
+        self.dropletItems = []
+              
+        self.ui.dropletTable.clearContents()   
+        self.ui.dropletTable.setRowCount(0)
+
+        self.dropletthreadpool = QThreadPool.globalInstance()
+        background_img = cv2.imread(self.ui.label_34.text())
+        background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
+        self.ui.dropletProgress.setMaximum(len(self.dropletFiles))
+        self.ui.dropletProgress.setValue(0)
+        self.ui.dropletGenerateReport.setDisabled(True)
+        self.ui.dropletRun.setText('Cancel')
+        # self.ui.dropletRun.setDisabled(True)
+        self.ui.dropletRun.disconnect()
+        self.ui.dropletRun.clicked.connect(self.stopThread)
+
+        for i, item in enumerate(self.dropletFiles):
+            worker = DropletsWorker(item, background_gray, self.ui.threshold.value(), self.ui.circ.value(), self.ui.dropletScale.value())
+            worker.signals.push.connect(self.dropletPush)
+            worker.signals.finished.connect(self.dropletFinished)
+            self.dropletthreadpool.start(worker)
+            # print(f'Created Worker: {i}')
+    
+    def stopThread(self):
+        self.dropletthreadpool.clear()
+        self.ui.dropletRun.disconnect()
+        self.ui.dropletRun.clicked.connect(self.dropletRun)
+        self.ui.dropletRun.setText('Run')
+        
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
