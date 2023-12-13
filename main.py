@@ -74,25 +74,19 @@ class FreqWorker(QRunnable):
         pic_cor = np.uint8((np.double(self.ref) / np.double(image)) * mw)
         return pic_cor
 
-
     def run(self):
-        image = io.imread(self.path)
-        self.correction(image)
-        gray = color.rgb2gray(image)
-        normalized_gray = (gray - gray.min()) / (gray.max() - gray.min())
+        image = cv2.imread(self.path)
+        pic_cor = self.correction(image)
+        gray = cv2.cvtColor(pic_cor, cv2.COLOR_BGR2GRAY)
+        _, binary_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-        threshold = 1-filters.threshold_otsu(normalized_gray)
-        print(threshold)
-
-        binary_image = normalized_gray > threshold
-
-        minPix = len(np.where(binary_image == 0)[0]) / 2
+        minPix = np.count_nonzero(binary_image == 0)/2
 
         binary_edit = morphology.remove_small_objects(binary_image, min_size=round(minPix))
 
         line = binary_edit[self.y, self.x_start:self.x_end]
 
-        tup = (self.id, np.sum(line))
+        tup = (self.id, np.sum(line == 0))
         self.signals.push.emit(tup)
         self.signals.finished.emit()
 
@@ -1169,15 +1163,14 @@ class UI(QMainWindow):
         self.load_image_into_graphics_view()
 
     def checkButtonState(self):
-        count = 0
-        for root, dir, files in os.walk(os.path.join(self.path, 'global', 'currentCine')):
-            count += len(files)
-        self.ui.picID.setMaximum(count-1)
-        # if self.ui.picID.value() == count-1: self.ui.nextPic.setDisabled(True)
-        # else: self.ui.nextPic.setEnabled(True)
+        if not self.lastMode: return
+        elif self.lastMode == 'cine':
+            count = 0
+            for root, dir, files in os.walk(os.path.join(self.path, 'global', 'currentCine')):
+                count += len(files)
+            self.ui.picID.setMaximum(count-1)
+        else: return
 
-        # if self.ui.picID.value() == 0: self.ui.prevPic.setDisabled(True)
-        # else: self.ui.prevPic.setEnabled(True)
 
     def load_image_into_graphics_view(self):
         if not self.lastMode: return
@@ -1292,8 +1285,10 @@ class UI(QMainWindow):
             
             print('Decode Done')
             container.close()
-            self.lastMode = 'cine'                
+            self.lastMode = 'cine'            
             self.run_threads(items)
+            self.ui.picID.setMaximum(len(items)-1)
+            self.ui.picID.setValue(0)
 
     def loadFolder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -1303,6 +1298,8 @@ class UI(QMainWindow):
             if len(files) > 1:
                 self.currentPathFreq = folder
                 self.lastMode = 'folder'
+                self.ui.picID.setMaximum(len(files)-1)
+                self.ui.picID.setValue(0)
             else: 
                 self.currentPathFreq = None
                 return
