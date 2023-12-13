@@ -19,7 +19,6 @@ from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
-from packages.freqAnalysis import freq
 from pyfluids import Fluid, FluidsList, Input
 # UI_FILE = './GUI/mainWindow.ui'
 # PY_FILE = './GUI/mainWindow.py'
@@ -27,7 +26,7 @@ from pyfluids import Fluid, FluidsList, Input
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
-from skimage import io, color, filters, morphology
+from skimage import morphology
 import cv2
 import plotly.graph_objs as go
 import logging
@@ -241,7 +240,7 @@ class UI(QMainWindow):
         self.path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')
         self.resultLabels = self.createLabelList()
         self.presetField()
-        # self.setCalcButtons()
+        self.setWindowIcon(QtGui.QIcon('assets/ATT_LOGO.ico'))
         self.enableAutoCalc()
         self.ui.pushButton_2.clicked.connect(self.calculator)
         self.ui.cpToclip.clicked.connect(self.toClip)

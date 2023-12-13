@@ -28,6 +28,7 @@ class UI(QDialog):
         self.exportPath = None
         self.ui.CreateFile.clicked.connect(self.selectFolder)
         self.ui.ChoseFile.clicked.connect(self.selectFile)
+        self.setWindowIcon(QtGui.QIcon('assets/ATT_LOGO.ico'))
 
 
     def loadButtons(self):

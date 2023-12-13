@@ -338,6 +338,7 @@ class UI(QDialog):
         self.loadButtons()
         self.createLoadList()
         self.savedCheck = True
+        self.setWindowIcon(QtGui.QIcon('assets/ATT_LOGO.ico'))
         
     def headers(self):
         try: self.ui.tableWidget.horizontalHeader().sectionDoubleClicked.disconnect()
