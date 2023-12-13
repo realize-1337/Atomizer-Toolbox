@@ -1368,13 +1368,6 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
-           <widget class="QPushButton" name="clearRef">
-            <property name="text">
-             <string>Clear Ref</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="1">
            <widget class="QPushButton" name="loadInput">
             <property name="text">
@@ -1395,13 +1388,6 @@
             </property>
             <property name="textVisible">
              <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="loadRef">
-            <property name="text">
-             <string>Load Ref</string>
             </property>
            </widget>
           </item>
@@ -1505,17 +1491,14 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="1" colspan="2">
+           <widget class="QPushButton" name="loadRef">
+            <property name="text">
+             <string>Load Ref</string>
+            </property>
+           </widget>
+          </item>
          </layout>
-        </item>
-        <item row="3" column="0">
-         <widget class="QPushButton" name="freqRun">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="text">
-           <string>Run</string>
-          </property>
-         </widget>
         </item>
         <item row="1" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -1575,6 +1558,27 @@
             </property>
             <property name="value">
              <number>4500</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="5" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QPushButton" name="freqRun">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>Run</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="clearRef">
+            <property name="text">
+             <string>Generate Report</string>
             </property>
            </widget>
           </item>
@@ -1981,9 +1985,9 @@
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>

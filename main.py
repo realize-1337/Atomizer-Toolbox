@@ -2,6 +2,7 @@ import av
 import os
 import sys
 import math
+from time import time
 import subprocess
 import json
 import ctypes
@@ -20,9 +21,9 @@ import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from packages.freqAnalysis import freq
 from pyfluids import Fluid, FluidsList, Input
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/mainWindow.ui'
+# PY_FILE = './GUI/mainWindow.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
@@ -30,6 +31,7 @@ from skimage import io, color, filters, morphology
 import cv2
 import plotly.graph_objs as go
 import logging
+import webbrowser
 
 class WorkerSignals(QObject):
     finished = pyqtSignal() 
@@ -69,23 +71,24 @@ class FreqWorker(QRunnable):
         self.ref = refImage
 
     def correction(self, image):
-        # if self.ref == None: return
-        mw = np.mean(image)
-        pic_cor = np.uint8((np.double(self.ref) / np.double(image)) * mw)
+        mw = np.mean(self.ref)
+        pic_cor = np.uint8((np.double(image) / np.double(self.ref)) * mw)
         return pic_cor
 
     def run(self):
-        image = cv2.imread(self.path)
+        image = cv2.imread(self.path, cv2.IMREAD_GRAYSCALE)
         pic_cor = self.correction(image)
-        gray = cv2.cvtColor(pic_cor, cv2.COLOR_BGR2GRAY)
-        _, binary_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        _, binary_image = cv2.threshold(pic_cor, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
         minPix = np.count_nonzero(binary_image == 0)/2
-
         binary_edit = morphology.remove_small_objects(binary_image, min_size=round(minPix))
+        
+        inverted_image = cv2.bitwise_not(binary_edit)
+        contours, _ = cv2.findContours(inverted_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            cv2.drawContours(binary_edit, [contour], 0, 0, -1)
 
         line = binary_edit[self.y, self.x_start:self.x_end]
-
         tup = (self.id, np.sum(line == 0))
         self.signals.push.emit(tup)
         self.signals.finished.emit()
@@ -270,6 +273,7 @@ class UI(QMainWindow):
         self.ui.runConversion.clicked.connect(self.runConversion)
         self.ui.freqRun.clicked.connect(self.createFreqList)
         self.ui.clearRef.clicked.connect(self.showFFTArray)
+        self.ui.clearRef.setDisabled(True)
         self.ui.loadRef.clicked.connect(self.loadRef)
         self.ui.dropFolder.clicked.connect(self.loadDropletFolder)
         self.ui.dropletRun.clicked.connect(self.dropletRun)
@@ -1171,7 +1175,6 @@ class UI(QMainWindow):
             self.ui.picID.setMaximum(count-1)
         else: return
 
-
     def load_image_into_graphics_view(self):
         if not self.lastMode: return
         elif self.lastMode == 'cine': self.load_cine_into_graphics_view()
@@ -1314,17 +1317,16 @@ class UI(QMainWindow):
     def freqThreadComplete(self):
         logging.info('Thread finished')
         self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
-        if self.ui.cineLoadBar.value() == self.ui.cineLoadBar.maximum()-1:
-            self.showFFTArray()
+        if self.ui.cineLoadBar.value() >= self.ui.cineLoadBar.maximum():
+            self.ui.clearRef.setEnabled(True)
 
     def run_threads(self, items):
-        threads = []
         threadpool = QThreadPool.globalInstance()
         for item in items:
             worker = Worker(item, self.path, 'jpeg')
             worker.signals.finished.connect(self.threadComplete)
             threadpool.start(worker)
-    
+        
     def makeFFTList(self, value):
         self.FFTList[value[0], 1] = value[1]
         # print(self.FFTList)
@@ -1354,8 +1356,9 @@ class UI(QMainWindow):
         print(x_start, x_end, y)
         self.ui.cineLoadBar.setMaximum(len(files))
         self.ui.cineLoadBar.setValue(0)
+        self.ui.clearRef.setDisabled(True)
         try:
-            refImage = io.imread(ref)
+            refImage = cv2.imread(ref, cv2.IMREAD_GRAYSCALE)
         except:
             QMessageBox.information(self, 'Error', 'Please select reference image')
             return
@@ -1363,7 +1366,7 @@ class UI(QMainWindow):
             worker = FreqWorker(i, file, ref, x_start, x_end, y, refImage)
             i += 1
             worker.signals.push.connect(self.makeFFTList)
-            worker.signals.finished.connect(self.threadComplete)
+            worker.signals.finished.connect(self.freqThreadComplete)
             threadpool.start(worker)
     
     def loadRef(self):
@@ -1394,7 +1397,8 @@ class UI(QMainWindow):
         trace = go.Scatter(x=f[1:], y=(2*np.abs(Y[1:int(NFFT/2)+1])), mode='lines', name='FFT')
         layout = go.Layout(title=f'Single-Sided Amplitude Spectrum of y(t)\n{self.currentPathFreq}', xaxis=dict(title='Frequency (Hz)'), yaxis=dict(title='|Y(f)|'))
         fig = go.Figure(data=[trace], layout=layout)
-        fig.show()
+        fig.write_html(os.path.join(self.currentPathFreq, '_freq_report.html'))
+        webbrowser.open_new_tab(os.path.join(self.currentPathFreq, '_freq_report.html'))
 
     # Cine to Picture
 
@@ -1547,7 +1551,6 @@ class UI(QMainWindow):
             QMessageBox.information(self, 'Error', 'Make sure to close existing Export PDF!')
             return
         os.startfile(export)
-
 
     def dropletRun(self):
         try:
