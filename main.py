@@ -1,24 +1,235 @@
+import av
 import os
 import sys
 import math
+from time import time
 import subprocess
 import json
 import ctypes
+import numpy as np
+from PIL import Image
 import pandas as pd
 import pyperclip as pc
 from functools import partial
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer
+from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
+from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
+from packages.freqAnalysis import freq
 from pyfluids import Fluid, FluidsList, Input
 # UI_FILE = './GUI/mainWindow.ui'
 # PY_FILE = './GUI/mainWindow.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
+import packages.bulkExport as bulkex
+from skimage import io, color, filters, morphology
+import cv2
+import plotly.graph_objs as go
+import logging
+import webbrowser
 
+class WorkerSignals(QObject):
+    finished = pyqtSignal() 
+
+class Worker(QRunnable):
+
+    def __init__(self, items:tuple, path, filetype):
+        super().__init__()
+        self.index, self.frame = items
+        self.path = path
+        self.filetype = filetype
+        self.signals = WorkerSignals()
+
+    def run(self):
+        frame = self.frame
+        frame = frame.reformat(format='gray')
+        img = frame.to_image()
+
+        # pil_image.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{index}.jpg'))
+        img.save(os.path.join(self.path, 'global', 'currentCine', f'frame_{"%04d" % self.index}.{self.filetype}'))
+        self.signals.finished.emit()
+
+class FreqSignals(QObject):
+    push = pyqtSignal(tuple)
+    finished = pyqtSignal() 
+
+class FreqWorker(QRunnable):
+
+    def __init__(self, index, file, ref, x_start:int, x_end:int, y:int, refImage=None):
+        super().__init__()
+        self.path = file
+        self.id = index
+        self.signals = FreqSignals()
+        self.x_start = x_start
+        self.x_end = x_end
+        self.y = y
+        self.ref = refImage
+
+    def correction(self, image):
+        mw = np.mean(self.ref)
+        pic_cor = np.uint8((np.double(image) / np.double(self.ref)) * mw)
+        return pic_cor
+
+    def run(self):
+        image = cv2.imread(self.path, cv2.IMREAD_GRAYSCALE)
+        pic_cor = self.correction(image)
+        _, binary_image = cv2.threshold(pic_cor, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+        minPix = np.count_nonzero(binary_image == 0)/2
+        binary_edit = morphology.remove_small_objects(binary_image, min_size=round(minPix))
+        
+        inverted_image = cv2.bitwise_not(binary_edit)
+        contours, _ = cv2.findContours(inverted_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            cv2.drawContours(binary_edit, [contour], 0, 0, -1)
+
+        line = binary_edit[self.y, self.x_start:self.x_end]
+        tup = (self.id, np.sum(line == 0))
+        self.signals.push.emit(tup)
+        self.signals.finished.emit()
+
+class WorkerSignalsConversion(QObject):
+    finishedConversion = pyqtSignal() 
+
+class WorkerConversion(QRunnable):
+    def __init__(self, file, filetype, keep=True, compression=False):
+        super().__init__()
+        self.file = file
+        self.keep = keep
+        self.compression = compression
+        self.filetype = filetype
+        self.signals = WorkerSignalsConversion()
+
+    def run(self):
+        container = av.open(self.file)
+        path = os.path.dirname(self.file)
+        logging.info('Working on it.')
+        for index, frame in enumerate(container.decode(video=0)):
+            frame = frame.reformat(format='gray')
+            img = frame.to_image()
+            if self.compression:
+                img.save(os.path.join(path, f'frame_{"%04d" % index}.{self.filetype}'), compression="jpeg")
+            else: img.save(os.path.join(path, f'frame_{"%04d" % index}.{self.filetype}'))
+            self.signals.finishedConversion.emit()
+        container.close()
+        if not self.keep:
+            os.remove(self.file)
+
+class DropletsSignals(QObject):
+    push = pyqtSignal(tuple)
+    finished = pyqtSignal() 
+
+class DropletsWorker(QRunnable):
+
+    def __init__(self, path, refImage_gray, threshold:int=40, circ:float=0.6, scale:float = 1):
+        super().__init__()
+        self.signals = DropletsSignals()
+        self.path = path
+        self.refImage = refImage_gray
+        self.threshold = threshold
+        self.circ = circ
+        self.scale = scale
+
+    def getImage(self):
+        droplets_img = cv2.imread(self.path)
+        self.droplets_gray = cv2.cvtColor(droplets_img, cv2.COLOR_BGR2GRAY)
+        diff_img = cv2.absdiff(self.droplets_gray, self.refImage)
+        return diff_img
+    
+    def getContours(self, diff_img):
+        _, self.thresholded_img = cv2.threshold(diff_img, self.threshold, 255, cv2.THRESH_BINARY)
+        # contours, _ = cv2.findContours(self.thresholded_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(self.thresholded_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        round_contours = []
+        circularity_threshold = self.circ
+        for contour in contours:
+            perimeter = cv2.arcLength(contour, True)
+            area = cv2.contourArea(contour)
+            if perimeter > 0:
+                circularity = (4 * 3.1416 * area) / (perimeter * perimeter)
+                if circularity > circularity_threshold:
+                    round_contours.append(contour)
+
+        return round_contours
+
+    def findLargestRound(self, round_contours):
+        largest_area = 0
+        for contour in round_contours:
+            area = cv2.contourArea(contour)
+            if area > largest_area:
+                largest_area = area
+                largest_contour = contour
+
+        try:
+            (x, y), radius = cv2.minEnclosingCircle(largest_contour)
+        except:
+            x = 0
+            y = 0 
+            radius = 0
+
+        return x, y, radius
+    
+    def generateImage(self, x:int, y:int, radius:int):
+        circle_img = np.zeros_like(self.droplets_gray)
+        if radius < 6:
+            radius *= 6
+        cv2.circle(circle_img, (int(x), int(y)), int(radius), (255, 255, 255), 2)
+        result_img = cv2.cvtColor(self.droplets_gray, cv2.COLOR_GRAY2BGR)
+        result_img = cv2.addWeighted(result_img, 1, cv2.cvtColor(circle_img, cv2.COLOR_GRAY2BGR), 0.5, 0)
+        return result_img
+
+    def generateReport(self, items:list, export):
+        '''
+        Items must be a list of paths in the order of diameter size.
+        The length is not relevant, however, i might come with a significant performace drawback.
+        '''
+        threshholds = []
+        results = []
+        diameters = []
+        refSize = self.scale
+        for item in items:
+            self.path = item
+            diff_img = self.getImage()
+            round_contours = self.getContours(diff_img)
+            x, y, radius = self.findLargestRound(round_contours)
+            diameters.append(2*radius/refSize*10**3)
+            threshholds.append(self.thresholded_img)
+            results.append(self.generateImage(x, y, radius+0.15*radius))
+
+        
+        if refSize != 1: unit = 'μm'
+        else: unit = 'px'
+
+        figs = []
+        for i in range(len(diameters)):
+            fileName = items[i].split("\\")[1]
+            fig, axs = plt.subplots(2, 1, figsize=(12, 12))
+            axs[0].imshow(cv2.cvtColor(results[i], cv2.COLOR_BGR2RGB))
+            axs[0].set_title(f'#{i+1} \t {"%.2f" % diameters[i]} {unit} \t {fileName}')
+            axs[1].imshow(threshholds[i], cmap='gray')
+            axs[1].set_title(f'Thresholded Image \t threshold: {self.threshold} \t circularity: {self.circ}')
+            plt.tight_layout()
+            figs.append(fig)
+
+        with PdfPages(export) as pdf:
+            for fig in figs:
+                pdf.savefig(fig)
+                plt.close(fig)
+
+
+    def run(self):
+        diff_img = self.getImage()
+        round_contours = self.getContours(diff_img)
+        x, y, radius = self.findLargestRound(round_contours)
+        push_ = (self.path, radius*2/self.scale*10**3)
+        self.signals.push.emit(push_)
+        self.signals.finished.emit()
 
 class UI(QMainWindow):
     def __init__(self):
@@ -36,11 +247,40 @@ class UI(QMainWindow):
         self.ui.cpToclip.clicked.connect(self.toClip)
         self.ui.cellToClip.clicked.connect(self.cellToClip)
         self.ui.actionEdit_and_Create_Export_Presets.triggered.connect(self.createExportPresets)
+        self.ui.actionBulk_Generate.triggered.connect(self.bulkCalc)
+        self.ui.actionSetup_Bulk_Export.triggered.connect(self.bulkExport)
         self.ui.actionLoad_Presets.triggered.connect(self.loadPreset)
         self.ui.actionSave_Presets.triggered.connect(self.savePreset)
         self.ui.actionReset_Values.triggered.connect(self.resetValues)
         self.ui.actionAbout.triggered.connect(self.about)
         self.ui.actionGo_to_default_path.triggered.connect(self.openPath)
+        self.ui.loadInput.clicked.connect(self.loadInput)
+        self.ui.selectFolderConverter.clicked.connect(self.convertFolder)
+        self.ui.nextPic.clicked.connect(self.nextPic)
+        self.ui.prevPic.clicked.connect(self.prevPic)
+        self.ui.plus10.clicked.connect(self.next10Pic)
+        self.ui.minus10.clicked.connect(self.prev10Pic)
+        self.ui.LLL.clicked.connect(self.moveLLL)
+        self.ui.LLR.clicked.connect(self.moveLLR)
+        self.ui.RLL.clicked.connect(self.moveRLL)
+        self.ui.RLR.clicked.connect(self.moveRLR)
+        self.ui.lineDown.clicked.connect(self.moveLineDown)
+        self.ui.lineUp.clicked.connect(self.moveLineUp)
+        self.ui.line10Down.clicked.connect(self.moveLine10Down)
+        self.ui.line10Up.clicked.connect(self.moveLine10Up)
+        self.ui.picID.valueChanged.connect(self.load_image_into_graphics_view)
+        self.ui.loadFolder.clicked.connect(self.loadFolder)
+        self.ui.runConversion.clicked.connect(self.runConversion)
+        self.ui.freqRun.clicked.connect(self.createFreqList)
+        self.ui.clearRef.clicked.connect(self.showFFTArray)
+        self.ui.clearRef.setDisabled(True)
+        self.ui.loadRef.clicked.connect(self.loadRef)
+        self.ui.dropFolder.clicked.connect(self.loadDropletFolder)
+        self.ui.dropletRun.clicked.connect(self.dropletRun)
+        self.ui.dropletRef.clicked.connect(self.loadDropletRef)
+        self.ui.dropletGenerateReport.clicked.connect(self.generateReport)
+        self.lastMode = None
+        self.lastFolder = None
         self.removePresetTag()
         self.tabOrder()
         self.loadGlobalSettings()
@@ -856,6 +1096,498 @@ class UI(QMainWindow):
     def openPath(self):
         subprocess.Popen(rf'explorer /select,"{self.path}"')
 
+    def bulkCalc(self):
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export', 'bulk.json')): return
+        with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export', 'bulk.json'), 'r') as file:
+            data = json.load(file)
+        inner = data['inner']
+        liq = data['middle']
+        outer = data['outer']
+        try: 
+            file = data['export'].replace('/', '\\')
+            if '/' in file:
+                file.replace('/', '\\')
+        except: 
+            QMessageBox.information(self, 'Error', f'Make sure to set an output')
+            return
+        self.ui.innerStreamUnit.setCurrentText(data['innerUnit'])
+        self.ui.sheetStreamUnit.setCurrentText(data['middleUnit'])
+        self.ui.outerStreamUnit.setCurrentText(data['outerUnit'])
+        df = pd.DataFrame()
+        for l in liq:
+            for i in inner:
+                for o in outer:
+                    self.ui.innerStreamValue.setValue(i)
+                    self.ui.sheetStreamValue.setValue(l)
+                    self.ui.outerStreamValue.setValue(o)
+                    self.readValues()
+                    df0 = self.generateExport()
+                    if type(df) == type(pd.DataFrame()):
+                        # df0:pd.DataFrame = self.replace(df0)
+                        df = pd.concat([df, df0])
+                    else:
+                        self.changeColor(self.ui.exportStyleBox, 'red', 1000)
+                        return
+        try: 
+            with pd.ExcelWriter(file, mode='w') as writer:
+                df.to_excel(writer)
+                df = self.replace(df)
+                df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+        except PermissionError: 
+            QMessageBox.information(self, 'Error', f'Make sure to close {file}')
+        except: 
+            self.changeColor(self.ui.exportStyleBox, 'red', 1000)
+            return None
+        self.changeColor(self.ui.exportStyleBox, 'green', 1000)
+
+    def bulkExport(self):
+        self.bulk = bulkex.UI(self)
+        self.bulk.exec()
+        
+    # FREQUENCY ANALYSIS
+
+    def nextPic(self):
+        self.ui.picID.setValue(self.ui.picID.value()+1)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def prevPic(self):
+        self.ui.picID.setValue(self.ui.picID.value()-1)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def next10Pic(self):
+        self.ui.picID.setValue(self.ui.picID.value()+10)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def prev10Pic(self):
+        self.ui.picID.setValue(self.ui.picID.value()-10)
+        self.checkButtonState()
+        self.load_image_into_graphics_view()
+
+    def checkButtonState(self):
+        if not self.lastMode: return
+        elif self.lastMode == 'cine':
+            count = 0
+            for root, dir, files in os.walk(os.path.join(self.path, 'global', 'currentCine')):
+                count += len(files)
+            self.ui.picID.setMaximum(count-1)
+        else: return
+
+    def load_image_into_graphics_view(self):
+        if not self.lastMode: return
+        elif self.lastMode == 'cine': self.load_cine_into_graphics_view()
+        else: self.load_folder_into_graphics_view(self.currentPathFreq)
+        
+    def load_cine_into_graphics_view(self):
+        scene = QGraphicsScene()
+        id = self.ui.picID.value()
+        pixmap = QPixmap(os.path.join(self.path, 'global', 'currentCine', f'frame_{"%04d" % id}.jpeg'))
+        
+        if not pixmap.isNull():
+            item = scene.addPixmap(pixmap)
+            self.ui.graphicsView.setScene(scene)
+            # self.ui.graphicsView.fitInView(item, aspectRatioMode=1)
+            self.ui.graphicsView.fitInView(item)
+        else:
+            print("Failed to load image.")
+
+        # pen = QPen(QColor(0, 135, 108)) # KIT COLOR
+        pen = QPen(QColor(0, 0, 255)) # BLACK
+        self.line_y = 100
+        self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
+        self.line.setZValue(1) 
+
+        self.line_x1 = 400
+        self.line_x2 = pixmap.width() - 400
+        self.linex1 = scene.addLine(self.line_x1, 0, self.line_x1, pixmap.height(), pen)
+        self.linex2 = scene.addLine(self.line_x2, 0, self.line_x2, pixmap.height(), pen)
+        self.linex1.setZValue(1)
+        self.linex2.setZValue(1)
+
+    def load_folder_into_graphics_view(self, path, name='frame_', type='.png'):
+        scene = QGraphicsScene()
+        id = self.ui.picID.value()
+        pixmap = QPixmap(os.path.join(path, f'frame_{"%04d" % id}{type}'))
+        
+        if not pixmap.isNull():
+            item = scene.addPixmap(pixmap)
+            self.ui.graphicsView.setScene(scene)
+            # self.ui.graphicsView.fitInView(item, aspectRatioMode=1)
+            self.ui.graphicsView.fitInView(item)
+        else:
+            print("Failed to load image.")
+
+        # pen = QPen(QColor(0, 135, 108)) # KIT COLOR
+        pen = QPen(QColor(0, 0, 255)) # BLACK
+        self.line_y = 100
+        self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
+        self.line.setZValue(1) 
+
+        self.line_x1 = 400
+        self.line_x2 = pixmap.width() - 400
+        self.linex1 = scene.addLine(self.line_x1, 0, self.line_x1, pixmap.height(), pen)
+        self.linex2 = scene.addLine(self.line_x2, 0, self.line_x2, pixmap.height(), pen)
+        self.linex1.setZValue(1)
+        self.linex2.setZValue(1)
+
+    def moveLineUp(self):
+        self.line_y -= 1
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+    
+    def moveLineDown(self):
+        self.line_y += 1
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+    
+    def moveLine10Up(self):
+        self.line_y -= 10
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+    
+    def moveLine10Down(self):
+        self.line_y += 10
+        self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
+
+    def moveLLL(self):
+        self.line_x1 -= 10
+        self.linex1.setLine(self.line_x1, 0, self.line_x1, self.linex1.line().y2())
+    
+    def moveLLR(self):
+        self.line_x1 += 10
+        self.linex1.setLine(self.line_x1, 0, self.line_x1, self.linex1.line().y2())
+    
+    def moveRLL(self):
+        self.line_x2 -= 10
+        self.linex2.setLine(self.line_x2, 0, self.line_x2, self.linex2.line().y2())
+    
+    def moveRLR(self):
+        self.line_x2 += 10
+        self.linex2.setLine(self.line_x2, 0, self.line_x2, self.linex2.line().y2())
+
+    def loadInput(self):
+        if not self.lastFolder:
+            filename, null = QFileDialog.getOpenFileName(self, filter='*.cine', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        else:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.lastFolder, filter='*.cine', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+
+        if filename.endswith('.cine'):
+            print('working')
+            print(filename)
+
+            self.ui.cineLoadBar.setValue(0)
+            container:av.ContainerFormat = av.open(filename)
+            if not os.path.exists(os.path.join(self.path, 'global', 'currentCine')):
+                os.mkdir(os.path.join(self.path, 'global', 'currentCine'))
+            for item_ in os.listdir(os.path.join(self.path, 'global', 'currentCine')):
+                os.remove(os.path.join(self.path, 'global', 'currentCine', item_))
+            items = []
+            for index, frame in enumerate(container.decode(video=0)):
+                items.append((index, frame))
+            
+            print('Decode Done')
+            container.close()
+            self.lastMode = 'cine'            
+            self.run_threads(items)
+            self.ui.picID.setMaximum(len(items)-1)
+            self.ui.picID.setValue(0)
+
+    def loadFolder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            types = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0]) or x.endswith(types[1]) or x.endswith(types[2]) or x.endswith(types[3]) or x.endswith(types[4])]
+            if len(files) > 1:
+                self.currentPathFreq = folder
+                self.lastMode = 'folder'
+                self.ui.picID.setMaximum(len(files)-1)
+                self.ui.picID.setValue(0)
+            else: 
+                self.currentPathFreq = None
+                return
+            
+            self.load_image_into_graphics_view()
+            
+    def threadComplete(self):
+        logging.info('Thread finished')
+        self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
+        self.checkButtonState()
+
+    def freqThreadComplete(self):
+        logging.info('Thread finished')
+        self.ui.cineLoadBar.setValue(self.ui.cineLoadBar.value() + 1)
+        if self.ui.cineLoadBar.value() >= self.ui.cineLoadBar.maximum():
+            self.ui.clearRef.setEnabled(True)
+
+    def run_threads(self, items):
+        threadpool = QThreadPool.globalInstance()
+        for item in items:
+            worker = Worker(item, self.path, 'jpeg')
+            worker.signals.finished.connect(self.threadComplete)
+            threadpool.start(worker)
+        
+    def makeFFTList(self, value):
+        self.FFTList[value[0], 1] = value[1]
+        # print(self.FFTList)
+
+    def createFreqList(self):
+        if self.lastMode == None: return
+        elif self.lastMode == 'cine': 
+            path = os.path.join(self.path, 'global', 'currentCine')
+            type = '.jpeg'
+        else: 
+            path = self.currentPathFreq
+            type = '.png'
+
+        files = [os.path.join(path, x) for x in os.listdir(path) if x.endswith(type)]
+        if len(files) == 0: return
+
+        threadpool = QThreadPool.globalInstance()
+        self.FFTList = np.zeros((len(files), 2))
+        self.FFTList[:, 0] = np.linspace(0, len(files) - 1, len(files))
+        print(self.FFTList)
+        i = 0
+        # ref = r'M:\Duese_4\Wasser\Oben_fern_ref.tif'
+        ref = self.ui.currentRef.text()
+        x_start = int(self.linex1.line().x1())
+        x_end = int(self.linex2.line().x1())
+        y = int(self.line.line().y1())
+        print(x_start, x_end, y)
+        self.ui.cineLoadBar.setMaximum(len(files))
+        self.ui.cineLoadBar.setValue(0)
+        self.ui.clearRef.setDisabled(True)
+        try:
+            refImage = cv2.imread(ref, cv2.IMREAD_GRAYSCALE)
+        except:
+            QMessageBox.information(self, 'Error', 'Please select reference image')
+            return
+        for file in files:
+            worker = FreqWorker(i, file, ref, x_start, x_end, y, refImage)
+            i += 1
+            worker.signals.push.connect(self.makeFFTList)
+            worker.signals.finished.connect(self.freqThreadComplete)
+            threadpool.start(worker)
+    
+    def loadRef(self):
+        if not self.lastFolder:
+            filename, null = QFileDialog.getOpenFileName(self, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        else:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.lastFolder, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        
+        if not filename: return
+        self.ui.currentRef.setText(filename)
+
+    def showFFTArray(self):
+        try:
+            print(self.FFTList)
+        except: return
+        x_values = self.FFTList[:, 0]  
+        y_values = self.FFTList[:, 1]  
+        Fs = self.ui.frameRate.value()  
+        T = 1 / Fs 
+        print(np.mean(y_values))
+        # t = np.arange(0, len(x_values)) * T * 1000  
+        NFFT = 2**np.ceil(np.log2(len(x_values)))  
+        Y = np.fft.fft(y_values, int(NFFT)) / len(x_values)
+        f = Fs / 2 * np.linspace(0, 1, int(NFFT / 2) + 1)
+
+        trace = go.Scatter(x=f[1:], y=(2*np.abs(Y[1:int(NFFT/2)+1])), mode='lines', name='FFT')
+        layout = go.Layout(title=f'Single-Sided Amplitude Spectrum of y(t)\n{self.currentPathFreq}', xaxis=dict(title='Frequency (Hz)'), yaxis=dict(title='|Y(f)|'))
+        fig = go.Figure(data=[trace], layout=layout)
+        fig.write_html(os.path.join(self.currentPathFreq, '_freq_report.html'))
+        webbrowser.open_new_tab(os.path.join(self.currentPathFreq, '_freq_report.html'))
+
+    # Cine to Picture
+
+    def convertFolder(self):
+        file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        self.ui.runConversion.setEnabled(True)
+        self.ui.runConversion.setText('Run')
+        self.ui.styleBox.setEnabled(True)
+        print(file)
+        # Find every .cine in folder
+
+        items = []
+        for root, dir, files in os.walk(file):
+            if files:
+                for item in files: 
+                    if item.endswith('.cine'):
+                        items.append(os.path.join(root.replace('/','\\'), item))
+        print(items)
+        self.ui.listWidget.clear()
+        item_text = QListWidgetItem()
+        item_text.setText(f'Found {len(items)} .cine files\n')
+        self.ui.listWidget.addItem(item_text)
+
+        for item in items:
+            listItem = QListWidgetItem()
+            listItem.setText(item.replace(r'\\', '/'))
+            self.ui.listWidget.addItem(listItem)
+        self.cineItems = items
+
+    def runConversion(self):
+        # if 'cineItems' not in globals(): return
+        if not self.cineItems: return
+        self.run_threadsConversion(self.cineItems)
+        
+    def threadCompleteConversion(self):
+        logging.info('Thread finished')
+        self.ui.cineBarConversion.setValue(self.ui.cineBarConversion.value() + 1)
+
+    def run_threadsConversion(self, items):
+        print('Working on it!')
+        threadpool = QThreadPool.globalInstance()
+        if self.ui.keepCine.isChecked(): keep = True
+        else: keep = False
+        
+        self.ui.cineBarConversion.setMaximum(len(items)*1001)
+        self.ui.cineBarConversion.setValue(0)
+        style = self.ui.styleBox.currentText()
+        self.ui.runConversion.setDisabled(True)
+        self.ui.runConversion.setText('Running ...')
+        self.ui.styleBox.setDisabled(True)
+
+        for item in items:
+            if style == '.tiff uncompressed':
+                worker = WorkerConversion(item, 'tiff', keep)
+            elif style == '.tiff compressed':
+                worker = WorkerConversion(item, 'tiff', keep, True)
+            elif style == '.png':
+                worker = WorkerConversion(item, 'png', keep)
+            elif style == '.jpeg':
+                worker = WorkerConversion(item, 'jpeg', keep)
+            else:
+                worker = WorkerConversion(item, 'tiff', keep)
+            worker.signals.finishedConversion.connect(self.threadCompleteConversion)
+            threadpool.start(worker)
+
+    # Droplet analysis
+    
+    def loadDropletFolder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            types = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0]) or x.endswith(types[1]) or x.endswith(types[2]) or x.endswith(types[3]) or x.endswith(types[4])]
+            if len(files) > 1:
+                self.currentDropletPath = folder
+                self.ui.label_33.setText(folder)
+                self.dropletFiles = files
+            else: 
+                self.currentDropletPath = None
+                self.ui.label_33.setText('Make sure to select folder with images inside')
+
+    def loadDropletRef(self):
+        if not self.lastFolder:
+            filename, null = QFileDialog.getOpenFileName(self, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        else:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.lastFolder, filter='*.tif;; *.tiff;; *.png;; *.jpeg;; *.jpg', options=QFileDialog.Option.ReadOnly)
+            if filename: self.lastFolder = os.path.dirname(filename)
+        
+        if not filename: return
+        self.dropletRefpath = filename
+        self.ui.label_34.setText(filename)
+
+    def dropletPush(self, tup:tuple):
+        path, dia = tup
+        self.dropletItems.append((path, dia))
+        # self.ui.dropletTable.setSortingEnabled(True)
+        row = self.ui.dropletTable.rowCount()
+        self.ui.dropletTable.insertRow(row)
+        pathItem = QTableWidgetItem(path)
+        self.ui.dropletTable.setItem(row, 0, pathItem)
+        diaItem = QTableWidgetItem(f'{dia}')
+        diaItem.setData(1, dia)
+        self.ui.dropletTable.setItem(row, 1, diaItem)
+        self.sortDropletTable('d')
+
+    def dropletFinished(self):
+        self.ui.dropletProgress.setValue(self.ui.dropletProgress.value() + 1)
+        if self.ui.dropletProgress.value() >= len(self.dropletFiles):
+            self.ui.dropletGenerateReport.setEnabled(True)
+            self.ui.dropletRun.setText('Run')
+            self.ui.dropletRun.disconnect()
+            self.ui.dropletRun.clicked.connect(self.dropletRun)
+
+    def sortDropletTable(self, order='auto'):
+        items = []
+        for row in range(self.ui.dropletTable.rowCount()):
+            items.append((self.ui.dropletTable.item(row, 0).text(), self.ui.dropletTable.item(row, 1).text()))
+
+        if order == 'auto':
+            sortedData = sorted(items, key=lambda x: float(x[1]), reverse=True)
+
+            if sortedData[0][1] > items[-1][1]: order = 'a'
+            else: order = 'd'
+        
+        if order == 'd': sortedData = sorted(items, key=lambda x: float(x[1]), reverse=True)
+        elif order == 'a': sortedData = sorted(items, key=lambda x: float(x[1]), reverse=False)
+        else: sortedData = sorted(items, key=lambda x: float(x[1]), reverse=False)
+        
+        # print(sortedData)
+        self.ui.dropletTable.clearContents()
+        self.ui.dropletTable.setRowCount(0)
+        for i, (path, dia) in enumerate(sortedData):
+            self.ui.dropletTable.insertRow(i)
+            pathItem = QTableWidgetItem(path)
+            diaItem = QTableWidgetItem(f'{dia}')
+            self.ui.dropletTable.setItem(i, 0, pathItem)
+            self.ui.dropletTable.setItem(i, 1, diaItem)
+
+    def generateReport(self):
+        background_img = cv2.imread(self.ui.label_34.text())
+        background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
+        export = os.path.join(self.ui.label_33.text(), 'droplet_report.pdf')
+        items = []
+        for i in range(10):
+            items.append(self.ui.dropletTable.item(i, 0).text())
+
+        worker = DropletsWorker(None, background_gray, self.ui.threshold.value(), self.ui.circ.value(), self.ui.dropletScale.value())
+        try: worker.generateReport(items, export)
+        except:
+            QMessageBox.information(self, 'Error', 'Make sure to close existing Export PDF!')
+            return
+        os.startfile(export)
+
+    def dropletRun(self):
+        try:
+            if not self.dropletRefpath: return
+            if not self.currentDropletPath: return
+            if not self.dropletFiles: return
+        except: return
+
+        self.dropletItems = []
+              
+        self.ui.dropletTable.clearContents()   
+        self.ui.dropletTable.setRowCount(0)
+
+        self.dropletthreadpool = QThreadPool.globalInstance()
+        background_img = cv2.imread(self.ui.label_34.text())
+        background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
+        self.ui.dropletProgress.setMaximum(len(self.dropletFiles))
+        self.ui.dropletProgress.setValue(0)
+        self.ui.dropletGenerateReport.setDisabled(True)
+        self.ui.dropletRun.setText('Cancel')
+        # self.ui.dropletRun.setDisabled(True)
+        self.ui.dropletRun.disconnect()
+        self.ui.dropletRun.clicked.connect(self.stopThread)
+
+        for i, item in enumerate(self.dropletFiles):
+            worker = DropletsWorker(item, background_gray, self.ui.threshold.value(), self.ui.circ.value(), self.ui.dropletScale.value())
+            worker.signals.push.connect(self.dropletPush)
+            worker.signals.finished.connect(self.dropletFinished)
+            self.dropletthreadpool.start(worker)
+            # print(f'Created Worker: {i}')
+    
+    def stopThread(self):
+        self.dropletthreadpool.clear()
+        self.ui.dropletRun.disconnect()
+        self.ui.dropletRun.clicked.connect(self.dropletRun)
+        self.ui.dropletRun.setText('Run')
+        
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
