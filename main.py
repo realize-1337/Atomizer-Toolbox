@@ -428,7 +428,6 @@ class UI(QMainWindow):
         resutlLabels.append(self.ui.innerMom)
         resutlLabels.append(self.ui.sheetMom)
         resutlLabels.append(self.ui.outerMom)
-        
 
         resutlLabels.append(self.ui.innerRe)
         resutlLabels.append(self.ui.innerWe)
@@ -437,12 +436,12 @@ class UI(QMainWindow):
 
         resutlLabels.append(self.ui.sheetRe)
         resutlLabels.append(self.ui.sheetWe)
-        resutlLabels.append(self.ui.outerOh)
+        resutlLabels.append(self.ui.sheetOh)
         self.ui.outerOh.setHidden(True)
     
         resutlLabels.append(self.ui.outerRe)
         resutlLabels.append(self.ui.outerWe)
-        resutlLabels.append(self.ui.sheetOh)
+        resutlLabels.append(self.ui.outerOh)
         
         resutlLabels.append(self.ui.totalGLR)
         resutlLabels.append(self.ui.totalMom)
@@ -642,6 +641,8 @@ class UI(QMainWindow):
         self.sheetDimless.append(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
         self.outerDimless.append(dL.Oh(visc[self.streamValues[2][5]], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
 
+        print(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
+
         def ReWeOhDF():
             dict = {
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'], 
@@ -673,7 +674,7 @@ class UI(QMainWindow):
             else: 
                 strings.append("%.2f" % item)
 
-
+        print(strings)
         for i in range(len(strings)):
             self.resultLabels[12+i].setText(strings[i])
 
