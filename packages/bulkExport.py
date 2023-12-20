@@ -24,8 +24,8 @@ class UI(QDialog):
         self.path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export')
         if not os.path.exists(self.path):
             os.mkdir(self.path)
-        self.loadValues()
         self.exportPath = None
+        self.loadValues()
         self.ui.CreateFile.clicked.connect(self.selectFolder)
         self.ui.ChoseFile.clicked.connect(self.selectFile)
         self.setWindowIcon(QtGui.QIcon('assets/ATT_LOGO.ico'))
@@ -50,9 +50,12 @@ class UI(QDialog):
         self.ui.middleUnit.setCurrentText(data['middleUnit'])
         self.ui.outerUnit.setCurrentText(data['outerUnit'])
         try: 
-            self.ui.currentFile.setText(data['export'].replace('/', '\\'))
             self.exportPath = data['export']
-        except: self.ui.currentFile.setText('Please select file or folder')
+            self.ui.currentFile.setText(data['export'].replace('/', '\\'))
+            print(self.exportPath)
+        except: 
+            self.ui.currentFile.setText('Please select file or folder')
+            print('No path')
         
 
     def send(self):

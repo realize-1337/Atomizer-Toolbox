@@ -768,6 +768,9 @@
           </item>
           <item row="2" column="2">
            <widget class="QDoubleSpinBox" name="sheetStreamValue">
+            <property name="decimals">
+             <number>3</number>
+            </property>
             <property name="maximum">
              <double>10000.000000000000000</double>
             </property>
@@ -804,6 +807,9 @@
           </item>
           <item row="3" column="2">
            <widget class="QDoubleSpinBox" name="outerStreamValue">
+            <property name="decimals">
+             <number>3</number>
+            </property>
             <property name="maximum">
              <double>10000.000000000000000</double>
             </property>
@@ -811,6 +817,9 @@
           </item>
           <item row="1" column="2">
            <widget class="QDoubleSpinBox" name="innerStreamValue">
+            <property name="decimals">
+             <number>3</number>
+            </property>
             <property name="maximum">
              <double>10000.000000000000000</double>
             </property>
