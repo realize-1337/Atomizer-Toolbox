@@ -2001,7 +2001,7 @@
           <item>
            <widget class="QPushButton" name="PDA_D32">
             <property name="text">
-             <string>D_32 Graph</string>
+             <string>D32 Graph</string>
             </property>
            </widget>
           </item>
@@ -2009,6 +2009,24 @@
            <widget class="QPushButton" name="PDA_vel">
             <property name="text">
              <string>Velocity Graph</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="7" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout_16">
+          <item>
+           <widget class="QPushButton" name="PDA_D32_mean">
+            <property name="text">
+             <string>D32 Mean Graph</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="PDA_Vel_mean">
+            <property name="text">
+             <string>Velocity Mean Graph</string>
             </property>
            </widget>
           </item>
@@ -2197,9 +2215,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

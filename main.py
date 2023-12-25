@@ -30,6 +30,7 @@ import packages.PDA as PDA
 from skimage import morphology
 import cv2
 import plotly.graph_objs as go
+import plotly.express as px
 import logging
 import webbrowser
 
@@ -305,8 +306,12 @@ class UI(QMainWindow):
         self.ui.PDA_run.clicked.connect(self.runPDA)
         self.ui.PDA_D32.clicked.connect(self.createD32Graph)
         self.ui.PDA_vel.clicked.connect(self.createVelGraph)
+        self.ui.PDA_Vel_mean.clicked.connect(self.createVelMeanGraph)
+        self.ui.PDA_D32_mean.clicked.connect(self.createD32MeanGraph)
         self.ui.PDA_D32.setDisabled(True)
         self.ui.PDA_vel.setDisabled(True)
+        self.ui.PDA_D32_mean.setDisabled(True)
+        self.ui.PDA_Vel_mean.setDisabled(True)
         self.currentPDAFolder = None
         self.lastMode = None
         self.lastFolder = None
@@ -1654,13 +1659,15 @@ class UI(QMainWindow):
         self.ui.PDA_table.setItem(3, 1, mean_m)
         lines[row].setEnabled(True)
         self.dfs.append(df_x)
-        self.names.append(row)
+        self.names.append(os.path.basename(lines[row].text()))
         if self.running >= 1: self.running -= 1
         if self.running == 0:
             self.ui.PDA_run.setText('Run')
             self.ui.PDA_run.setEnabled(True)
             self.ui.PDA_D32.setEnabled(True)
             self.ui.PDA_vel.setEnabled(True)
+            self.ui.PDA_Vel_mean.setEnabled(True)
+            self.ui.PDA_D32_mean.setEnabled(True)
 
     def runPDA(self):
         lines = [
@@ -1683,6 +1690,8 @@ class UI(QMainWindow):
         self.names = []
         self.ui.PDA_D32.setDisabled(True)
         self.ui.PDA_vel.setDisabled(True)
+        self.ui.PDA_Vel_mean.setDisabled(True)
+        self.ui.PDA_D32_mean.setDisabled(True)
         
         threadpool = QThreadPool.globalInstance()
         self.ui.PDA_run.setText('Running')
@@ -1699,12 +1708,17 @@ class UI(QMainWindow):
             except:
                 QMessageBox.information(self, 'Error', 'Make sure the path is valid')
                 if self.running > 1: self.running -= 1
+
+    def createDataFramePDA(self, mode):
+        if mode == 'D32':
+            d = 'D32 [µm]'
+        else:
+            d = 'v_z_mean [m/s]'
         
-    def createD32Graph(self):
-        d = 'D32 [µm]'
         x = 'x [mm]'
         max = 0
         max_len = 0
+        
         for i, df in enumerate(self.dfs):
             if len(df) > max_len:
                 max = i
@@ -1726,10 +1740,63 @@ class UI(QMainWindow):
                 df_push = pd.concat([df_push, df_d32_new], ignore_index=True, axis=1)
         
         df_push = df_push.set_index(0)
-        print(df_push)
+        print(self.names)
+        newCols = {col: f'{item}' for col, item in zip(df_push.columns, self.names)}
+        df_push = df_push.rename(columns=newCols)
+
+        return df_push
+
+    
+    def createD32Graph(self):
+        df_push = self.createDataFramePDA('D32')
+        df_push = df_push.reindex(sorted(df_push.columns), axis=1)  
+
+        fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
+                                          'value':'D32 [µm]'}, markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
+        fig.show()
 
     def createVelGraph(self):
-        pass
+        df_push = self.createDataFramePDA('Vel')
+        df_push = df_push.reindex(sorted(df_push.columns), axis=1)
+
+        fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
+                                          'value':'Axial Velocity [m/s]'}, markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
+        fig.show()
+
+    def createD32MeanGraph(self):
+        df = self.createDataFramePDA('D32')
+        df = df.reindex(sorted(df.columns), axis=1)
+        rowMeans = df.mean(axis=1)
+        rowMax = df.max(axis=1)
+        rowMin = df.min(axis=1)
+        df['mean'] = rowMeans
+        df['pos'] = rowMax.sub(rowMeans)
+        df['neg']  = rowMeans.sub(rowMin)
+
+        print(df)
+        fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
+                                          'value':'Mean D32 [µm]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
+        fig.show()
+
+
+    def createVelMeanGraph(self):
+        df = self.createDataFramePDA('Vel')
+        df = df.reindex(sorted(df.columns), axis=1)
+        rowMeans = df.mean(axis=1)
+        rowMax = df.max(axis=1)
+        rowMin = df.min(axis=1)
+        df['mean'] = rowMeans
+        df['pos'] = rowMax.sub(rowMeans)
+        df['neg']  = rowMeans.sub(rowMin)
+
+        print(df)
+        fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
+                                          'value':'Mean Axial Velocity [m/s]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
+        fig.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
