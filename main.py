@@ -247,8 +247,8 @@ class PDAWorker(QRunnable):
 
     def run(self):
         pda = PDA.PDA(self.path, self.upperCutOff, liqDens=self.liqDens)
-        i, j = pda.run()
-        self.signals.push.emit([i, j, self.row])
+        i, j, df_x = pda.run()
+        self.signals.push.emit([i, j, self.row, df_x])
         self.signals.finished.emit()
 
 class UI(QMainWindow):
@@ -303,6 +303,10 @@ class UI(QMainWindow):
         self.ui.PDA_load_Folder_2.clicked.connect(partial(self.loadPDAFolder, 1))
         self.ui.PDA_load_Folder_3.clicked.connect(partial(self.loadPDAFolder, 2))
         self.ui.PDA_run.clicked.connect(self.runPDA)
+        self.ui.PDA_D32.clicked.connect(self.createD32Graph)
+        self.ui.PDA_vel.clicked.connect(self.createVelGraph)
+        self.ui.PDA_D32.setDisabled(True)
+        self.ui.PDA_vel.setDisabled(True)
         self.currentPDAFolder = None
         self.lastMode = None
         self.lastFolder = None
@@ -1636,7 +1640,7 @@ class UI(QMainWindow):
             self.ui.PDA_Line_2,
             self.ui.PDA_Line_3,
         ]
-        n, m, row = ls 
+        n, m, row, df_x = ls 
         item_n = QTableWidgetItem(f'{"%3f" % n}')
         item_m =  QTableWidgetItem(f'{"%3f" % m}')
         self.ui.PDA_table.setItem(row, 0, item_n)
@@ -1649,19 +1653,37 @@ class UI(QMainWindow):
         self.ui.PDA_table.setItem(3, 0, mean_n)
         self.ui.PDA_table.setItem(3, 1, mean_m)
         lines[row].setEnabled(True)
+        self.dfs.append(df_x)
+        self.names.append(row)
         if self.running >= 1: self.running -= 1
         if self.running == 0:
             self.ui.PDA_run.setText('Run')
             self.ui.PDA_run.setEnabled(True)
+            self.ui.PDA_D32.setEnabled(True)
+            self.ui.PDA_vel.setEnabled(True)
 
     def runPDA(self):
-        self.mean_n = []
-        self.mean_m = []
         lines = [
             self.ui.PDA_Line_1,
             self.ui.PDA_Line_2,
             self.ui.PDA_Line_3,
         ]
+
+        check = [x for x in lines if x.text() != '']
+        if len(check) == 0: return
+
+        if self.ui.PDA_cutoff.value() == 0:
+            self.changeColor(self.ui.PDA_cutoff, 'red', 1000)
+            return
+
+        self.mean_n = []
+        self.mean_m = []
+        self.ui.PDA_table.clearContents()
+        self.dfs = []
+        self.names = []
+        self.ui.PDA_D32.setDisabled(True)
+        self.ui.PDA_vel.setDisabled(True)
+        
         threadpool = QThreadPool.globalInstance()
         self.ui.PDA_run.setText('Running')
         self.ui.PDA_run.setDisabled(True)
@@ -1678,6 +1700,36 @@ class UI(QMainWindow):
                 QMessageBox.information(self, 'Error', 'Make sure the path is valid')
                 if self.running > 1: self.running -= 1
         
+    def createD32Graph(self):
+        d = 'D32 [µm]'
+        x = 'x [mm]'
+        max = 0
+        max_len = 0
+        for i, df in enumerate(self.dfs):
+            if len(df) > max_len:
+                max = i
+        
+        x_val:np.array = self.dfs[max][x].to_numpy()
+        if not abs(np.max(x_val)) == abs(np.min(x_val)):
+            x_val = pd.Series(data=(np.concatenate((x_val, -1*np.flip(x_val[:-1])))))
+
+        df_push = pd.DataFrame(data=[x_val]).transpose()
+        
+
+        for i, df in enumerate(self.dfs):
+            x_val:np.array = df[x].to_numpy()
+            if abs(np.max(x_val)) == abs(np.min(x_val)):
+                df_push = pd.concat([df_push, df[d]], ignore_index=True, axis=1)
+            else: 
+                d_val:np.array = df[d].to_numpy()
+                df_d32_new = pd.Series(data=(np.concatenate((d_val, np.flip(d_val[:-1])))))
+                df_push = pd.concat([df_push, df_d32_new], ignore_index=True, axis=1)
+        
+        df_push = df_push.set_index(0)
+        print(df_push)
+
+    def createVelGraph(self):
+        pass
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

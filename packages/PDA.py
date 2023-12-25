@@ -159,7 +159,7 @@ class PDA():
         return D_val, A_val
 
     def calcFlux(self, A_Val:np.array, t_ges:float, dia_arr:pd.Series):
-        print(np.count_nonzero(np.isnan(A_Val)))
+        # print(np.count_nonzero(np.isnan(A_Val)))
         n_flux = 1/t_ges * np.sum(1./A_Val)*10**6
         m_flux = 1/t_ges * np.sum(10**(-18)*self.liqDens*(np.pi/6.*dia_arr**3./A_Val))*10**6
 
@@ -317,7 +317,7 @@ class PDA():
         df_x, ID_32_n_x, ID_32_m_x = self.calcID32(fullDict_x, dir='x')
 
         self.writeToExcel(df_x, ID_32_n_x, ID_32_m_x)
-        return(ID_32_n_x, ID_32_m_x)
+        return(ID_32_n_x, ID_32_m_x, df_x)
 
 if __name__ == '__main__':
     # _path = r'M:\Duese_4\Ole_Erw\2_60_34\VP'
