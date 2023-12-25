@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit
+from openpyxl import load_workbook
 
 def createPowerFit(x, y):
     def func(x, a, b):
@@ -242,12 +243,36 @@ class PDA():
         ID_32_n = np.sum(d_30_i**3 * n_flux_i * areas)/np.sum(d_20_i**2 * n_flux_i * areas)
         ID_32_m = np.sum(d_30_i**3 * m_flux_i * areas)/np.sum(d_20_i**2 * m_flux_i * areas)
         
+        units = ['[mm]', '[mm]', '[mm]', '[µm]', '[µm]', '[µm]', '[µm]', '[µm]', '[µm]', '[µm]', '[1/s]', '[m/s]', '[-]', '[µm]', '[1/(s mm^2)]', '[kg/(s mm^2)]']
+        newCols = {col: f'{col} {item}' for col, item in zip(df.columns, units)}
+        df = df.rename(columns=newCols).reset_index()
+
         # print(ID_32_n)
         # print(ID_32_m)
+        
+        # df_n = pd.DataFrame(d_30_i).transpose()
+        # df_m = pd.DataFrame(d_20_i).transpose()
+
+        # df_new = pd.concat([df_n, df_m]).transpose()
+        # df_new.to_excel(os.path.join(self.path, 'testFlux.xlsx'))
 
         return [df, ID_32_n, ID_32_m]
 
+    def writeToExcel(self, df, ID_32_n, ID_32_m, filename='export.xlsx'):
+        maxId = len(df)+2
 
+        export = os.path.join(self.path, filename)
+        df.to_excel(export, index=False)
+
+        workbook = load_workbook(export)
+        sheet = workbook.active
+
+        sheet[f'A{maxId}'] = 'ID_32_n [µm]'
+        sheet[f'A{maxId+1}'] = 'ID_32_m [µm]'
+        sheet[f'B{maxId}'] = ID_32_n
+        sheet[f'B{maxId+1}'] = ID_32_m
+
+        workbook.save(export)
 
     def run(self):
         fullDict_x = {}
@@ -291,15 +316,8 @@ class PDA():
 
         df_x, ID_32_n_x, ID_32_m_x = self.calcID32(fullDict_x, dir='x')
 
-        df_x_units = pd.DataFrame(['[mm]', '[mm]', '[mm]', '[µm]', '[µm]', '[µm]', '[µm]', '[µm]', '[µm]', '[µm]', '[1/s]', '[m/s]', '[-]', '[µm]', '[1/(s mm**2)]', '[kg/(s mm**2)]'], columns=df_x.columns.tolist())
-        
-        df_x_:pd.DataFrame = pd.concat([[df_x_units, df_x]])
-        df.to_excel()
-        df_x_ = df_x_
-        print(df_x)
-
-        print(1)
-
+        self.writeToExcel(df_x, ID_32_n_x, ID_32_m_x)
+        return(ID_32_n_x, ID_32_m_x)
 
 if __name__ == '__main__':
     # _path = r'M:\Duese_4\Ole_Erw\2_60_34\VP'

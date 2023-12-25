@@ -20,12 +20,13 @@ from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
+import packages.PDA as PDA
 from skimage import morphology
 import cv2
 import plotly.graph_objs as go
@@ -230,6 +231,26 @@ class DropletsWorker(QRunnable):
         self.signals.push.emit(push_)
         self.signals.finished.emit()
 
+class PDAWorkerSignals(QObject):
+    finished = pyqtSignal() 
+    push = pyqtSignal(list)
+
+class PDAWorker(QRunnable):
+
+    def __init__(self, path, liqDens, upperCutOff, row):
+        super().__init__()
+        self.path = path
+        self.liqDens = liqDens
+        self.upperCutOff = upperCutOff
+        self.signals = PDAWorkerSignals()
+        self.row = row
+
+    def run(self):
+        pda = PDA.PDA(self.path, self.upperCutOff, liqDens=self.liqDens)
+        i, j = pda.run()
+        self.signals.push.emit([i, j, self.row])
+        self.signals.finished.emit()
+
 class UI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -278,6 +299,11 @@ class UI(QMainWindow):
         self.ui.dropletRun.clicked.connect(self.dropletRun)
         self.ui.dropletRef.clicked.connect(self.loadDropletRef)
         self.ui.dropletGenerateReport.clicked.connect(self.generateReport)
+        self.ui.PDA_load_Folder_1.clicked.connect(partial(self.loadPDAFolder, 0))
+        self.ui.PDA_load_Folder_2.clicked.connect(partial(self.loadPDAFolder, 1))
+        self.ui.PDA_load_Folder_3.clicked.connect(partial(self.loadPDAFolder, 2))
+        self.ui.PDA_run.clicked.connect(self.runPDA)
+        self.currentPDAFolder = None
         self.lastMode = None
         self.lastFolder = None
         self.removePresetTag()
@@ -1585,6 +1611,74 @@ class UI(QMainWindow):
         self.ui.dropletRun.clicked.connect(self.dropletRun)
         self.ui.dropletRun.setText('Run')
         
+    # PDA ROUTINE
+        
+    def loadPDAFolder(self, num):
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+        if self.currentPDAFolder:folder = QFileDialog.getExistingDirectory(self, "Select Directory", directory=self.currentPDAFolder)
+        else: folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            types = ['.txt']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0])]
+            if len(files) > 1:
+                self.currentPDAFolder = os.path.dirname(folder)
+                lines[num].setText(folder)
+            else: 
+                lines[num].setText('Make sure to select folder with .txt files in it.')
+    
+    def createItemPDA(self, ls:list):
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+        n, m, row = ls 
+        item_n = QTableWidgetItem(f'{"%3f" % n}')
+        item_m =  QTableWidgetItem(f'{"%3f" % m}')
+        self.ui.PDA_table.setItem(row, 0, item_n)
+        self.ui.PDA_table.setItem(row, 1, item_m)
+        self.mean_m.append(m)
+        self.mean_n.append(n)
+        
+        mean_n = QTableWidgetItem(f'{sum(self.mean_n)/len(self.mean_n)}')
+        mean_m = QTableWidgetItem(f'{sum(self.mean_m)/len(self.mean_m)}')
+        self.ui.PDA_table.setItem(3, 0, mean_n)
+        self.ui.PDA_table.setItem(3, 1, mean_m)
+        lines[row].setEnabled(True)
+        if self.running >= 1: self.running -= 1
+        if self.running == 0:
+            self.ui.PDA_run.setText('Run')
+            self.ui.PDA_run.setEnabled(True)
+
+    def runPDA(self):
+        self.mean_n = []
+        self.mean_m = []
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+        threadpool = QThreadPool.globalInstance()
+        self.ui.PDA_run.setText('Running')
+        self.ui.PDA_run.setDisabled(True)
+        self.running = 0
+        for row, line in enumerate(lines):
+            if line.text().endswith('.') or line.text() == '': continue
+            try:
+                worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row)
+                worker.signals.push.connect(self.createItemPDA)
+                threadpool.start(worker)
+                line.setDisabled(True)
+                self.running += 1
+            except:
+                QMessageBox.information(self, 'Error', 'Make sure the path is valid')
+                if self.running > 1: self.running -= 1
+        
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
