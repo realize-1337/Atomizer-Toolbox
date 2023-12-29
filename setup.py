@@ -1,78 +1,43 @@
 import subprocess
-import os
 import sys
-import packages.editMatlabEngine as edit
-sys.setrecursionlimit(sys.getrecursionlimit()*5)
+import venv
+import os
 
-FILE = f'{os.path.abspath("./main.py")}'
-PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.6'
-AUTHOR = 'David Maerker'
-MATLAB_PATH = 'C:\Program Files\MATLAB\R2023b'
+# Function to create a virtual environment
+def create_venv(venv_name):
+    venv.create(venv_name, with_pip=True)
+    print(f"Virtual environment '{venv_name}' created successfully!")
 
-# Aktualisiere die Abhängigkeiten mit 'pip freeze'
-# print("Aktualisiere Abhängigkeiten mit 'pip freeze'...")
-# with open("requirements.txt", "w") as requirements_file:
-#     subprocess.check_call(["pip", "freeze"], stdout=requirements_file)
+# Function to activate the virtual environment
+def activate_venv(venv_name):
+    activate_script = os.path.join(venv_name, 'Scripts' if sys.platform.startswith('win') else 'bin', 'activate')
+    activate_cmd = f"source {activate_script}"
+    subprocess.run(activate_cmd, shell=True)
+    print(f"Activated virtual environment '{venv_name}'!")
 
-# Edit matlab engine arch file, which otherwise would cause issues
-edit.edit()
+# Function to install requirements using pip
+def install_requirements(requirements_file):
+    subprocess.run([sys.executable, "-m", "pip", "install", "-r", requirements_file])
+    print("Requirements installed successfully!")
 
-# Führe PyInstaller aus
-print("Führe PyInstaller aus...")
-makeSpec = [
-    "pyi-makespec",
-    "--onefile",   # Eine einzelne ausführbare Datei erstellen
-    # Hier können Sie weitere PyInstaller-Optionen hinzufügen
-    "--noconsole", 
-    # "--windowed",
-    "--name", f"{PROJECTNAME}_V{VERSION}",
-    "--icon", f"{os.path.relpath('../../assets/ATT_LOGO.ico')}",
-    "--add-data", f"{os.path.relpath('../../GUI')}\\*.py;GUI",
-    "--add-data", f"../../packages/*.py;packages",
-    "--add-data", f"../../matlab_scripts/*.m;matlab_scripts",
-    # "--exclude-module", "module_to_exclude",
-    "--hidden-import", "sympy",
-    "--hidden-import", "skimage",
-    "--hidden-import", "pyi_splash",
-    # "--hidden-import", "matlab",
-    # "--upx-dir", "path/to/upx",
-    # "--additional-hooks-dir", "path/to/hooks",
-    "--specpath", "build/spec",
-    # "--additional-hook-dir=hooks",
-    # "--paths", "<path to the "matlab" folder>"
-    # "--workpath", "work_directory",
-    "--log-level", "WARN",
-    '--splash', f"{os.path.relpath('../../assets/splash_screen.png')}",
-    FILE
-]
-try:
-    subprocess.run(makeSpec)
-except subprocess.CalledProcessError as e:
-    raise SystemExit(e)
+# Function to run setup.py
+def run_setup():
+    subprocess.run([sys.executable, "compile.py"])
+    print("Setup.py executed successfully!")
 
-runSpec = [
-    'pyinstaller',
-    '--distpath', '',
-    "--workpath", "build/work",
-    f'{os.path.abspath(f"build/spec/{PROJECTNAME}_V{VERSION}.spec")}'
-]
+if __name__ == "__main__":
+    # Define the name of the virtual environment
+    venv_name = "venv"
 
-try: 
-    subprocess.run(runSpec, check=True)
-except subprocess.CalledProcessError as e:
-    print('#'*100)
-    print(' ERROR '*10)
-    print('#'*100)
-    print('Trying to automatically adjust spec file')
-    with open(os.path.abspath(f"build/spec/{PROJECTNAME}_V{VERSION}.spec"), "r") as specFile:
-        lines = specFile.readlines()
+    # Create a virtual environment
+    create_venv(venv_name)
 
-    with open(os.path.abspath(f"build/spec/{PROJECTNAME}_V{VERSION}.spec"), "w") as specFile:
-        specFile.write(lines[0])
-        specFile.write('import sys; \n')
-        specFile.write('sys.setrecursionlimit(sys.getrecursionlimit()*10);\n')
-        specFile.writelines(lines[1:])
-    subprocess.run(runSpec)
-except subprocess.CalledProcessError as e:
-    raise SystemExit(e)
+    # Activate the virtual environment
+    activate_venv(venv_name)
+
+    # Install requirements.txt
+    requirements_file = "requirements.txt"  # Change this to your requirements file path
+    install_requirements(requirements_file)
+
+    # Run setup.py
+    run_setup()
