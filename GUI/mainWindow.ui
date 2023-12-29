@@ -768,6 +768,9 @@
           </item>
           <item row="2" column="2">
            <widget class="QDoubleSpinBox" name="sheetStreamValue">
+            <property name="decimals">
+             <number>3</number>
+            </property>
             <property name="maximum">
              <double>10000.000000000000000</double>
             </property>
@@ -804,6 +807,9 @@
           </item>
           <item row="3" column="2">
            <widget class="QDoubleSpinBox" name="outerStreamValue">
+            <property name="decimals">
+             <number>3</number>
+            </property>
             <property name="maximum">
              <double>10000.000000000000000</double>
             </property>
@@ -811,6 +817,9 @@
           </item>
           <item row="1" column="2">
            <widget class="QDoubleSpinBox" name="innerStreamValue">
+            <property name="decimals">
+             <number>3</number>
+            </property>
             <property name="maximum">
              <double>10000.000000000000000</double>
             </property>
@@ -1810,6 +1819,250 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_6">
+       <attribute name="title">
+        <string>PDA Routine</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout_2">
+        <item row="0" column="0" colspan="2">
+         <layout class="QGridLayout" name="gridLayout_12">
+          <item row="0" column="0">
+           <layout class="QVBoxLayout" name="verticalLayout_11">
+            <item>
+             <layout class="QFormLayout" name="formLayout_4">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_46">
+                <property name="text">
+                 <string>Upper cut off diameter [µm]</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QDoubleSpinBox" name="PDA_cutoff">
+                <property name="maximum">
+                 <double>9999999999.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_47">
+                <property name="text">
+                 <string>Liquid density [kg/m³]</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QDoubleSpinBox" name="PDA_liqDens">
+                <property name="maximum">
+                 <double>999999.000000000000000</double>
+                </property>
+                <property name="value">
+                 <double>998.210000000000036</double>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="Line" name="line_8">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_50">
+          <property name="text">
+           <string>Folder 1</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <item>
+           <widget class="QLineEdit" name="PDA_Line_1"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="PDA_load_Folder_1">
+            <property name="text">
+             <string>Load Folder</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_51">
+          <property name="text">
+           <string>Folder 2</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_15">
+          <item>
+           <widget class="QLineEdit" name="PDA_Line_2"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="PDA_load_Folder_2">
+            <property name="text">
+             <string>Load Folder</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_53">
+          <property name="text">
+           <string>Folder 3</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_14">
+          <item>
+           <widget class="QLineEdit" name="PDA_Line_3"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="PDA_load_Folder_3">
+            <property name="text">
+             <string>Load Folder</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="0">
+         <widget class="QRadioButton" name="radio_py_mode">
+          <property name="toolTip">
+           <string>Open source implementation, technically slightly more precise but little bit slower</string>
+          </property>
+          <property name="text">
+           <string>Python Mode</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup_5</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QRadioButton" name="radio_mat_mode">
+          <property name="toolTip">
+           <string>Matlab must be installed with a valid license</string>
+          </property>
+          <property name="text">
+           <string>Matlab mode (default)</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup_5</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="6" column="0" colspan="2">
+         <widget class="QPushButton" name="PDA_run">
+          <property name="text">
+           <string>Run</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0" colspan="2">
+         <widget class="QTableWidget" name="PDA_table">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>180</height>
+           </size>
+          </property>
+          <attribute name="horizontalHeaderMinimumSectionSize">
+           <number>80</number>
+          </attribute>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <row>
+           <property name="text">
+            <string>Folder 1</string>
+           </property>
+          </row>
+          <row>
+           <property name="text">
+            <string>Folder 2</string>
+           </property>
+          </row>
+          <row>
+           <property name="text">
+            <string>Folder 3</string>
+           </property>
+          </row>
+          <row>
+           <property name="text">
+            <string>Mean</string>
+           </property>
+          </row>
+          <column>
+           <property name="text">
+            <string>ID 32 n</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ID 32 m</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <item>
+           <widget class="QPushButton" name="PDA_D32">
+            <property name="text">
+             <string>D32 Graph</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="PDA_vel">
+            <property name="text">
+             <string>Velocity Graph</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="9" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout_16">
+          <item>
+           <widget class="QPushButton" name="PDA_D32_mean">
+            <property name="text">
+             <string>D32 Mean Graph</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="PDA_Vel_mean">
+            <property name="text">
+             <string>Velocity Mean Graph</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
         <string>Cine to Picture</string>
@@ -1901,7 +2154,7 @@
      <x>0</x>
      <y>0</y>
      <width>1034</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetting">
@@ -1985,9 +2238,10 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_5"/>
  </buttongroups>
 </ui>

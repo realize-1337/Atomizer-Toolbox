@@ -26,9 +26,11 @@ from pyfluids import Fluid, FluidsList, Input
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
+import packages.PDA as PDA
 from skimage import morphology
 import cv2
 import plotly.graph_objs as go
+import plotly.express as px
 import logging
 import webbrowser
 
@@ -243,6 +245,31 @@ class DropletsWorker(QRunnable):
         self.signals.diasPush.emit(dias)
         self.signals.finished.emit()
 
+class PDAWorkerSignals(QObject):
+    finished = pyqtSignal() 
+    push = pyqtSignal(list)
+
+class PDAWorker(QRunnable):
+
+    def __init__(self, path, upperCutOff, liqDens, row, mode='mat', matPath = None):
+        super().__init__()
+        self.path = path
+        self.liqDens = liqDens
+        self.upperCutOff = upperCutOff
+        self.signals = PDAWorkerSignals()
+        self.row = row
+        self.mode = mode
+        self.matPath = matPath
+
+    def run(self):
+        pda = PDA.PDA(self.path, upperCutOff=self.upperCutOff, liqDens=self.liqDens, mode=self.mode, matPath=self.matPath)
+        print(self.upperCutOff)
+        print(self.path)
+        print(self.liqDens)
+        i, j, df_x = pda.run()
+        self.signals.push.emit([i, j, self.row, df_x])
+        self.signals.finished.emit()
+
 class UI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -291,6 +318,19 @@ class UI(QMainWindow):
         self.ui.dropletRun.clicked.connect(self.dropletRun)
         self.ui.dropletRef.clicked.connect(self.loadDropletRef)
         self.ui.dropletGenerateReport.clicked.connect(self.generateReport)
+        self.ui.PDA_load_Folder_1.clicked.connect(partial(self.loadPDAFolder, 0))
+        self.ui.PDA_load_Folder_2.clicked.connect(partial(self.loadPDAFolder, 1))
+        self.ui.PDA_load_Folder_3.clicked.connect(partial(self.loadPDAFolder, 2))
+        self.ui.PDA_run.clicked.connect(self.runPDA)
+        self.ui.PDA_D32.clicked.connect(self.createD32Graph)
+        self.ui.PDA_vel.clicked.connect(self.createVelGraph)
+        self.ui.PDA_Vel_mean.clicked.connect(self.createVelMeanGraph)
+        self.ui.PDA_D32_mean.clicked.connect(self.createD32MeanGraph)
+        self.ui.PDA_D32.setDisabled(True)
+        self.ui.PDA_vel.setDisabled(True)
+        self.ui.PDA_D32_mean.setDisabled(True)
+        self.ui.PDA_Vel_mean.setDisabled(True)
+        self.currentPDAFolder = None
         self.lastMode = None
         self.lastFolder = None
         self.removePresetTag()
@@ -1599,11 +1639,189 @@ class UI(QMainWindow):
         self.ui.dropletRun.disconnect()
         self.ui.dropletRun.clicked.connect(self.dropletRun)
         self.ui.dropletRun.setText('Run')
-        
+    
     def getAllDropletsAbove(self, dias):
         for dia in dias:
             self.dropsAbove.append(dia)
         print(len(self.dropsAbove))
+
+    # PDA ROUTINE
+        
+    def loadPDAFolder(self, num):
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+        if self.currentPDAFolder:folder = QFileDialog.getExistingDirectory(self, "Select Directory", directory=self.currentPDAFolder)
+        else: folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if folder:
+            types = ['.txt']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0])]
+            if len(files) > 1:
+                self.currentPDAFolder = os.path.dirname(folder)
+                lines[num].setText(folder)
+            else: 
+                lines[num].setText('Make sure to select folder with .txt files in it.')
+    
+    def createItemPDA(self, ls:list):
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+        n, m, row, df_x = ls 
+        item_n = QTableWidgetItem(f'{"%3f" % n}')
+        item_m =  QTableWidgetItem(f'{"%3f" % m}')
+        self.ui.PDA_table.setItem(row, 0, item_n)
+        self.ui.PDA_table.setItem(row, 1, item_m)
+        self.mean_m.append(m)
+        self.mean_n.append(n)
+        
+        mean_n = QTableWidgetItem(f'{"%3f" % sum(self.mean_n)/len(self.mean_n)}')
+        mean_m = QTableWidgetItem(f'{"%3f" % sum(self.mean_m)/len(self.mean_m)}')
+        self.ui.PDA_table.setItem(3, 0, mean_n)
+        self.ui.PDA_table.setItem(3, 1, mean_m)
+        lines[row].setEnabled(True)
+        self.dfs.append(df_x)
+        self.names.append(os.path.basename(lines[row].text()))
+        if self.running >= 1: self.running -= 1
+        if self.running == 0:
+            self.ui.PDA_run.setText('Run')
+            self.ui.PDA_run.setEnabled(True)
+            self.ui.PDA_D32.setEnabled(True)
+            self.ui.PDA_vel.setEnabled(True)
+            self.ui.PDA_Vel_mean.setEnabled(True)
+            self.ui.PDA_D32_mean.setEnabled(True)
+
+    def runPDA(self):
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+
+        check = [x for x in lines if x.text() != '']
+        if len(check) == 0: return
+
+        if self.ui.PDA_cutoff.value() == 0:
+            self.changeColor(self.ui.PDA_cutoff, 'red', 1000)
+            return
+
+        self.mean_n = []
+        self.mean_m = []
+        self.ui.PDA_table.clearContents()
+        self.dfs = []
+        self.names = []
+        self.ui.PDA_D32.setDisabled(True)
+        self.ui.PDA_vel.setDisabled(True)
+        self.ui.PDA_Vel_mean.setDisabled(True)
+        self.ui.PDA_D32_mean.setDisabled(True)
+        
+        threadpool = QThreadPool.globalInstance()
+        self.ui.PDA_run.setText('Running')
+        self.ui.PDA_run.setDisabled(True)
+        self.running = 0
+        for row, line in enumerate(lines):
+            if line.text().endswith('.') or line.text() == '': continue
+            try:
+                if self.ui.radio_mat_mode.isChecked():
+                    matPath = os.path.join(self.path, 'global', f'folder{row+1}.mat')
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, matPath=matPath)
+                else:
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py')
+                worker.signals.push.connect(self.createItemPDA)
+                threadpool.start(worker)
+                line.setDisabled(True)
+                self.running += 1
+            except:
+                QMessageBox.information(self, 'Error', 'Make sure to chose valid paths and if Matlab mode is selected, make sure Matlab is installed and the license is valid.')
+                if self.running > 1: self.running -= 1
+
+    def createDataFramePDA(self, mode):
+        if mode == 'D32':
+            d = 'D32 [µm]'
+        else:
+            d = 'v_z_mean [m/s]'
+        
+        x = 'x [mm]'
+        max = 0
+        max_len = 0
+        
+        for i, df in enumerate(self.dfs):
+            if len(df) > max_len:
+                max = i
+        
+        x_val:np.array = self.dfs[max][x].to_numpy()
+        if not abs(np.max(x_val)) == abs(np.min(x_val)):
+            x_val = pd.Series(data=(np.concatenate((x_val, -1*np.flip(x_val[:-1])))))
+
+        df_push = pd.DataFrame(data=[x_val]).transpose()
+        
+
+        for i, df in enumerate(self.dfs):
+            x_val:np.array = df[x].to_numpy()
+            if abs(np.max(x_val)) == abs(np.min(x_val)):
+                df_push = pd.concat([df_push, df[d]], ignore_index=True, axis=1)
+            else: 
+                d_val:np.array = df[d].to_numpy()
+                df_d32_new = pd.Series(data=(np.concatenate((d_val, np.flip(d_val[:-1])))))
+                df_push = pd.concat([df_push, df_d32_new], ignore_index=True, axis=1)
+        
+        df_push = df_push.set_index(0)
+        # print(self.names)
+        newCols = {col: f'{item}' for col, item in zip(df_push.columns, self.names)}
+        df_push = df_push.rename(columns=newCols)
+
+        return df_push
+    
+    def createD32Graph(self):
+        df_push = self.createDataFramePDA('D32')
+        df_push = df_push.reindex(sorted(df_push.columns), axis=1)  
+
+        fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
+                                          'value':'D32 [µm]'}, markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
+        fig.show()
+
+    def createVelGraph(self):
+        df_push = self.createDataFramePDA('Vel')
+        df_push = df_push.reindex(sorted(df_push.columns), axis=1)
+
+        fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
+                                          'value':'Axial Velocity [m/s]'}, markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
+        fig.show()
+
+    def createD32MeanGraph(self):
+        df = self.createDataFramePDA('D32')
+        df = df.reindex(sorted(df.columns), axis=1)
+        rowMeans = df.mean(axis=1)
+        rowMax = df.max(axis=1)
+        rowMin = df.min(axis=1)
+        df['mean'] = rowMeans
+        df['pos'] = rowMax.sub(rowMeans)
+        df['neg']  = rowMeans.sub(rowMin)
+
+        fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
+                                          'value':'Mean D32 [µm]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
+        fig.show()
+
+    def createVelMeanGraph(self):
+        df = self.createDataFramePDA('Vel')
+        df = df.reindex(sorted(df.columns), axis=1)
+        rowMeans = df.mean(axis=1)
+        rowMax = df.max(axis=1)
+        rowMin = df.min(axis=1)
+        df['mean'] = rowMeans
+        df['pos'] = rowMax.sub(rowMeans)
+        df['neg']  = rowMeans.sub(rowMin)
+
+        fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
+                                          'value':'Mean Axial Velocity [m/s]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
+        fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
+        fig.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
