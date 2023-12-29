@@ -19,14 +19,15 @@ If you want to use these features, make sure to have matlab installed
 - Matlab (optional, but recommended, must have Matlab engine for python support, usally most recent versions should have it)
 
 The installation of these softwares is straight forward and needs to be conducted now.
-
 If you are familiar with git, you can clone the repository. However, since you are reading this, you are probably not. 
-
 Download the source code as a .zip file from the green button on the very top of this website. 
-
 Unzip the file to a location of your choice. 
 
-#### Now to the real work 
+### Automatic compile
+Run the `setup.bat` file in the folder and the process will run fully automatically.
+After it has finished, you'll end up with a .exe file in the folder which you can move anywhere you want.
+
+### Manual compile
 be aware that this i writte for people without any python knowledge
 1. In the unziped folder: Hold shift and press right click, from the dialog select "Open powershell window here"
 2. A blue command terminal should appear. Alternatively you can open and command window by CTRL + R and then typing "cmd". If you have taken the "cmd" path, you have to navigate to the unziped folder by typing `cd PATH_TO_UNZIPED_FOLDER`. Make sure to replace `PATH_TO_UNZIPED_FOLDER` with your folder path.
