@@ -20,9 +20,9 @@ from PyQt6.QtGui import QPixmap, QPen, QColor
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/mainWindow.ui'
+# PY_FILE = './GUI/mainWindow.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
@@ -238,16 +238,21 @@ class PDAWorkerSignals(QObject):
 
 class PDAWorker(QRunnable):
 
-    def __init__(self, path, liqDens, upperCutOff, row):
+    def __init__(self, path, upperCutOff, liqDens, row, mode='mat', matPath = None):
         super().__init__()
         self.path = path
         self.liqDens = liqDens
         self.upperCutOff = upperCutOff
         self.signals = PDAWorkerSignals()
         self.row = row
+        self.mode = mode
+        self.matPath = matPath
 
     def run(self):
-        pda = PDA.PDA(self.path, self.upperCutOff, liqDens=self.liqDens)
+        pda = PDA.PDA(self.path, upperCutOff=self.upperCutOff, liqDens=self.liqDens, mode=self.mode, matPath=self.matPath)
+        print(self.upperCutOff)
+        print(self.path)
+        print(self.liqDens)
         i, j, df_x = pda.run()
         self.signals.push.emit([i, j, self.row, df_x])
         self.signals.finished.emit()
@@ -1700,13 +1705,17 @@ class UI(QMainWindow):
         for row, line in enumerate(lines):
             if line.text().endswith('.') or line.text() == '': continue
             try:
-                worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row)
+                if self.ui.radio_mat_mode.isChecked():
+                    matPath = os.path.join(self.path, 'global', f'folder{row+1}.mat')
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, matPath=matPath)
+                else:
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py')
                 worker.signals.push.connect(self.createItemPDA)
                 threadpool.start(worker)
                 line.setDisabled(True)
                 self.running += 1
             except:
-                QMessageBox.information(self, 'Error', 'Make sure the path is valid')
+                QMessageBox.information(self, 'Error', 'Make sure to chose valid paths and if Matlab mode is selected, make sure Matlab is installed and the license is valid.')
                 if self.running > 1: self.running -= 1
 
     def createDataFramePDA(self, mode):
@@ -1740,7 +1749,7 @@ class UI(QMainWindow):
                 df_push = pd.concat([df_push, df_d32_new], ignore_index=True, axis=1)
         
         df_push = df_push.set_index(0)
-        print(self.names)
+        # print(self.names)
         newCols = {col: f'{item}' for col, item in zip(df_push.columns, self.names)}
         df_push = df_push.rename(columns=newCols)
 
@@ -1775,7 +1784,6 @@ class UI(QMainWindow):
         df['pos'] = rowMax.sub(rowMeans)
         df['neg']  = rowMeans.sub(rowMin)
 
-        print(df)
         fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
                                           'value':'Mean D32 [µm]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
@@ -1792,7 +1800,6 @@ class UI(QMainWindow):
         df['pos'] = rowMax.sub(rowMeans)
         df['neg']  = rowMeans.sub(rowMin)
 
-        print(df)
         fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
                                           'value':'Mean Axial Velocity [m/s]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
