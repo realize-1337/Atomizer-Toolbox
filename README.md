@@ -23,8 +23,8 @@ If you are familiar with git, you can clone the repository. However, since you a
 Download the source code as a .zip file from the green button on the very top of this website. 
 Unzip the file to a location of your choice. 
 
-### Automatic compile
-Run the `setup.bat` file in the folder and the process will run fully automatically.
+### Automatic compile (Windows only)
+Run the `setup.bat` file (just double click it) in the folder and the process will run fully automatically.
 After it has finished, you'll end up with a .exe file in the folder which you can move anywhere you want.
 
 ### Manual compile
