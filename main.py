@@ -1658,8 +1658,8 @@ class UI(QMainWindow):
         self.mean_m.append(m)
         self.mean_n.append(n)
         
-        mean_n = QTableWidgetItem(f'{sum(self.mean_n)/len(self.mean_n)}')
-        mean_m = QTableWidgetItem(f'{sum(self.mean_m)/len(self.mean_m)}')
+        mean_n = QTableWidgetItem(f'{"%3f" % sum(self.mean_n)/len(self.mean_n)}')
+        mean_m = QTableWidgetItem(f'{"%3f" % sum(self.mean_m)/len(self.mean_m)}')
         self.ui.PDA_table.setItem(3, 0, mean_n)
         self.ui.PDA_table.setItem(3, 1, mean_m)
         lines[row].setEnabled(True)
@@ -1754,7 +1754,6 @@ class UI(QMainWindow):
         df_push = df_push.rename(columns=newCols)
 
         return df_push
-
     
     def createD32Graph(self):
         df_push = self.createDataFramePDA('D32')
@@ -1788,7 +1787,6 @@ class UI(QMainWindow):
                                           'value':'Mean D32 [µm]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
         fig.show()
-
 
     def createVelMeanGraph(self):
         df = self.createDataFramePDA('Vel')
