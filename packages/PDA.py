@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit, least_squares
 from openpyxl import load_workbook
-import matlab.engine
+
 import os
 from scipy.io import loadmat
 import tracemalloc
@@ -56,7 +56,11 @@ class PDA():
         self.liqDens = liqDens
         self.matlab = os.path.relpath(r'matlab_scripts')
         self.matPath = matPath
-        self.mode = mode
+        try: 
+            import matlab.engine
+            self.mode = mode
+        except:
+            self.mode = 'py'
 
     def findPos(self, file):
         lines = ''
@@ -186,7 +190,7 @@ class PDA():
             A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
                     np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
 
-        return [D_val, A_val]
+        return [D_val, A_val]     
 
     def matlabArea(self, df:pd.DataFrame, engine):
         D = df['Diameter'].to_list()
@@ -417,8 +421,6 @@ class PDA():
                     fullDict_y[f'{y}'] = innerDict
 
                 debugDict[f'{x}'] = innerDebug
-
-        
 
         df_debug = pd.DataFrame(debugDict)
         df_debug.to_clipboard()

@@ -34,6 +34,13 @@ import plotly.express as px
 import logging
 import webbrowser
 
+try:
+    import pyi_splash
+    # pyi_splash.update_text('UI Loaded ...')
+    pyi_splash.close()
+except:
+    pass
+
 class WorkerSignals(QObject):
     finished = pyqtSignal() 
 
@@ -337,6 +344,7 @@ class UI(QMainWindow):
         self.tabOrder()
         self.loadGlobalSettings()
         self.loadStyles()
+        self.checkMatlabInstalled()
         
     def liqAndGasDF(self):
         liqAndGas = pd.DataFrame()
@@ -1647,6 +1655,12 @@ class UI(QMainWindow):
 
     # PDA ROUTINE
         
+    def checkMatlabInstalled(self):
+        try: import matlab
+        except:
+            self.ui.radio_mat_mode.setDisabled(True)
+            self.ui.radio_py_mode.setChecked(True)
+        
     def loadPDAFolder(self, num):
         lines = [
             self.ui.PDA_Line_1,
@@ -1671,15 +1685,17 @@ class UI(QMainWindow):
             self.ui.PDA_Line_3,
         ]
         n, m, row, df_x = ls 
-        item_n = QTableWidgetItem(f'{"%3f" % n}')
-        item_m =  QTableWidgetItem(f'{"%3f" % m}')
+        item_n = QTableWidgetItem(f'{"%.3f" % n}')
+        item_m =  QTableWidgetItem(f'{"%.3f" % m}')
         self.ui.PDA_table.setItem(row, 0, item_n)
         self.ui.PDA_table.setItem(row, 1, item_m)
         self.mean_m.append(m)
         self.mean_n.append(n)
         
-        mean_n = QTableWidgetItem(f'{"%3f" % sum(self.mean_n)/len(self.mean_n)}')
-        mean_m = QTableWidgetItem(f'{"%3f" % sum(self.mean_m)/len(self.mean_m)}')
+        val1 = sum(self.mean_n)/len(self.mean_n)
+        val2 = sum(self.mean_m)/len(self.mean_m)
+        mean_n = QTableWidgetItem(f'{"%.3f" % val1}')
+        mean_m = QTableWidgetItem(f'{"%.3f" % val2}')
         self.ui.PDA_table.setItem(3, 0, mean_n)
         self.ui.PDA_table.setItem(3, 1, mean_m)
         lines[row].setEnabled(True)

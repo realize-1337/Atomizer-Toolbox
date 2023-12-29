@@ -34,6 +34,7 @@ makeSpec = [
     # "--exclude-module", "module_to_exclude",
     "--hidden-import", "sympy",
     "--hidden-import", "skimage",
+    "--hidden-import", "pyi_splash",
     # "--hidden-import", "matlab",
     # "--upx-dir", "path/to/upx",
     # "--additional-hooks-dir", "path/to/hooks",
