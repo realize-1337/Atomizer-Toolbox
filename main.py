@@ -123,6 +123,7 @@ class WorkerConversion(QRunnable):
 
 class DropletsSignals(QObject):
     push = pyqtSignal(tuple)
+    diasPush = pyqtSignal(list)
     finished = pyqtSignal() 
 
 class DropletsWorker(QRunnable):
@@ -176,6 +177,17 @@ class DropletsWorker(QRunnable):
 
         return x, y, radius
     
+    def listAllAbove(self, round_contours):
+        dias = []
+        for contour in round_contours:
+            try: 
+                (x, y), radius = cv2.minEnclosingCircle(contour)
+                dia = radius*2/self.scale
+                if dia > 1452.2/1000:
+                    dias.append(dia)
+            except: pass
+        return dias
+
     def generateImage(self, x:int, y:int, radius:int):
         circle_img = np.zeros_like(self.droplets_gray)
         if radius < 6:
@@ -223,13 +235,14 @@ class DropletsWorker(QRunnable):
                 pdf.savefig(fig)
                 plt.close(fig)
 
-
     def run(self):
         diff_img = self.getImage()
         round_contours = self.getContours(diff_img)
         x, y, radius = self.findLargestRound(round_contours)
         push_ = (self.path, radius*2/self.scale*10**3)
+        dias = self.listAllAbove(round_contours)
         self.signals.push.emit(push_)
+        self.signals.diasPush.emit(dias)
         self.signals.finished.emit()
 
 class PDAWorkerSignals(QObject):
@@ -1611,10 +1624,12 @@ class UI(QMainWindow):
         # self.ui.dropletRun.setDisabled(True)
         self.ui.dropletRun.disconnect()
         self.ui.dropletRun.clicked.connect(self.stopThread)
+        self.dropsAbove = []
 
         for i, item in enumerate(self.dropletFiles):
             worker = DropletsWorker(item, background_gray, self.ui.threshold.value(), self.ui.circ.value(), self.ui.dropletScale.value())
             worker.signals.push.connect(self.dropletPush)
+            worker.signals.diasPush.connect(self.getAllDropletsAbove)
             worker.signals.finished.connect(self.dropletFinished)
             self.dropletthreadpool.start(worker)
             # print(f'Created Worker: {i}')
@@ -1624,7 +1639,12 @@ class UI(QMainWindow):
         self.ui.dropletRun.disconnect()
         self.ui.dropletRun.clicked.connect(self.dropletRun)
         self.ui.dropletRun.setText('Run')
-        
+    
+    def getAllDropletsAbove(self, dias):
+        for dia in dias:
+            self.dropsAbove.append(dia)
+        print(len(self.dropsAbove))
+
     # PDA ROUTINE
         
     def loadPDAFolder(self, num):
