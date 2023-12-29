@@ -1659,6 +1659,7 @@ class UI(QMainWindow):
         try: import matlab
         except:
             self.ui.radio_mat_mode.setDisabled(True)
+            self.ui.radio_mat_mode.setToolTip('Install Matlab and restart software')
             self.ui.radio_py_mode.setChecked(True)
         
     def loadPDAFolder(self, num):
