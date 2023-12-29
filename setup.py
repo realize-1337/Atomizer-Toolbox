@@ -16,7 +16,10 @@ MATLAB_PATH = 'C:\Program Files\MATLAB\R2023b'
 #     subprocess.check_call(["pip", "freeze"], stdout=requirements_file)
 
 # Edit matlab engine arch file, which otherwise would cause issues
-edit.edit()
+try:
+    edit.edit()
+except:
+    raise ModuleNotFoundError()
 
 # Führe PyInstaller aus
 print("Führe PyInstaller aus...")
