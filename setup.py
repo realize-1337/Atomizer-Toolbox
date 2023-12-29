@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+import packages.editMatlabEngine as edit
 sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 FILE = f'{os.path.abspath("./main.py")}'
@@ -10,15 +11,18 @@ AUTHOR = 'David Maerker'
 MATLAB_PATH = 'C:\Program Files\MATLAB\R2023b'
 
 # Aktualisiere die Abhängigkeiten mit 'pip freeze'
-print("Aktualisiere Abhängigkeiten mit 'pip freeze'...")
-with open("requirements.txt", "w") as requirements_file:
-    subprocess.check_call(["pip", "freeze"], stdout=requirements_file)
+# print("Aktualisiere Abhängigkeiten mit 'pip freeze'...")
+# with open("requirements.txt", "w") as requirements_file:
+#     subprocess.check_call(["pip", "freeze"], stdout=requirements_file)
+
+# Edit matlab engine arch file, which otherwise would cause issues
+edit.edit()
 
 # Führe PyInstaller aus
 print("Führe PyInstaller aus...")
 makeSpec = [
     "pyi-makespec",
-    #"--onefile",   # Eine einzelne ausführbare Datei erstellen
+    "--onefile",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
     "--noconsole", 
     # "--windowed",
@@ -27,9 +31,6 @@ makeSpec = [
     "--add-data", f"{os.path.relpath('../../GUI')}\\*.py;GUI",
     "--add-data", f"../../packages/*.py;packages",
     "--add-data", f"../../matlab_scripts/*.m;matlab_scripts",
-    "--add-data", f"{MATLAB_PATH}\bin\win64;{MATLAB_PATH}\bin\win64",
-    "--add-data", f"{MATLAB_PATH}\extern\engines\python\dist\matlab\engine\win64;{MATLAB_PATH}\extern\engines\python\dist\matlab\engine\win64",
-    "--add-data", f"{MATLAB_PATH}\extern\bin\win64;{MATLAB_PATH}\extern\bin\win64",
     # "--exclude-module", "module_to_exclude",
     "--hidden-import", "sympy",
     "--hidden-import", "skimage",
@@ -40,8 +41,8 @@ makeSpec = [
     # "--additional-hook-dir=hooks",
     # "--paths", "<path to the "matlab" folder>"
     # "--workpath", "work_directory",
-    # "--log-level", "DEBUG",
-    # "--debug",
+    "--log-level", "WARN",
+    '--splash', f"{os.path.relpath('../../assets/splash_screen.png')}",
     FILE
 ]
 try:
