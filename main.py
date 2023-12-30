@@ -3,6 +3,7 @@ import os
 import sys
 import math
 from time import time
+from datetime import datetime
 import subprocess
 import json
 import ctypes
@@ -17,6 +18,7 @@ from PyQt6.QtWidgets import *
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
+from openpyxl import load_workbook, Workbook
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
@@ -270,9 +272,9 @@ class PDAWorker(QRunnable):
 
     def run(self):
         pda = PDA.PDA(self.path, upperCutOff=self.upperCutOff, liqDens=self.liqDens, mode=self.mode, matPath=self.matPath)
-        print(self.upperCutOff)
-        print(self.path)
-        print(self.liqDens)
+        # print(self.upperCutOff)
+        # print(self.path)
+        # print(self.liqDens)
         i, j, df_x = pda.run()
         self.signals.push.emit([i, j, self.row, df_x])
         self.signals.finished.emit()
@@ -1702,6 +1704,7 @@ class UI(QMainWindow):
         lines[row].setEnabled(True)
         self.dfs.append(df_x)
         self.names.append(os.path.basename(lines[row].text()))
+        print(f'Basename: {os.path.basename(lines[row].text())}')
         if self.running >= 1: self.running -= 1
         if self.running == 0:
             self.ui.PDA_run.setText('Run')
@@ -1710,6 +1713,13 @@ class UI(QMainWindow):
             self.ui.PDA_vel.setEnabled(True)
             self.ui.PDA_Vel_mean.setEnabled(True)
             self.ui.PDA_D32_mean.setEnabled(True)
+            try:
+                self.createTotalOut()
+            except:
+                response = QMessageBox.question(self, 'Error', f'Please close PDA Excel file in {os.path.dirname(lines[row].text())} and press Ok afterwards', buttons=QMessageBox.StandardButton.Cancel, defaultButton=QMessageBox.StandardButton.Ok)
+            if response == QMessageBox.StandardButton.Ok:
+                try: self.createTotalOut()
+                except:pass
 
     def runPDA(self):
         lines = [
@@ -1729,6 +1739,8 @@ class UI(QMainWindow):
         self.mean_m = []
         self.ui.PDA_table.clearContents()
         self.dfs = []
+        self.m = []
+        self.n = []
         self.names = []
         self.ui.PDA_D32.setDisabled(True)
         self.ui.PDA_vel.setDisabled(True)
@@ -1839,6 +1851,53 @@ class UI(QMainWindow):
                                           'value':'Mean Axial Velocity [m/s]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
         fig.show()
+
+    def createTotalOut(self):
+        lines = [
+            self.ui.PDA_Line_1,
+            self.ui.PDA_Line_2,
+            self.ui.PDA_Line_3,
+        ]
+        dirNames = []
+        meanDF = pd.DataFrame(columns=['Name', 'ID_32_n', 'ID_32_m'])
+        for x in lines:
+            if x.text() == '':continue
+            if os.path.dirname(x.text()) not in dirNames: dirNames.append(os.path.dirname(x.text()))
+        print(dirNames)
+        if len(dirNames) == 1:
+            baseName = os.path.basename(dirNames[0])
+            export = os.path.join(dirNames[0], f'PDA_Report_{baseName}.xlsx')
+            #pd.DataFrame().to_excel(export)
+            with pd.ExcelWriter(export, engine='openpyxl') as file:
+                for df, n, m, name in zip(self.dfs, self.mean_n, self.mean_m, self.names):
+                    wb = file.book
+                    lda = [x for x in os.listdir(os.path.join(dirNames[0], name)) if x.endswith('.lda')]
+                    if lda:
+                        header = lda[0]
+                        offset = 3
+                        maxId = len(df)+4+offset
+                        startRow = 3
+                    else:
+                        maxId = len(df)+4
+                        startRow = 0
+
+                    df.to_excel(file, sheet_name=name, index=False, startrow=startRow)
+                    sheet = wb[name]
+                    
+                    if startRow: 
+                        sheet[f'A1'] = f'{os.path.join(dirNames[0], name, header)}'
+                        sheet['A2'] = f'{datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}'
+                    sheet[f'A{maxId}'] = 'ID_32_n [µm]'
+                    sheet[f'A{maxId+1}'] = 'ID_32_m [µm]'
+                    sheet[f'B{maxId}'] = n
+                    sheet[f'B{maxId+1}'] = m
+                    wb.save(export)
+                    meanDF.loc[len(meanDF)] = [name, n, m]
+
+                meanDF.loc[len(meanDF)] = ['Mean', meanDF['ID_32_n'].mean(), meanDF['ID_32_m'].mean()]
+                meanDF.set_index('Name', drop=True)
+                meanDF.to_excel(file, sheet_name='ID_32', index=False)
+                
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

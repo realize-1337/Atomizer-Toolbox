@@ -3,10 +3,15 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit, least_squares
 from openpyxl import load_workbook
-
+import time
 import os
 from scipy.io import loadmat
 import tracemalloc
+try: 
+    import matlab.engine
+    modeSet = None
+except: 
+    modeSet = 'py'
 
 def createPowerFit(x, y):
     def func(params, x):
@@ -56,11 +61,9 @@ class PDA():
         self.liqDens = liqDens
         self.matlab = os.path.relpath(r'matlab_scripts')
         self.matPath = matPath
-        try: 
-            import matlab.engine
-            self.mode = mode
-        except:
-            self.mode = 'py'
+        if modeSet:
+            self.mode = modeSet
+        else: self.mode = mode
 
     def findPos(self, file):
         lines = ''
@@ -214,7 +217,7 @@ class PDA():
         data = np.array(mat_data['A_val'])
         data = data.astype(np.float64)
         data = data.reshape((len(data),))
-        print(np.shape(data))
+        # print(np.shape(data))
         return [0, data]
 
     def calcFlux(self, A_Val:np.array, t_ges:float, dia_arr:pd.Series):
@@ -309,15 +312,15 @@ class PDA():
         # print(ID_32_n)
         # print(ID_32_m)
         
-        df_n = pd.DataFrame(d_30_i)
-        df_m = pd.DataFrame(d_20_i)
-        df_k = pd.DataFrame(n_flux_i)
-        df_j = pd.DataFrame(m_flux_i)
-        df_l = pd.DataFrame(areas)
+        # df_n = pd.DataFrame(d_30_i)
+        # df_m = pd.DataFrame(d_20_i)
+        # df_k = pd.DataFrame(n_flux_i)
+        # df_j = pd.DataFrame(m_flux_i)
+        # df_l = pd.DataFrame(areas)
 
-        df_new = pd.concat([df_n, df_m, df_k, df_j, df_l, df['t_ges [s]']], axis=1, ignore_index=True).transpose()
+        # df_new = pd.concat([df_n, df_m, df_k, df_j, df_l, df['t_ges [s]']], axis=1, ignore_index=True).transpose()
         # df_new.to_excel(os.path.join(self.path, 'testFlux.xlsx'))
-        df_new.to_clipboard()
+        # df_new.to_clipboard()
 
         return [df, ID_32_n, ID_32_m]
 
@@ -349,14 +352,23 @@ class PDA():
         return [df, ID32_n, ID32_m]
 
     def writeToExcel(self, df, ID_32_n, ID_32_m, filename='export.xlsx'):
-        maxId = len(df)+2
+        lda = [x for x in os.listdir(self.path) if x.endswith('.lda')]
+        if lda:
+            header = lda[0]
+            offset = 3
+            maxId = len(df)+4+offset
+            startRow = 3
+        else:
+            maxId = len(df)+4
+            startRow = 0
 
         export = os.path.join(self.path, filename)
-        df.to_excel(export, index=False)
+        df.to_excel(export, index=False, startrow=startRow)
 
         workbook = load_workbook(export)
         sheet = workbook.active
-
+        
+        if startRow: sheet[f'A1'] = f'{os.path.join(self.path, header)}'
         sheet[f'A{maxId}'] = 'ID_32_n [µm]'
         sheet[f'A{maxId+1}'] = 'ID_32_m [µm]'
         sheet[f'B{maxId}'] = ID_32_n
@@ -374,7 +386,7 @@ class PDA():
         
         for file in os.listdir(self.path):
             if file.endswith('.txt'):
-                print(file)
+                # print(file)
                 x, y, z = self.findPos(os.path.join(self.path, file))
                 innerDict = {}
                 innerDebug = {}
@@ -423,14 +435,13 @@ class PDA():
                 debugDict[f'{x}'] = innerDebug
 
         df_debug = pd.DataFrame(debugDict)
-        df_debug.to_clipboard()
+        # df_debug.to_clipboard()
 
         if self.mode != 'py':
             df_x, ID_32_n_x, ID_32_m_x = self.ID32_mat(fullDict_x, dir='x', engine=engine)
             engine.quit()
         else:
             df_x, ID_32_n_x, ID_32_m_x = self.calcID32(fullDict_x, dir='x')
-
 
         self.writeToExcel(df_x, ID_32_n_x, ID_32_m_x)
         return(ID_32_n_x, ID_32_m_x, df_x)
