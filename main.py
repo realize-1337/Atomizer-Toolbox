@@ -1897,11 +1897,27 @@ class UI(QMainWindow):
                 meanDF.loc[len(meanDF)] = ['Mean', meanDF['ID_32_n'].mean(), meanDF['ID_32_m'].mean()]
                 meanDF.set_index('Name', drop=True)
                 meanDF.to_excel(file, sheet_name='ID_32', index=False)
-                
+
+def show_error_popup():
+    app = QApplication([])
+    error_popup = QMessageBox()
+    error_popup.setIcon(QMessageBox.Icon.Critical)
+    error_popup.setWindowTitle("Error")
+    error_popup.setText(f"An error occurred!\nA crash log can be found in {os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs')}")
+    error_popup.setStandardButtons(QMessageBox.StandardButton.Ok)
+    error_popup.exec()
+    app.quit()                
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    app.setStyle('Fusion')
-    window = UI()
-    window.show()
-    sys.exit(app.exec())
+    try:
+        app = QApplication(sys.argv)
+        app.setStyle('Fusion')
+        window = UI()
+        window.show()
+        sys.exit(app.exec())
+    except Exception as e:
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs')):
+            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+        with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs', f'{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}_crash.log'), 'w+') as file:
+            file.write(f'Crash LOG:\n{e}')
+        show_error_popup()
