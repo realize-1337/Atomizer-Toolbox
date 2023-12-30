@@ -843,9 +843,9 @@ class UI(QMainWindow):
         else:
             with open(rf'{path}', 'r') as global_config:
                 dict = json.load(global_config)
-                lastFile = dict['lastFile']
+                self.lastFile = dict['lastFile']
                 self.lastExport = dict['lastExport']
-            try: self.loadPreset(lastFile)
+            try: self.loadPreset(self.lastFile)
             except: pass
         
     def loadPreset(self, path = None):
@@ -976,9 +976,9 @@ class UI(QMainWindow):
         self.ui.exportStyleBox.clear()
         
         self.ui.exportStyleBox.addItem('Select Export Style')
-        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets')):
-            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets'))
-        items = os.listdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets'))
+        if not os.path.exists(os.path.join(self.path, 'global', 'presets')):
+            os.mkdir(os.path.join(self.path, 'global', 'presets'))
+        items = os.listdir(os.path.join(self.path, 'global', 'presets'))
         self.ui.exportStyleBox.addItems(items)
         if self.lastExport != 'empty__':
             if self.lastExport in items:
@@ -997,7 +997,7 @@ class UI(QMainWindow):
             with open(os.path.join(self.path, 'global', 'global_settings.json'), 'w+') as file:
                 json.dump(dict, file)
 
-            path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets', style)
+            path = os.path.join(self.path, 'global', 'presets', style)
             files = os.listdir(path)
 
             dicts = []
@@ -1038,7 +1038,7 @@ class UI(QMainWindow):
         style = self.ui.exportStyleBox.currentText()
         if style == 'Select Export Style':
             return None
-        path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets', style)
+        path = os.path.join(self.path, 'global', 'presets', style)
         files = os.listdir(path)
 
         dicts = []
@@ -1157,8 +1157,8 @@ class UI(QMainWindow):
         subprocess.Popen(rf'explorer /select,"{self.path}"')
 
     def bulkCalc(self):
-        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export', 'bulk.json')): return
-        with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export', 'bulk.json'), 'r') as file:
+        if not os.path.exists(os.path.join(self.path, 'global', 'export', 'bulk.json')): return
+        with open(os.path.join(self.path, 'global', 'export', 'bulk.json'), 'r') as file:
             data = json.load(file)
         inner = data['inner']
         liq = data['middle']
