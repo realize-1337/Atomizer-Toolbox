@@ -8,7 +8,6 @@ FILE = f'{os.path.abspath("./main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
 VERSION = '1.62'
 AUTHOR = 'David Maerker'
-MATLAB_PATH = 'C:\Program Files\MATLAB\R2023b'
 
 # Aktualisiere die Abhängigkeiten mit 'pip freeze'
 # print("Aktualisiere Abhängigkeiten mit 'pip freeze'...")
