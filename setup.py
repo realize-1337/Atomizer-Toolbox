@@ -6,7 +6,7 @@ sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 FILE = f'{os.path.abspath("./main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.61-hotfix'
+VERSION = '1.62'
 AUTHOR = 'David Maerker'
 MATLAB_PATH = 'C:\Program Files\MATLAB\R2023b'
 
