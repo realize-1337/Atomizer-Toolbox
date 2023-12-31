@@ -6,6 +6,7 @@ currentDir = os.path.dirname(__file__)
 parentDir = os.path.dirname(currentDir)
 sys.path.append(parentDir)
 import subprocess
+from packages.exportDB import exportDB
 from functools import partial
 import json
 import pandas as pd
@@ -403,7 +404,7 @@ class UI(QDialog):
         dfs = {}
         box = QComboBox()
         for item in os.listdir(self.sharePath):
-            with open(os.path.join(self.sharePath, item), 'r') as file:
+            with open(os.path.join(self.sharePath, item), 'r') as file:   
                 name_ = item[:-11]
                 dfs[name_] = pd.read_json(file)
                 dict = dfs[name_].to_dict()
@@ -442,10 +443,7 @@ class UI(QDialog):
                 try: hheader[col] = self.ui.tableWidget.horizontalHeaderItem(col).text()
                 except: hheader[col] = f'{col+1}'
             dict[row] = innerDict
-
-        print(dict)
-        print(vheader)
-        print(hheader)
+        
         self.exportName = ''
         items = os.listdir(self.PresetPath)
         print(items)
@@ -458,10 +456,13 @@ class UI(QDialog):
             if not os.path.exists(exportPath):
                 os.mkdir(exportPath)
             
+            
             dicts = [(dict, '0_items'), (hheader, '1_hheader'), (vheader, '2_vheader')]
             for dict in dicts:
+                # ex = exportDB(os.path.join(exportPath, 'export.db'))
                 with open(os.path.join(exportPath, f"{dict[1]}.json"), 'w+') as file:
                     json.dump(dict[0], file)
+                # ex.writeExport(dict[0], f'{dict[1]}')
             print('Export Done!')
             self.savedCheck = True
             self.createLoadList()
@@ -546,7 +547,6 @@ class UI(QDialog):
             self.ui.tableWidget.clear()
             self.ui.tableWidget.setRowCount(0)
             self.ui.tableWidget.setColumnCount(0)
-
 
 def call():
     import sys

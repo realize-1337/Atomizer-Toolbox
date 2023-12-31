@@ -29,13 +29,14 @@ from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
 import packages.PDA as PDA
+from packages.settings import settings
+from packages.exportDB import exportDB
 from skimage import morphology
 import cv2
 import plotly.graph_objs as go
 import plotly.express as px
 import logging
 import webbrowser
-
 try:
     import pyi_splash
     # pyi_splash.update_text('UI Loaded ...')
@@ -340,6 +341,9 @@ class UI(QMainWindow):
         self.ui.PDA_D32_mean.setDisabled(True)
         self.ui.PDA_Vel_mean.setDisabled(True)
         self.currentPDAFolder = None
+        self.settings_dict = {}
+        self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
+        self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
         self.lastMode = None
         self.lastFolder = None
         self.removePresetTag()
@@ -662,7 +666,7 @@ class UI(QMainWindow):
         def StreamDF():
             dict = {
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'],
-                'Type': [self.streamValues[0][-1].capitalize(), self.streamValues[1][-1].capitalize(), self.streamValues[2][-1].capitalize()],
+                'Fluid Type': [self.streamValues[0][-1].capitalize(), self.streamValues[1][-1].capitalize(), self.streamValues[2][-1].capitalize()],
                 'Mass Flow Rate [kg/h]': [self.streamValues[0][1], self.streamValues[1][1], self.streamValues[2][1]],
                 'Flow Velocity [m/s]': [self.streamValues[0][2], self.streamValues[1][2], self.streamValues[2][2]],
                 'Momentum Flux [kg/(m s²)]': [self.streamValues[0][3], self.streamValues[1][3], self.streamValues[2][3]],
@@ -834,18 +838,11 @@ class UI(QMainWindow):
 
                 FILE_ATTRIBUTE_HIDDEN = 0x02
                 ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
-                with open(rf'{path}', 'w+') as global_config:
-                    json.dump(default, global_config)
-                    self.lastFile = 'empty__'
-                    self.lastExport = 'empty__'
+                self.settings.setup(default)
                 self.resetValues()
             except: pass
         else:
-            with open(rf'{path}', 'r') as global_config:
-                dict = json.load(global_config)
-                self.lastFile = dict['lastFile']
-                self.lastExport = dict['lastExport']
-            try: self.loadPreset(self.lastFile)
+            try: self.loadPreset(self.settings.get('lastFile'))
             except: pass
         
     def loadPreset(self, path = None):
@@ -872,14 +869,7 @@ class UI(QMainWindow):
         list = filename.split('/')
         self.ui.label_19.setText(f'Atomizer Properties (Preset: {list[-1][:-5]})')
 
-        export = {
-            'lastFile': filename,
-            'lastExport': self.lastExport
-        }
-
-        with open(rf"{os.path.join(self.path, 'global', 'global_settings.json')}", 'w+') as json_file:
-            json.dump(export, json_file)
-            self.lastFile = filename
+        self.settings.set('lastFile', filename)
 
     def savePreset(self):
         filename, null = QFileDialog.getSaveFileName(self, directory=self.path, filter='*.json')
@@ -905,14 +895,7 @@ class UI(QMainWindow):
         with open(rf'{filename}', 'w+') as json_file:
             json.dump(export, json_file)
 
-        export = {
-            'lastFile': filename,
-            'lastExport': self.lastExport
-        }
-
-        with open(rf"{os.path.join(self.path, 'global', 'global_settings.json')}", 'w+') as json_file:
-            json.dump(export, json_file)
-            self.lastFile = filename
+        self.settings.set('lastFile', filename)
 
     def presetField(self):
         fields = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.outerWall, self.ui.liquidTemp, self.ui.liquidVisc, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue]
@@ -967,7 +950,7 @@ class UI(QMainWindow):
             os.mkdir(os.path.join(self.path, 'global', 'presets'))
 
         for k,v in dfs.items():
-            # print (v)
+            self.exportDB.writeData(v, k)
             with open(os.path.join(self.path, 'global', 'share', f'{k}_share.json'), 'w+') as file:
                 v.to_json(file, default_handler=float)
             # print('\n')
@@ -980,22 +963,16 @@ class UI(QMainWindow):
             os.mkdir(os.path.join(self.path, 'global', 'presets'))
         items = os.listdir(os.path.join(self.path, 'global', 'presets'))
         self.ui.exportStyleBox.addItems(items)
-        if self.lastExport != 'empty__':
-            if self.lastExport in items:
-                self.ui.exportStyleBox.setCurrentText(self.lastExport)
+        if self.settings.get('lastExport') != 'empty__':
+            if self.settings.get('lastExport') in items:
+                self.ui.exportStyleBox.setCurrentText(self.settings.get('lastExport'))
 
     def generateExport(self):
         style = self.ui.exportStyleBox.currentText()
         if style == 'Select Export Style':
             return None
         else:
-            self.lastExport = style
-            with open(os.path.join(self.path, 'global', 'global_settings.json'), 'r') as file:
-                dict = json.load(file)
-                dict['lastExport'] = self.lastExport
-
-            with open(os.path.join(self.path, 'global', 'global_settings.json'), 'w+') as file:
-                json.dump(dict, file)
+            self.settings.set('lastExport', style)
 
             path = os.path.join(self.path, 'global', 'presets', style)
             files = os.listdir(path)
