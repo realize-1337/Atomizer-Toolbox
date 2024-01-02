@@ -403,11 +403,9 @@ class UI(QDialog):
     def createCombobox(self):
         dfs = {}
         box = QComboBox()
-        for item in os.listdir(self.sharePath):
-            with open(os.path.join(self.sharePath, item), 'r') as file:   
-                name_ = item[:-11]
-                dfs[name_] = pd.read_json(file)
-                dict = dfs[name_].to_dict()
+        ex = exportDB(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'export.db'))
+        full = ex.readExportOption()
+        for dict, name_ in full:
             for k, v in dict.items():
                 name = f'{k}'
                 if len(v) > 1:
@@ -455,14 +453,11 @@ class UI(QDialog):
             exportPath = os.path.join(self.PresetPath, self.exportName)
             if not os.path.exists(exportPath):
                 os.mkdir(exportPath)
-            
-            
+
             dicts = [(dict, '0_items'), (hheader, '1_hheader'), (vheader, '2_vheader')]
+            ex = exportDB(os.path.join(exportPath, 'database.db'))
             for dict in dicts:
-                # ex = exportDB(os.path.join(exportPath, 'export.db'))
-                with open(os.path.join(exportPath, f"{dict[1]}.json"), 'w+') as file:
-                    json.dump(dict[0], file)
-                # ex.writeExport(dict[0], f'{dict[1]}')
+                ex.writeExport(dict[0], dict[1])
             print('Export Done!')
             self.savedCheck = True
             self.createLoadList()

@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import pandas as pd
+import numpy as np
 
 class exportDB():
     def __init__(self, path) -> None:
@@ -60,8 +61,36 @@ class exportDB():
                 if i == 0: continue
                 innerDict = {}
                 for row in rows:
-                    innerDict[row] = row[i]
+                    innerDict[row[0]] = row[i]
                 dict[col[1]] = innerDict
             dictList.append((dict, table_name))
 
-            return dictList
+        return dictList
+    
+    def DBtoDicts(self) -> list:
+        self.c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = self.c.fetchall()
+        dictList = []
+        for i, table in enumerate(tables):
+            dict = {}
+            table_name = table[0]
+            self.c.execute(f"SELECT * FROM \"{table_name}\";")
+            rows = self.c.fetchall()
+            # if i == 0:
+            arr = pd.DataFrame(rows, columns=['row', 'col', 'ad1', 'ad2', 'ad3'])
+            arr = arr.sort_values(by=['row', 'col'], ascending=True)
+            minRow = arr['row'].min()
+            maxRow = arr['row'].max()
+            bins = np.arange(minRow, maxRow+1, 1)
+            # Here Binning 
+            print(bins)
+
+
+            for row in rows:
+                print('1')
+
+
+if __name__ == '__main__':
+    # self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
+    ex = exportDB(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'presets', '1', 'database.db'))
+    ex.DBtoDicts()

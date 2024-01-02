@@ -1690,13 +1690,14 @@ class UI(QMainWindow):
             self.ui.PDA_vel.setEnabled(True)
             self.ui.PDA_Vel_mean.setEnabled(True)
             self.ui.PDA_D32_mean.setEnabled(True)
+            self.createTotalOut()
             try:
                 self.createTotalOut()
             except:
                 response = QMessageBox.question(self, 'Error', f'Please close PDA Excel file in {os.path.dirname(lines[row].text())} and press Ok afterwards', buttons=QMessageBox.StandardButton.Cancel, defaultButton=QMessageBox.StandardButton.Ok)
-            if response == QMessageBox.StandardButton.Ok:
-                try: self.createTotalOut()
-                except:pass
+                if response == QMessageBox.StandardButton.Ok:
+                    try: self.createTotalOut()
+                    except:pass
 
     def runPDA(self):
         lines = [
