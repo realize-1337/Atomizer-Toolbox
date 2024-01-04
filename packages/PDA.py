@@ -177,17 +177,34 @@ class PDA():
         D_val = np.zeros(len(D))
         A_val = np.zeros(len(D))
 
+        # Original
+        # for i in range(len(D)):
+        #     if D[i] < x_pow_max:
+        #         numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(powA * D[i] ** powB))) /
+        #                                 (ls_korr - np.cos(self.phi) * np.sqrt(powA * D[i] ** powB) *
+        #                                     np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+        #         D_val[i] = numerator
+        #     else:
+        #         numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(logA * np.log(D[i]) + logB))) /
+        #                                 (ls_korr - np.cos(self.phi) * np.sqrt(logA * np.log(D[i]) + logB) *
+        #                                     np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+        #         D_val[i] = numerator
+
+        # for i in range(len(D)):
+        #     A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
+        #             np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
+
+        #Neu nach 12.48
+        sum1 = np.sum(LDA1*Ttime)
         for i in range(len(D)):
-            if D[i] < x_pow_max:
-                numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(powA * D[i] ** powB))) /
-                                        (ls_korr - np.cos(self.phi) * np.sqrt(powA * D[i] ** powB) *
-                                            np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
-                D_val[i] = numerator
-            else:
-                numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(logA * np.log(D[i]) + logB))) /
-                                        (ls_korr - np.cos(self.phi) * np.sqrt(logA * np.log(D[i]) + logB) *
-                                            np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
-                D_val[i] = numerator
+            # if D[i] < x_pow_max:
+            numerator = (4 / np.pi) * (ls_korr * sum1) / (ls_korr - np.cos(self.phi) * sum1 * np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2)))
+            D_val[i] = numerator
+            # else:
+            #     numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(logA * np.log(D[i]) + logB))) /
+            #                             (ls_korr - np.cos(self.phi) * np.sqrt(logA * np.log(D[i]) + logB) *
+            #                                 np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+            #     D_val[i] = numerator
 
         for i in range(len(D)):
             A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
@@ -386,7 +403,7 @@ class PDA():
         
         for file in os.listdir(self.path):
             if file.endswith('.txt'):
-                # print(file)
+                print(file)
                 x, y, z = self.findPos(os.path.join(self.path, file))
                 innerDict = {}
                 innerDebug = {}

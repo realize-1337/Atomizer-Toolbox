@@ -120,14 +120,12 @@
     D_val = zeros(length(D),1);   %[�m]
     A_val = zeros(length(D),1);   %[�m^2]
 
-    
+    % NEW
+    res = Ttime .* LDA1;
+    sum1 = cumsum(res);
+
     for i=1:length(D)
-        if D(i) < x_pow_max
-            D_val(i) = (4/pi)*((ls_korr*(sqrt(pow_A*D(i).^pow_B)))/(ls_korr-cos(phi)*sqrt(pow_A*D(i).^pow_B)*abs(LDA4(i)/sqrt(LDA1(i)^2+LDA4(i)^2)))); % [�m]
-        else
-            D_val(i) = (4/pi)*((ls_korr*(sqrt(Log_A*log(D(i))+Log_B)))/(ls_korr-cos(phi)*sqrt(Log_A*log(D(i))+Log_B)*abs(LDA4(i)/sqrt(LDA1(i)^2+LDA4(i)^2)))); % [�m]   
-        end
-        
+        D_val(i) = (4/pi)*((ls_korr*sum1(end))/(ls_korr-cos(phi)*sum1(end)*abs(LDA4(i)/sqrt(LDA1(i)^2+LDA4(i)^2)))); % [�m]
     end
     
     % Ab hier ist D_e in [�m]
@@ -135,7 +133,6 @@
     for i=1:length(D)
        A_val(i) = (D_val(i)*ls_korr/sin(phi)) - (pi*(D_val(i)^2)/4/tan(phi)) * (abs(LDA4(i))/sqrt(LDA1(i)^2+LDA4(i)^2)); % [�m^2]
     end
-
 
     save(path, 'A_val');
     
