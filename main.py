@@ -974,13 +974,17 @@ class UI(QMainWindow):
         else:
             self.settings.set('lastExport', style)
 
-            path = os.path.join(self.path, 'global', 'presets', style)
-            files = os.listdir(path)
+            
+            path = os.path.join(self.path, 'global', 'presets', style, 'database.db')
+            ex = exportDB(path)
+            dicts = ex.DBtoDicts()
+            print(dicts)
+            # files = os.listdir(path)
 
-            dicts = []
-            for item in files:
-                with open(os.path.join(path, item), 'r') as file:
-                    dicts.append(json.load(file))
+            # dicts = []
+            # for item in files:
+            #     with open(os.path.join(path, item), 'r') as file:
+            #         dicts.append(json.load(file))
 
             if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
                 self.readValues()

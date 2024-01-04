@@ -468,12 +468,20 @@ class UI(QDialog):
             self.ui.tableWidget.clear()
             self.ui.tableWidget.setRowCount(0)
             self.ui.tableWidget.setColumnCount(0)
-            path = os.path.join(self.PresetPath, self.ui.comboBox.currentText())
-            items = os.listdir(path)
-            dicts = []
-            for item in items:
-                with open(os.path.join(path, item), 'r') as file:
-                    dicts.append(json.load(file))
+            try:
+                path = os.path.join(self.PresetPath, self.ui.comboBox.currentText(), 'database.db')
+                ex = exportDB(path)
+                dicts = ex.DBtoDicts()
+            except:
+                dicts = []
+                path = os.path.join(self.PresetPath, self.ui.comboBox.currentText())
+                items = os.listdir(path)
+                for item in items:
+                    if item.endswith('.json'):
+                        print(item)
+                        if not item.endswith('.json'): pass
+                        with open(os.path.join(path, item), 'r') as file:
+                            dicts.append(json.load(file))
 
             for i in range(len(dicts[1])):
                 self.addCol()
