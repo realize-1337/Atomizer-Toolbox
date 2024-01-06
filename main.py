@@ -830,7 +830,9 @@ class UI(QMainWindow):
             try: 
                 default = {
                     'lastFile': 'empty__',
-                    'lastExport': 'empty__'
+                    'lastExport': 'empty__', 
+                    'exportDecimal': 'point', 
+                    'exportHeader': False
                 }
                 if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
                 if not os.path.exists(os.path.join(self.path, 'global', 'share')):
@@ -842,6 +844,25 @@ class UI(QMainWindow):
                 self.resetValues()
             except: pass
         else:
+            # Load export decimal comma or point for export
+            try:
+                mode = self.settings.get('exportDecimal')
+                if mode == 'point': self.ui.radioPoint.setChecked(True)
+                else: self.ui.radioComma.setChecked(True)
+            except:
+                self.settings.set('exportDecimal', 'point')
+                self.ui.radioPoint.setChecked(True)
+            
+            # Load export header setting
+            try:
+                if self.settings.get('exportHeader'):
+                    self.ui.headerCheck.setChecked(True)
+                else: self.ui.headerCheck.setChecked(False)
+            except:
+                self.settings.set('exportHeader', False)
+                self.ui.headerCheck.setChecked(False)
+
+            # Load preset
             try: self.loadPreset(self.settings.get('lastFile'))
             except: pass
         
@@ -974,17 +995,9 @@ class UI(QMainWindow):
         else:
             self.settings.set('lastExport', style)
 
-            
             path = os.path.join(self.path, 'global', 'presets', style, 'database.db')
             ex = exportDB(path)
             dicts = ex.DBtoDicts()
-            print(dicts)
-            # files = os.listdir(path)
-
-            # dicts = []
-            # for item in files:
-            #     with open(os.path.join(path, item), 'r') as file:
-            #         dicts.append(json.load(file))
 
             if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
                 self.readValues()
@@ -1019,13 +1032,10 @@ class UI(QMainWindow):
         style = self.ui.exportStyleBox.currentText()
         if style == 'Select Export Style':
             return None
-        path = os.path.join(self.path, 'global', 'presets', style)
-        files = os.listdir(path)
-
-        dicts = []
-        for item in files:
-            with open(os.path.join(path, item), 'r') as file:
-                dicts.append(json.load(file))
+        self.settings.set('lastExport', style)
+        path = os.path.join(self.path, 'global', 'presets', style, 'database.db')
+        ex = exportDB(path)
+        dicts = ex.DBtoDicts()
 
         if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
             self.readValues()
@@ -1061,8 +1071,11 @@ class UI(QMainWindow):
         if type(df) == type(pd.DataFrame()):
             df = self.replace(df)
             if self.ui.headerCheck.isChecked() == True:
-                df.to_clipboard(decimal=',', sep='\t')
-            else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+                self.settings.set('exportHeader', True)
+                df.to_clipboard(sep='\t')
+            else: 
+                df.to_clipboard(header=False, index=False, sep='\t')
+                self.settings.set('exportHeader', False)
             self.changeColor(self.ui.cpToclip, 'green', 2000)
         else:
             self.changeColor(self.ui.exportStyleBox, 'red', 1000)
@@ -1073,7 +1086,10 @@ class UI(QMainWindow):
         if type(df) == type(pd.DataFrame()):
             if self.ui.headerCheck.isChecked() == True:
                 df.to_clipboard(decimal=',', sep='\t')
-            else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+                self.settings.set('exportHeader', True)
+            else: 
+                df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+                self.settings.set('exportHeader', False)
             self.changeColor(self.ui.cellToClip, 'green', 1000)
         else:
             self.changeColor(self.ui.exportStyleBox, 'red', 1000)
@@ -1081,8 +1097,10 @@ class UI(QMainWindow):
         
     def replace(self, df):
         if self.ui.radioComma.isChecked() == True:
+            self.settings.set('exportDecimal', 'comma')
             df = df.applymap(lambda x: str(x).replace('.', ','))
         else: 
+            self.settings.set('exportDecimal', 'point')
             df = df.applymap(lambda x: str(x))
         # print(df)
         return df
