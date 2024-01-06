@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit, least_squares
+from sklearn.metrics import r2_score
 from openpyxl import load_workbook
 import time
 import os
@@ -13,34 +14,32 @@ try:
 except: 
     modeSet = 'py'
 
-def createPowerFit(x, y):
-    def func(params, x):
-        a, b = params
+def createPowerFit(x, y):   
+    def func1(x, y, a, b):
         return a * np.power(x, b)
     
-    def residual(params, x, y):
-        return func(params, x) - y
-    
-    initial = [19880.700336885, 0.401023878366104]
-    tol = 1e-6
+    result = curve_fit(func1, x, y, method='trf')
 
-    result = least_squares(residual, initial, args=(x, y), xtol=tol, ftol=tol)
-    return result.x
+    # a = result[0][1]
+    # b = result[0][2]
+    # r2 = r2_score(y, func1(x, y, a, b))
+    # print('R2 POWER:', r2)
 
+    return result[0][1:]
 
-def createLogFit(x, y):
-    def func(params, x):
-        a, b = params
+def createLogFit(x, y):   
+    def func1(x, y, a, b):
         return a * np.log(x) + b
     
-    def residual(params, x, y):
-        return func(params, x) - y
-    
-    initial = [0.754686681982361, 0.276025076998578]
-    tol = 1e-6
+    result = curve_fit(func1, x, y, method='trf')
 
-    result = least_squares(residual, initial, args=(x, y), xtol=tol, ftol=tol)
-    return result.x
+    # a = result[0][1]
+    # b = result[0][2]
+    # r2 = r2_score(y, func1(x, y, a, b))
+    # print('R2 LOG:', r2)
+
+    return result[0][1:]
+
 
 class PDA():
     def __init__(self, path, upperCutOff = 516.85, matPath = None, mode:str = 'py', lowerCutOff = 0, posLine = 3, firstDataLine = 6, velCol = 3, diaCol = 6, timeCol = 1, split = '\t', phi = 70, f_1 = 1000, f_2 = 310, ls_p = 200, liqDens = 998.2, header=['Row', 'AT', 'TT', 'Vel', 'U12', 'U13', 'Diameter']) -> None:
@@ -118,10 +117,9 @@ class PDA():
         bingroesse = 5
         bincount = 200
 
-        edges = np.arange(0, np.ceil(np.max(D)) + bingroesse, bingroesse)
+        edges = np.arange(0, int(np.ceil(np.max(D)+bingroesse+1)), bingroesse)
         N, edges = np.histogram(Data_new_sort['D'], bins=edges)
-        # print(N)
-        # print(len(N))
+
         Data_bin = [None]*len(N)
 
         count = N[0]
@@ -142,7 +140,7 @@ class PDA():
             mean_burstlensquared[i] = mean_burstlen[i]**2
         
 
-        edges_middle = edges[0:-1] + bingroesse/2
+        edges_middle = edges[:-1] + bingroesse/2
         # print(mean_burstlensquared)
 
         # print(np.isnan(mean_burstlensquared))
@@ -160,15 +158,15 @@ class PDA():
 
         powA, powB = createPowerFit(fit_x, fit_y)
         logA, logB = createLogFit(fit_x, fit_y)
-        x = np.arange(0, np.max(np.ceil(D))+1)[1:]
+        x = np.arange(0, np.max(np.ceil(D))+1)#[1:]
         # y_power = powA*x**powB
         y_power = powA*np.power(x, powB)
         y_log = logA*np.log(x) + logB
 
-        y_diff = abs(y_power-y_log)
+        y_diff = abs(y_log-y_power)
         I = np.argsort(y_diff)[:5]
         sorted_x = x[I]
-        sorted_y_diff = y_diff[I]
+        # sorted_y_diff = y_diff[I]
         x_pow_max = np.max(sorted_x)
         # x_pow_max = np.max(x[I[:5]])
 
@@ -177,7 +175,7 @@ class PDA():
         D_val = np.zeros(len(D))
         A_val = np.zeros(len(D))
 
-        Original
+        # Original
         for i in range(len(D)):
             if D[i] < x_pow_max:
                 numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(powA * D[i] ** powB))) /
@@ -462,6 +460,6 @@ if __name__ == '__main__':
     path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'Folder1.mat')
     # _path = r'M:\Duese_4\Ole_Erw\2_60_34\1H'
 
-    pda = PDA(_path, matPath=path, mode='mat')
+    pda = PDA(_path, matPath=path, mode='py')
     pda.run()
 
