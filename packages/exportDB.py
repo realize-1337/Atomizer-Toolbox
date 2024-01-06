@@ -10,8 +10,8 @@ class exportDB():
         self.c = self.db.cursor()
 
     def writeData(self, df:pd.DataFrame, name):
-        print(df)
-        print(df.to_sql(name, self.db, if_exists='replace'))
+        # print(df)
+        df.to_sql(name, self.db, if_exists='replace')
         pass
 
     def writeExport(self, di:dict, name:str):
@@ -56,7 +56,7 @@ class exportDB():
         dictList = []
         for table in tables:
             table_name = table[0]
-            print(table_name)
+            # print(table_name)
             self.c.execute(f"SELECT * FROM \"{table_name}\";")
             rows = self.c.fetchall()
 
@@ -79,7 +79,7 @@ class exportDB():
         dictList = []
         if len(tables) == 0: raise IndexError
         for i, table in enumerate(tables):
-            print('-'*10)
+            # print('-'*10)
             dict = {}
             table_name = table[0]
             self.c.execute(f"SELECT * FROM \"{table_name}\";")
@@ -97,7 +97,7 @@ class exportDB():
                         l = []
                         raw = [s['ad1'], s['ad2'], s['ad3']]
                         trigger = False
-                        print(raw)
+                        # print(raw)
                         for v, ad in enumerate(raw):
                             if ad == None: 
                                 if v == 0:

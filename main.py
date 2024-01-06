@@ -529,10 +529,10 @@ class UI(QMainWindow):
         self.Lc.append(self.innerTube)
         self.innerWall = self.ui.innerWall.value()/1000
         self.annularSheet = self.ui.annularSheet.value()/1000
-        self.Lc.append(self.annularSheet)
+        self.Lc.append(2*self.annularSheet)
         self.middleWall = self.ui.middleWall.value()/1000
         self.outerSheet = self.ui.outerSheet.value()/1000
-        self.Lc.append(self.outerSheet)
+        self.Lc.append(2*self.outerSheet)
         self.outerWall = self.ui.outerWall.value()/1000
         self.orifice()
 
