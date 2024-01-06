@@ -177,31 +177,31 @@ class PDA():
         D_val = np.zeros(len(D))
         A_val = np.zeros(len(D))
 
-        # Original
-        # for i in range(len(D)):
-        #     if D[i] < x_pow_max:
-        #         numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(powA * D[i] ** powB))) /
-        #                                 (ls_korr - np.cos(self.phi) * np.sqrt(powA * D[i] ** powB) *
-        #                                     np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
-        #         D_val[i] = numerator
-        #     else:
-        #         numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(logA * np.log(D[i]) + logB))) /
-        #                                 (ls_korr - np.cos(self.phi) * np.sqrt(logA * np.log(D[i]) + logB) *
-        #                                     np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
-        #         D_val[i] = numerator
+        Original
+        for i in range(len(D)):
+            if D[i] < x_pow_max:
+                numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(powA * D[i] ** powB))) /
+                                        (ls_korr - np.cos(self.phi) * np.sqrt(powA * D[i] ** powB) *
+                                            np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+                D_val[i] = numerator
+            else:
+                numerator = (4 / np.pi) * ((ls_korr * (np.sqrt(logA * np.log(D[i]) + logB))) /
+                                        (ls_korr - np.cos(self.phi) * np.sqrt(logA * np.log(D[i]) + logB) *
+                                            np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+                D_val[i] = numerator
 
-        # for i in range(len(D)):
-        #     A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
-        #             np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
+        for i in range(len(D)):
+            A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
+                    np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
 
         #Neu nach 12.48
-        sum1 = np.sum(LDA1*Ttime)
-        for i in range(len(D)):
-            # if D[i] < x_pow_max:
-            D_val[i] = (4 / np.pi) * (ls_korr * sum1) / (ls_korr - np.cos(self.phi) * sum1 * np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2)))
+        # sum1 = np.sum(LDA1*Ttime)
+        # for i in range(len(D)):
+        #     # if D[i] < x_pow_max:
+        #     D_val[i] = (4 / np.pi) * (ls_korr * sum1) / (ls_korr - np.cos(self.phi) * sum1 * np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2)))
             
-        for i in range(len(D)):
-            A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
+        # for i in range(len(D)):
+        #     A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
 
         return [D_val, A_val]     
 
@@ -220,8 +220,8 @@ class PDA():
         ls_p = matlab.double(self.ls_p)
         phi = matlab.double(self.phi)
         
-        #engine.D_A_for_py(D, Ttime, LDA1, LDA4, f_1, f_2, ls_p, phi, self.matPath, nargout=0)
-        engine.D_A_for_py_new(D, Ttime, LDA1, LDA4, f_1, f_2, ls_p, phi, self.matPath, nargout=0)
+        engine.D_A_for_py(D, Ttime, LDA1, LDA4, f_1, f_2, ls_p, phi, self.matPath, nargout=0)
+        # engine.D_A_for_py_new(D, Ttime, LDA1, LDA4, f_1, f_2, ls_p, phi, self.matPath, nargout=0)
        
         mat_data = loadmat(self.matPath)
         data = np.array(mat_data['A_val'])
