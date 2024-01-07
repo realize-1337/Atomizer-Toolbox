@@ -22,6 +22,8 @@ from openpyxl import load_workbook, Workbook
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
+import logging
+import traceback
 # UI_FILE = './GUI/mainWindow.ui'
 # PY_FILE = './GUI/mainWindow.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
@@ -1918,10 +1920,16 @@ if __name__ == '__main__':
         app.setStyle('Fusion')
         window = UI()
         window.show()
-        sys.exit(app.exec())
+        app.exec()
     except Exception as e:
-        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs')):
-            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+        crash=["Error on line {}".format(sys.exc_info()[-1].tb_lineno),"\n",e]
+        print(crash)
+        try: os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+        except: 
+            try: 
+                os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
+                os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+            except: pass
+
         with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs', f'{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}_crash.log'), 'w+') as file:
-            file.write(f'Crash LOG:\n{e}')
-        show_error_popup()
+            file.writelines(crash)
