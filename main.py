@@ -22,9 +22,9 @@ from openpyxl import load_workbook, Workbook
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
@@ -1757,8 +1757,12 @@ class UI(QMainWindow):
                 if self.ui.radio_mat_mode.isChecked():
                     matPath = os.path.join(self.path, 'global', f'folder{row+1}.mat')
                     worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, matPath=matPath)
-                else:
+                elif self.ui.radio_py_mode.isChecked():
                     worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py')
+                elif self.ui.radio_py_ex_mode.isChecked():
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_ex')
+                elif self.ui.radio_py_poly_mode.isChecked():
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_poly')
                 worker.signals.push.connect(self.createItemPDA)
                 threadpool.start(worker)
                 line.setDisabled(True)

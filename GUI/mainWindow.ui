@@ -1937,43 +1937,17 @@
           </item>
          </layout>
         </item>
-        <item row="4" column="0">
-         <widget class="QRadioButton" name="radio_py_mode">
-          <property name="toolTip">
-           <string>Open source implementation, technically slightly more precise but little bit slower</string>
-          </property>
-          <property name="text">
-           <string>Python Mode</string>
-          </property>
-          <attribute name="buttonGroup">
-           <string notr="true">buttonGroup_5</string>
-          </attribute>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QRadioButton" name="radio_mat_mode">
-          <property name="toolTip">
-           <string>Matlab must be installed with a valid license</string>
-          </property>
-          <property name="text">
-           <string>Matlab mode (default)</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-          <attribute name="buttonGroup">
-           <string notr="true">buttonGroup_5</string>
-          </attribute>
-         </widget>
-        </item>
-        <item row="5" column="0" colspan="2">
+        <item row="6" column="0" colspan="2">
          <widget class="QPushButton" name="PDA_run">
+          <property name="toolTip">
+           <string>As long as this button says running, everything is fine and running as normal</string>
+          </property>
           <property name="text">
            <string>Run</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0" colspan="2">
+        <item row="7" column="0" colspan="2">
          <widget class="QTableWidget" name="PDA_table">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2025,7 +1999,7 @@
           </column>
          </widget>
         </item>
-        <item row="7" column="0" colspan="2">
+        <item row="8" column="0" colspan="2">
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
            <widget class="QPushButton" name="PDA_D32">
@@ -2043,7 +2017,7 @@
           </item>
          </layout>
         </item>
-        <item row="8" column="0" colspan="2">
+        <item row="9" column="0" colspan="2">
          <layout class="QHBoxLayout" name="horizontalLayout_16">
           <item>
            <widget class="QPushButton" name="PDA_D32_mean">
@@ -2057,6 +2031,65 @@
             <property name="text">
              <string>Velocity Mean Graph</string>
             </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="5" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout_18">
+          <item>
+           <widget class="QRadioButton" name="radio_mat_mode">
+            <property name="toolTip">
+             <string>Matlab must be installed with a valid license</string>
+            </property>
+            <property name="text">
+             <string>Matlab mode (default)</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_5</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="radio_py_mode">
+            <property name="toolTip">
+             <string>Open source implementation of matlab mode, technically slightly more precise but little bit slower</string>
+            </property>
+            <property name="text">
+             <string>Python default mode</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_5</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="radio_py_ex_mode">
+            <property name="toolTip">
+             <string>In this mode data is fitted to a polynom function and a log function, whereas is matlab mode it is fitted to exponetial function and log function</string>
+            </property>
+            <property name="text">
+             <string>Python Poly Log mode</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_5</string>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="radio_py_poly_mode">
+            <property name="toolTip">
+             <string>In this mode data is fitted to a polynom function, whereas is matlab mode it is fitted to exponetial function and log function</string>
+            </property>
+            <property name="text">
+             <string>Python Full-Poly mode</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup_5</string>
+            </attribute>
            </widget>
           </item>
          </layout>
@@ -2154,7 +2187,7 @@
      <x>0</x>
      <y>0</y>
      <width>1034</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetting">
@@ -2260,10 +2293,10 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup_5"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup_5"/>
+  <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

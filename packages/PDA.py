@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit, least_squares
 from sklearn.metrics import r2_score
 from openpyxl import load_workbook
 import time
+import plotly.express as px
 import os
 from scipy.io import loadmat
 import tracemalloc
@@ -18,7 +19,7 @@ def createPowerFit(x, y):
     def func1(x, y, a, b):
         return a * np.power(x, b)
     
-    result = curve_fit(func1, x, y, method='trf')
+    result = curve_fit(func1, x, y, method='lm')
 
     # a = result[0][1]
     # b = result[0][2]
@@ -31,7 +32,7 @@ def createLogFit(x, y):
     def func1(x, y, a, b):
         return a * np.log(x) + b
     
-    result = curve_fit(func1, x, y, method='trf')
+    result = curve_fit(func1, x, y, method='lm')
 
     # a = result[0][1]
     # b = result[0][2]
@@ -39,7 +40,6 @@ def createLogFit(x, y):
     # print('R2 LOG:', r2)
 
     return result[0][1:]
-
 
 class PDA():
     def __init__(self, path, upperCutOff = 516.85, matPath = None, mode:str = 'py', lowerCutOff = 0, posLine = 3, firstDataLine = 6, velCol = 3, diaCol = 6, timeCol = 1, split = '\t', phi = 70, f_1 = 1000, f_2 = 310, ls_p = 200, liqDens = 998.2, header=['Row', 'AT', 'TT', 'Vel', 'U12', 'U13', 'Diameter']) -> None:
@@ -146,6 +146,10 @@ class PDA():
         # print(np.isnan(mean_burstlensquared))
         fit_x = edges_middle[np.isfinite(mean_burstlensquared)]
         fit_y = mean_burstlensquared[np.isfinite(mean_burstlensquared)]
+
+        fit_x_raw = fit_x
+        fit_y_raw = fit_y
+
         anz_pro_bin = np.transpose(N)
         anz_pro_bin = anz_pro_bin[np.isfinite(mean_burstlensquared)]
     
@@ -153,8 +157,8 @@ class PDA():
         if sort_anz_pro_bin[-1] < bincount:
             bincount = np.mean(anz_pro_bin)
 
-        fit_x = fit_x[anz_pro_bin >= bincount]
-        fit_y = fit_y[anz_pro_bin >= bincount]
+        # fit_x = fit_x[anz_pro_bin >= bincount]
+        # fit_y = fit_y[anz_pro_bin >= bincount]
 
         powA, powB = createPowerFit(fit_x, fit_y)
         logA, logB = createLogFit(fit_x, fit_y)
@@ -163,12 +167,20 @@ class PDA():
         y_power = powA*np.power(x, powB)
         y_log = logA*np.log(x) + logB
 
+        # y_log_full = powA*np.power(fit_x_raw, powB)
+        # y_power_full = logA*np.log(fit_x_raw) + logB
+
         y_diff = abs(y_log-y_power)
         I = np.argsort(y_diff)[:5]
         sorted_x = x[I]
-        # sorted_y_diff = y_diff[I]
         x_pow_max = np.max(sorted_x)
-        # x_pow_max = np.max(x[I[:5]])
+
+        # df_push = pd.DataFrame(np.array([fit_x_raw, fit_y_raw, y_log_full, y_power_full]).transpose(), columns=['fit_x', 'fit_y', 'y_log', 'y_power'])
+        # df_push = df_push.set_index('fit_x', drop=True)
+
+        # fig = px.line(df_push, labels={'0':'fit_x_raw', 'value':'y'}, markers=True)
+        # fig.show()
+
 
         beta = -self.f_2/self.f_1
         ls_korr = self.ls_p/abs(beta)
@@ -202,6 +214,179 @@ class PDA():
         #     A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
 
         return [D_val, A_val]     
+
+    def calcAreaExperimental(self, df:pd.DataFrame):
+        D = df['Diameter'].to_numpy()
+        Ttime = df['TT'].to_numpy()
+        LDA1 = df['Vel'].to_numpy()
+        LDA4 = np.zeros(len(LDA1))
+        burst_length = Ttime * np.sqrt(np.square(LDA1) + np.square(LDA4))
+        Data_new = np.column_stack((D, Ttime, LDA1, LDA4, burst_length))
+        Data_new = pd.DataFrame(Data_new, columns=['D', 'Ttime', 'LDA1', 'LDA4', 'burst_length'])
+        Data_new_sort = Data_new.sort_values(by=['D'])
+
+        bingroesse = 5
+        bincount = 200
+
+        edges = np.arange(0, int(np.ceil(np.max(D)+bingroesse+1)), bingroesse)
+        N, edges = np.histogram(Data_new_sort['D'], bins=edges)
+        
+        Data_bin = [None]*len(N)
+
+        count = N[0]
+        Data_bin[0] = Data_new_sort.iloc[: count, :]
+
+        
+        for i in range(1, len(N)):
+            Data_bin[i] = Data_new_sort.iloc[count: count+N[i], :]
+            count = count + N[i]
+
+        mean_burstlen = np.zeros(len(N))
+        mean_burstlensquared = np.zeros(len(N))
+
+        for i in range(len(N)):
+            mean_burstlen[i] = (Data_bin[i]['burst_length']).mean()
+            mean_burstlensquared[i] = mean_burstlen[i]**2
+        
+        edges_middle = edges[:-1] + bingroesse/2
+
+        fit_x = edges_middle[np.isfinite(mean_burstlensquared)]
+        fit_y = mean_burstlensquared[np.isfinite(mean_burstlensquared)]
+
+        fit_x_raw = fit_x
+        fit_y_raw = fit_y
+
+        anz_pro_bin = np.transpose(N)
+        anz_pro_bin = anz_pro_bin[np.isfinite(mean_burstlensquared)]
+    
+        sort_anz_pro_bin = np.sort(anz_pro_bin)
+        if sort_anz_pro_bin[-1] < bincount:
+            bincount = np.mean(anz_pro_bin)
+
+        fit_x = fit_x[anz_pro_bin >= bincount]
+        fit_y = fit_y[anz_pro_bin >= bincount]
+        
+        p = np.poly1d(np.polyfit(fit_x_raw, fit_y_raw, 6))
+        logA, logB = createLogFit(fit_x, fit_y)
+
+        y_log = logA * np.log(fit_x_raw) + logB
+        
+        x = np.max(fit_x)
+
+        beta = -self.f_2/self.f_1
+        ls_korr = self.ls_p/abs(beta)
+        D_val = np.zeros(len(D))
+        A_val = np.zeros(len(D))
+
+        # df_push = pd.DataFrame(np.array([fit_x_raw, fit_y_raw, p(fit_x_raw), y_log]).transpose(), columns=['fit_x', 'fit_y', 'y_poly', 'y_log'])
+        # df_push = df_push.set_index('fit_x', drop=True)
+
+        # fig = px.line(df_push, labels={'0':'fit_x_raw', 'value':'y'}, markers=True)
+        # fig.show()
+
+        for i in range(len(D)):
+            if D[i] <= x:
+                calc = p(D[i])
+                if calc <= 0:
+                    D_val[i] = np.NaN
+                else:
+                    D_val[i] = (4 / np.pi) * ((ls_korr * (np.sqrt(calc))) /
+                                            (ls_korr - np.cos(self.phi) * np.sqrt(calc) *
+                                                np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+            else: 
+                calc = logA * np.log(D[i]) + logB
+                if calc <= 0:
+                    D_val[i] = np.NaN
+                else:
+                    D_val[i] = (4 / np.pi) * ((ls_korr * (np.sqrt(calc))) /
+                                            (ls_korr - np.cos(self.phi) * np.sqrt(calc) *
+                                                np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+
+
+        for i in range(len(D)):
+            A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
+                    np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
+
+        return [D_val, A_val]
+    
+    def calcAreaPoly(self, df:pd.DataFrame):
+        D = df['Diameter'].to_numpy()
+        Ttime = df['TT'].to_numpy()
+        LDA1 = df['Vel'].to_numpy()
+        LDA4 = np.zeros(len(LDA1))
+        burst_length = Ttime * np.sqrt(np.square(LDA1) + np.square(LDA4))
+        Data_new = np.column_stack((D, Ttime, LDA1, LDA4, burst_length))
+        Data_new = pd.DataFrame(Data_new, columns=['D', 'Ttime', 'LDA1', 'LDA4', 'burst_length'])
+        Data_new_sort = Data_new.sort_values(by=['D'])
+
+        bingroesse = 5
+        bincount = 200
+
+        edges = np.arange(0, int(np.ceil(np.max(D)+bingroesse+1)), bingroesse)
+        N, edges = np.histogram(Data_new_sort['D'], bins=edges)
+        
+        Data_bin = [None]*len(N)
+
+        count = N[0]
+        Data_bin[0] = Data_new_sort.iloc[: count, :]
+
+        
+        for i in range(1, len(N)):
+            Data_bin[i] = Data_new_sort.iloc[count: count+N[i], :]
+            count = count + N[i]
+
+        mean_burstlen = np.zeros(len(N))
+        mean_burstlensquared = np.zeros(len(N))
+
+        for i in range(len(N)):
+            mean_burstlen[i] = (Data_bin[i]['burst_length']).mean()
+            mean_burstlensquared[i] = mean_burstlen[i]**2
+        
+        edges_middle = edges[:-1] + bingroesse/2
+
+        fit_x = edges_middle[np.isfinite(mean_burstlensquared)]
+        fit_y = mean_burstlensquared[np.isfinite(mean_burstlensquared)]
+
+        fit_x_raw = fit_x
+        fit_y_raw = fit_y
+
+        anz_pro_bin = np.transpose(N)
+        anz_pro_bin = anz_pro_bin[np.isfinite(mean_burstlensquared)]
+    
+        sort_anz_pro_bin = np.sort(anz_pro_bin)
+        if sort_anz_pro_bin[-1] < bincount:
+            bincount = np.mean(anz_pro_bin)
+
+        fit_x = fit_x[anz_pro_bin >= bincount]
+        fit_y = fit_y[anz_pro_bin >= bincount]
+        
+        p = np.poly1d(np.polyfit(fit_x_raw, fit_y_raw, 6))
+
+        beta = -self.f_2/self.f_1
+        ls_korr = self.ls_p/abs(beta)
+        D_val = np.zeros(len(D))
+        A_val = np.zeros(len(D))
+
+        # df_push = pd.DataFrame(np.array([fit_x_raw, fit_y_raw, p(fit_x_raw), y_log]).transpose(), columns=['fit_x', 'fit_y', 'y_poly', 'y_log'])
+        # df_push = df_push.set_index('fit_x', drop=True)
+
+        # fig = px.line(df_push, labels={'0':'fit_x_raw', 'value':'y'}, markers=True)
+        # fig.show()
+
+        for i in range(len(D)):
+            calc = p(D[i])
+            if calc <= 0:
+                D_val[i] = np.NaN
+            else:
+                D_val[i] = (4 / np.pi) * ((ls_korr * (np.sqrt(calc))) /
+                                        (ls_korr - np.cos(self.phi) * np.sqrt(calc) *
+                                            np.abs(LDA4[i] / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))))
+
+        for i in range(len(D)):
+            A_val[i] = (D_val[i] * ls_korr / np.sin(self.phi)) - (np.pi * (D_val[i] ** 2) / 4 / np.tan(self.phi)) * (
+                    np.abs(LDA4[i]) / np.sqrt(LDA1[i] ** 2 + LDA4[i] ** 2))
+
+        return [D_val, A_val]
 
     def matlabArea(self, df:pd.DataFrame, engine):
         D = df['Diameter'].to_list()
@@ -405,10 +590,15 @@ class PDA():
                 if df.empty: continue
                 t_ges = df['AT'].max()/1000 + df['TT'].iloc[-1]/(10**6) -df['AT'].min()/1000
                 D10, D20, D30, D32, DV10, DV50, DV90 = self.calcDias(df)
-                if self.mode != 'py':
+                if self.mode == 'mat':
                     D_val, A_val = self.matlabArea(df, engine)
-                else:
+                elif self.mode == 'py':
                     D_val, A_val = self.calcArea(df)
+                elif self.mode == 'py_ex':
+                    D_val, A_val = self.calcAreaExperimental(df)
+                elif self.mode == 'py_poly':
+                    D_val, A_val = self.calcAreaPoly(df)
+                else: raise NotImplementedError
 
                 n_flux, m_flux = self.calcFlux(A_val, t_ges, df['Diameter'])
 
@@ -445,11 +635,13 @@ class PDA():
         df_debug = pd.DataFrame(debugDict)
         # df_debug.to_clipboard()
 
-        if self.mode != 'py':
+        if self.mode == 'mat':
             df_x, ID_32_n_x, ID_32_m_x = self.ID32_mat(fullDict_x, dir='x', engine=engine)
             engine.quit()
-        else:
+        elif self.mode == 'py' or self.mode == 'py_ex' or self.mode == 'py_poly':
             df_x, ID_32_n_x, ID_32_m_x = self.calcID32(fullDict_x, dir='x')
+        else:
+            raise NotImplementedError
 
         self.writeToExcel(df_x, ID_32_n_x, ID_32_m_x)
         return(ID_32_n_x, ID_32_m_x, df_x)
@@ -460,6 +652,7 @@ if __name__ == '__main__':
     path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'Folder1.mat')
     # _path = r'M:\Duese_4\Ole_Erw\2_60_34\1H'
 
-    pda = PDA(_path, matPath=path, mode='py')
+    pda = PDA(_path, matPath=path, mode='py_ex')
+    # pda = PDA(_path, matPath=path, mode='py')
     pda.run()
 
