@@ -22,9 +22,9 @@ from openpyxl import load_workbook, Workbook
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# UI_FILE = './GUI/mainWindow.ui'
+# PY_FILE = './GUI/mainWindow.py'
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
