@@ -321,6 +321,7 @@ class UI(QMainWindow):
         self.ui.line10Up.clicked.connect(self.moveLine10Up)
         self.ui.picID.valueChanged.connect(self.load_image_into_graphics_view)
         self.ui.loadFolder.clicked.connect(self.loadFolder)
+        self.cineItems = None
         self.ui.runConversion.clicked.connect(self.runConversion)
         self.ui.freqRun.clicked.connect(self.createFreqList)
         self.ui.clearRef.clicked.connect(self.showFFTArray)
@@ -1509,7 +1510,9 @@ class UI(QMainWindow):
             listItem = QListWidgetItem()
             listItem.setText(item.replace(r'\\', '/'))
             self.ui.listWidget.addItem(listItem)
-        self.cineItems = items
+        if len(items) > 0:
+            self.cineItems = items
+        else: self.cineItems = None
 
     def runConversion(self):
         # if 'cineItems' not in globals(): return
