@@ -42,7 +42,7 @@ def createLogFit(x, y):
     return result[0][1:]
 
 class PDA():
-    def __init__(self, path, upperCutOff = 516.85, matPath = None, mode:str = 'py', lowerCutOff = 0, posLine = 3, firstDataLine = 6, velCol = 3, diaCol = 6, timeCol = 1, split = '\t', phi = 70, f_1 = 1000, f_2 = 310, ls_p = 200, liqDens = 998.2, header=['Row', 'AT', 'TT', 'Vel', 'U12', 'U13', 'Diameter']) -> None:
+    def __init__(self, path, upperCutOff = 516.85, matPath = None, scriptPath=None, mode:str = 'py', lowerCutOff = 0, posLine = 3, firstDataLine = 6, velCol = 3, diaCol = 6, timeCol = 1, split = '\t', phi = 70, f_1 = 1000, f_2 = 310, ls_p = 200, liqDens = 998.2, header=['Row', 'AT', 'TT', 'Vel', 'U12', 'U13', 'Diameter']) -> None:
         self.path = path
         self.posLine = posLine
         self.firstDataLine = firstDataLine
@@ -58,7 +58,9 @@ class PDA():
         self.f_2 = f_2
         self.ls_p = ls_p
         self.liqDens = liqDens
-        self.matlab = os.path.relpath(r'matlab_scripts')
+        if not scriptPath:
+            self.matlab = os.path.relpath(r'matlab_scripts')
+        else: self.matlab = scriptPath
         self.matPath = matPath
         if modeSet:
             self.mode = modeSet
@@ -573,7 +575,7 @@ class PDA():
         fullDict_x = {}
         fullDict_y = {}
         debugDict = {}
-        if not self.mode == 'py':
+        if not self.mode == 'py' or self.mode == 'py_ex' or self.mode == 'py_poly':
             engine = matlab.engine.start_matlab()
             engine.cd(self.matlab, nargout=0)
         

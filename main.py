@@ -21,6 +21,7 @@ from PyQt6.QtGui import QPixmap, QPen, QColor
 from openpyxl import load_workbook, Workbook
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
+from packages.createMatlabScripts import MLS
 from pyfluids import Fluid, FluidsList, Input
 import logging
 import traceback
@@ -45,6 +46,8 @@ try:
     pyi_splash.close()
 except:
     pass
+
+
 
 class WorkerSignals(QObject):
     finished = pyqtSignal() 
@@ -263,7 +266,7 @@ class PDAWorkerSignals(QObject):
 
 class PDAWorker(QRunnable):
 
-    def __init__(self, path, upperCutOff, liqDens, row, mode='mat', matPath = None):
+    def __init__(self, path, upperCutOff, liqDens, row, mode='mat', matPath = None, scriptPath = None):
         super().__init__()
         self.path = path
         self.liqDens = liqDens
@@ -272,9 +275,10 @@ class PDAWorker(QRunnable):
         self.row = row
         self.mode = mode
         self.matPath = matPath
+        self.scriptPath = scriptPath
 
     def run(self):
-        pda = PDA.PDA(self.path, upperCutOff=self.upperCutOff, liqDens=self.liqDens, mode=self.mode, matPath=self.matPath)
+        pda = PDA.PDA(self.path, upperCutOff=self.upperCutOff, liqDens=self.liqDens, mode=self.mode, matPath=self.matPath, scriptPath = self.scriptPath)
         # print(self.upperCutOff)
         # print(self.path)
         # print(self.liqDens)
@@ -1778,18 +1782,19 @@ class UI(QMainWindow):
         self.ui.PDA_run.setText('Running')
         self.ui.PDA_run.setDisabled(True)
         self.running = 0
+        path = MLS(os.path.join(self.path, 'global', 'scripts')).run()
         for row, line in enumerate(lines):
             if line.text().endswith('.') or line.text() == '': continue
             try:
                 if self.ui.radio_mat_mode.isChecked():
                     matPath = os.path.join(self.path, 'global', f'folder{row+1}.mat')
-                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, matPath=matPath)
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, matPath=matPath, scriptPath=path)
                 elif self.ui.radio_py_mode.isChecked():
-                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py')
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py', scriptPath=path)
                 elif self.ui.radio_py_ex_mode.isChecked():
-                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_ex')
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_ex', scriptPath=path)
                 elif self.ui.radio_py_poly_mode.isChecked():
-                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_poly')
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_poly', scriptPath=path)
                 worker.signals.push.connect(self.createItemPDA)
                 threadpool.start(worker)
                 line.setDisabled(True)
