@@ -33,7 +33,7 @@ makeSpec = [
     "--add-data", f"{os.path.relpath('../../GUI')}\\*.py;GUI",
     "--add-data", f"../../packages/*.py;packages",
     "--add-data", f"../../matlab_scripts/*.m;matlab_scripts",
-    "--add-data", f"../../assets;assets",
+    "--add-data", f"{os.path.relpath('../../assets')};assets",
     # "--exclude-module", "module_to_exclude",
     "--hidden-import", "sympy",
     "--hidden-import", "skimage",
