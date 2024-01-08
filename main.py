@@ -22,6 +22,8 @@ from openpyxl import load_workbook, Workbook
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 from pyfluids import Fluid, FluidsList, Input
+import logging
+import traceback
 # UI_FILE = './GUI/mainWindow.ui'
 # PY_FILE = './GUI/mainWindow.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
@@ -319,6 +321,7 @@ class UI(QMainWindow):
         self.ui.line10Up.clicked.connect(self.moveLine10Up)
         self.ui.picID.valueChanged.connect(self.load_image_into_graphics_view)
         self.ui.loadFolder.clicked.connect(self.loadFolder)
+        self.cineItems = None
         self.ui.runConversion.clicked.connect(self.runConversion)
         self.ui.freqRun.clicked.connect(self.createFreqList)
         self.ui.clearRef.clicked.connect(self.showFFTArray)
@@ -342,8 +345,7 @@ class UI(QMainWindow):
         self.ui.PDA_Vel_mean.setDisabled(True)
         self.currentPDAFolder = None
         self.settings_dict = {}
-        self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
-        self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
+        self.createFolders()
         self.lastMode = None
         self.lastFolder = None
         self.removePresetTag()
@@ -529,10 +531,10 @@ class UI(QMainWindow):
         self.Lc.append(self.innerTube)
         self.innerWall = self.ui.innerWall.value()/1000
         self.annularSheet = self.ui.annularSheet.value()/1000
-        self.Lc.append(self.annularSheet)
+        self.Lc.append(2*self.annularSheet)
         self.middleWall = self.ui.middleWall.value()/1000
         self.outerSheet = self.ui.outerSheet.value()/1000
-        self.Lc.append(self.outerSheet)
+        self.Lc.append(2*self.outerSheet)
         self.outerWall = self.ui.outerWall.value()/1000
         self.orifice()
 
@@ -824,13 +826,38 @@ class UI(QMainWindow):
         except: output = '<br><br>This combination of viscosity and temperature is not possible!'
         self.ui.outputLabel.setText(output)
 
+    def createFolders(self):
+        default = {
+                'lastFile': 'empty__',
+                'lastExport': 'empty__', 
+                'exportDecimal': 'point', 
+                'exportHeader': False
+                }
+        
+        if not os.path.exists(os.path.join(self.path, 'global')): 
+            os.mkdir(os.path.join(self.path, 'global'))
+            if not os.path.exists(os.path.join(self.path, 'global', 'share')):
+                os.mkdir(os.path.join(self.path, 'global', 'share'))
+
+            FILE_ATTRIBUTE_HIDDEN = 0x02
+            ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
+            self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
+            self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
+            self.settings.setup(default)
+            self.resetValues()
+        else:
+            self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
+            self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
+
     def loadGlobalSettings(self):
         path = os.path.join(self.path, 'global', 'global_settings.json')
         if not os.path.exists(path):
             try: 
                 default = {
                     'lastFile': 'empty__',
-                    'lastExport': 'empty__'
+                    'lastExport': 'empty__', 
+                    'exportDecimal': 'point', 
+                    'exportHeader': False
                 }
                 if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
                 if not os.path.exists(os.path.join(self.path, 'global', 'share')):
@@ -842,6 +869,25 @@ class UI(QMainWindow):
                 self.resetValues()
             except: pass
         else:
+            # Load export decimal comma or point for export
+            try:
+                mode = self.settings.get('exportDecimal')
+                if mode == 'point': self.ui.radioPoint.setChecked(True)
+                else: self.ui.radioComma.setChecked(True)
+            except:
+                self.settings.set('exportDecimal', 'point')
+                self.ui.radioPoint.setChecked(True)
+            
+            # Load export header setting
+            try:
+                if self.settings.get('exportHeader'):
+                    self.ui.headerCheck.setChecked(True)
+                else: self.ui.headerCheck.setChecked(False)
+            except:
+                self.settings.set('exportHeader', False)
+                self.ui.headerCheck.setChecked(False)
+
+            # Load preset
             try: self.loadPreset(self.settings.get('lastFile'))
             except: pass
         
@@ -974,13 +1020,9 @@ class UI(QMainWindow):
         else:
             self.settings.set('lastExport', style)
 
-            path = os.path.join(self.path, 'global', 'presets', style)
-            files = os.listdir(path)
-
-            dicts = []
-            for item in files:
-                with open(os.path.join(path, item), 'r') as file:
-                    dicts.append(json.load(file))
+            path = os.path.join(self.path, 'global', 'presets', style, 'database.db')
+            ex = exportDB(path)
+            dicts = ex.DBtoDicts()
 
             if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
                 self.readValues()
@@ -1015,13 +1057,10 @@ class UI(QMainWindow):
         style = self.ui.exportStyleBox.currentText()
         if style == 'Select Export Style':
             return None
-        path = os.path.join(self.path, 'global', 'presets', style)
-        files = os.listdir(path)
-
-        dicts = []
-        for item in files:
-            with open(os.path.join(path, item), 'r') as file:
-                dicts.append(json.load(file))
+        self.settings.set('lastExport', style)
+        path = os.path.join(self.path, 'global', 'presets', style, 'database.db')
+        ex = exportDB(path)
+        dicts = ex.DBtoDicts()
 
         if not 'self.innerTube' in locals() or not 'self.innerTube' in globals():
             self.readValues()
@@ -1057,8 +1096,11 @@ class UI(QMainWindow):
         if type(df) == type(pd.DataFrame()):
             df = self.replace(df)
             if self.ui.headerCheck.isChecked() == True:
-                df.to_clipboard(decimal=',', sep='\t')
-            else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+                self.settings.set('exportHeader', True)
+                df.to_clipboard(sep='\t')
+            else: 
+                df.to_clipboard(header=False, index=False, sep='\t')
+                self.settings.set('exportHeader', False)
             self.changeColor(self.ui.cpToclip, 'green', 2000)
         else:
             self.changeColor(self.ui.exportStyleBox, 'red', 1000)
@@ -1069,7 +1111,10 @@ class UI(QMainWindow):
         if type(df) == type(pd.DataFrame()):
             if self.ui.headerCheck.isChecked() == True:
                 df.to_clipboard(decimal=',', sep='\t')
-            else: df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+                self.settings.set('exportHeader', True)
+            else: 
+                df.to_clipboard(header=False, index=False, decimal=',', sep='\t')
+                self.settings.set('exportHeader', False)
             self.changeColor(self.ui.cellToClip, 'green', 1000)
         else:
             self.changeColor(self.ui.exportStyleBox, 'red', 1000)
@@ -1077,8 +1122,10 @@ class UI(QMainWindow):
         
     def replace(self, df):
         if self.ui.radioComma.isChecked() == True:
+            self.settings.set('exportDecimal', 'comma')
             df = df.applymap(lambda x: str(x).replace('.', ','))
         else: 
+            self.settings.set('exportDecimal', 'point')
             df = df.applymap(lambda x: str(x))
         # print(df)
         return df
@@ -1463,7 +1510,9 @@ class UI(QMainWindow):
             listItem = QListWidgetItem()
             listItem.setText(item.replace(r'\\', '/'))
             self.ui.listWidget.addItem(listItem)
-        self.cineItems = items
+        if len(items) > 0:
+            self.cineItems = items
+        else: self.cineItems = None
 
     def runConversion(self):
         # if 'cineItems' not in globals(): return
@@ -1690,6 +1739,7 @@ class UI(QMainWindow):
             self.ui.PDA_vel.setEnabled(True)
             self.ui.PDA_Vel_mean.setEnabled(True)
             self.ui.PDA_D32_mean.setEnabled(True)
+            self.createTotalOut()
             try:
                 self.createTotalOut()
             except:
@@ -1734,8 +1784,12 @@ class UI(QMainWindow):
                 if self.ui.radio_mat_mode.isChecked():
                     matPath = os.path.join(self.path, 'global', f'folder{row+1}.mat')
                     worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, matPath=matPath)
-                else:
+                elif self.ui.radio_py_mode.isChecked():
                     worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py')
+                elif self.ui.radio_py_ex_mode.isChecked():
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_ex')
+                elif self.ui.radio_py_poly_mode.isChecked():
+                    worker = PDAWorker(line.text(), self.ui.PDA_cutoff.value(), self.ui.PDA_liqDens.value(), row, mode='py_poly')
                 worker.signals.push.connect(self.createItemPDA)
                 threadpool.start(worker)
                 line.setDisabled(True)
@@ -1891,10 +1945,16 @@ if __name__ == '__main__':
         app.setStyle('Fusion')
         window = UI()
         window.show()
-        sys.exit(app.exec())
+        app.exec()
     except Exception as e:
-        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs')):
-            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+        crash=["Error on line {}".format(sys.exc_info()[-1].tb_lineno),"\n",e]
+        print(crash)
+        try: os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+        except: 
+            try: 
+                os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
+                os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+            except: pass
+
         with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs', f'{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}_crash.log'), 'w+') as file:
-            file.write(f'Crash LOG:\n{e}')
-        show_error_popup()
+            file.writelines(crash)

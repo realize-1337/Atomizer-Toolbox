@@ -24,8 +24,7 @@ class settings():
         except:
             raise FileNotFoundError
       
-
-    def set(self, key:str, value:float|str) -> None:
+    def set(self, key:str, value:float|str|int|bool) -> None:
         dict = self.getCurrentDict()
         try:
             dict[key] = value
@@ -39,3 +38,4 @@ class settings():
             return dict[key]
         except:
             raise KeyError
+        

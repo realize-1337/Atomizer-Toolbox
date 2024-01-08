@@ -6,7 +6,7 @@ sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 FILE = f'{os.path.abspath("./main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.62-hotifx'
+VERSION = '1.64-beta2'
 AUTHOR = 'David Maerker'
 
 # Aktualisiere die Abhängigkeiten mit 'pip freeze'
@@ -33,6 +33,7 @@ makeSpec = [
     "--add-data", f"{os.path.relpath('../../GUI')}\\*.py;GUI",
     "--add-data", f"../../packages/*.py;packages",
     "--add-data", f"../../matlab_scripts/*.m;matlab_scripts",
+    "--add-data", f"{os.path.relpath('../../assets')};assets",
     # "--exclude-module", "module_to_exclude",
     "--hidden-import", "sympy",
     "--hidden-import", "skimage",

@@ -119,6 +119,7 @@
     ls_korr = ls_p/abs(beta);        %[�m]
     D_val = zeros(length(D),1);   %[�m]
     A_val = zeros(length(D),1);   %[�m^2]
+
     
     for i=1:length(D)
         if D(i) < x_pow_max
