@@ -344,8 +344,7 @@ class UI(QMainWindow):
         self.ui.PDA_Vel_mean.setDisabled(True)
         self.currentPDAFolder = None
         self.settings_dict = {}
-        self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
-        self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
+        self.createFolders()
         self.lastMode = None
         self.lastFolder = None
         self.removePresetTag()
@@ -825,6 +824,29 @@ class UI(QMainWindow):
             output = f'<u>{result} wt-% </u> of glycerin are requiered to get a viscosity of {"%.0f" % my_target} mPa s at {temp} °C.'
         except: output = '<br><br>This combination of viscosity and temperature is not possible!'
         self.ui.outputLabel.setText(output)
+
+    def createFolders(self):
+        default = {
+                'lastFile': 'empty__',
+                'lastExport': 'empty__', 
+                'exportDecimal': 'point', 
+                'exportHeader': False
+                }
+        
+        if not os.path.exists(os.path.join(self.path, 'global')): 
+            os.mkdir(os.path.join(self.path, 'global'))
+            if not os.path.exists(os.path.join(self.path, 'global', 'share')):
+                os.mkdir(os.path.join(self.path, 'global', 'share'))
+
+            FILE_ATTRIBUTE_HIDDEN = 0x02
+            ctypes.windll.kernel32.SetFileAttributesW(fr"{os.path.join(self.path, 'global')}", FILE_ATTRIBUTE_HIDDEN)
+            self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
+            self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
+            self.settings.setup(default)
+            self.resetValues()
+        else:
+            self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
+            self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
 
     def loadGlobalSettings(self):
         path = os.path.join(self.path, 'global', 'global_settings.json')
