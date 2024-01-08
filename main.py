@@ -1930,31 +1930,44 @@ class UI(QMainWindow):
                 meanDF.to_excel(file, sheet_name='ID_32', index=False)
 
 def show_error_popup():
-    app = QApplication([])
+    # app = QApplication([])
     error_popup = QMessageBox()
     error_popup.setIcon(QMessageBox.Icon.Critical)
     error_popup.setWindowTitle("Error")
     error_popup.setText(f"An error occurred!\nA crash log can be found in {os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs')}")
     error_popup.setStandardButtons(QMessageBox.StandardButton.Ok)
     error_popup.exec()
-    app.quit()                
+    app.quit()        
+    os._exit(1)        
+
+def excepthook(exc_type, exc_value, traceback):
+    # Log unhandled exceptions
+    print('ERROR')
+    logging.exception("Unhandled exception", exc_info=(exc_type, exc_value, traceback))
+    print('Logging Done')
+    os.startfile(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+    os._exit(1)  
+
 
 if __name__ == '__main__':
-    try:
-        app = QApplication(sys.argv)
-        app.setStyle('Fusion')
-        window = UI()
-        window.show()
-        app.exec()
-    except Exception as e:
-        crash=["Error on line {}".format(sys.exc_info()[-1].tb_lineno),"\n",e]
-        print(crash)
-        try: os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
-        except: 
-            try: 
-                os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
-                os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
-            except: pass
+    try: os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+    except: 
+        try: 
+            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
+            os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
+        except: pass
 
-        with open(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs', f'{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}_crash.log'), 'w+') as file:
-            file.writelines(crash)
+    log_directory = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs')
+    log_file = f"{log_directory}/crash.log"
+
+    logging.basicConfig(filename=log_file, level=logging.ERROR,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+    sys.excepthook = excepthook
+
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+    window = UI()
+    window.show()
+    sys.exit(app.exec())
