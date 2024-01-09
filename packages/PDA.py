@@ -11,9 +11,8 @@ from scipy.io import loadmat
 import tracemalloc
 try: 
     import matlab.engine
-    modeSet = None
 except: 
-    modeSet = 'py'
+    pass
 
 def createPowerFit(x, y):   
     def func1(x, y, a, b):
