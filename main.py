@@ -47,8 +47,6 @@ try:
 except:
     pass
 
-
-
 class WorkerSignals(QObject):
     finished = pyqtSignal() 
 
@@ -1977,7 +1975,6 @@ def excepthook(exc_type, exc_value, traceback):
     print('Logging Done')
     os.startfile(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))
     os._exit(1)  
-
 
 if __name__ == '__main__':
     try: os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'logs'))

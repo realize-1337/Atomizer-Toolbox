@@ -11,9 +11,8 @@ from scipy.io import loadmat
 import tracemalloc
 try: 
     import matlab.engine
-    modeSet = None
 except: 
-    modeSet = 'py'
+    pass
 
 def createPowerFit(x, y):   
     def func1(x, y, a, b):
@@ -62,9 +61,7 @@ class PDA():
             self.matlab = os.path.relpath(r'matlab_scripts')
         else: self.matlab = scriptPath
         self.matPath = matPath
-        if modeSet:
-            self.mode = modeSet
-        else: self.mode = mode
+        self.mode = mode
 
     def findPos(self, file):
         lines = ''
