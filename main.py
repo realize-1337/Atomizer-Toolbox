@@ -1904,6 +1904,15 @@ class UI(QMainWindow):
             baseName = os.path.basename(dirNames[0])
             export = os.path.join(dirNames[0], f'PDA_Report_{baseName}.xlsx')
             #pd.DataFrame().to_excel(export)
+
+            neg5 = np.arange(-100, -20, 5)
+            pos2 = np.arange(-20, 20, 2)
+            pos5 = np.arange(20, 105, 5)
+            ind = np.concatenate((neg5, pos2, pos5))
+
+
+            D_32_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg'], index=ind)
+            v_z_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg'], index=ind)
             with pd.ExcelWriter(export, engine='openpyxl') as file:
                 for df, n, m, name in zip(self.dfs, self.mean_n, self.mean_m, self.names):
                     wb = file.book
@@ -1919,6 +1928,9 @@ class UI(QMainWindow):
 
                     df.to_excel(file, sheet_name=name, index=False, startrow=startRow)
                     sheet = wb[name]
+                    for index, row in df.iterrows():
+                        D_32_df.loc[row['x [mm]'], name] = row['D32 [µm]']
+                        v_z_df.loc[row['x [mm]'], name] = row['v_z_mean [m/s]']
                     
                     if startRow: 
                         sheet[f'A1'] = f'{os.path.join(dirNames[0], name, header)}'
@@ -1933,6 +1945,19 @@ class UI(QMainWindow):
                 meanDF.loc[len(meanDF)] = ['Mean', meanDF['ID_32_n'].mean(), meanDF['ID_32_m'].mean()]
                 meanDF.set_index('Name', drop=True)
                 meanDF.to_excel(file, sheet_name='ID_32', index=False)
+
+                D_32_df['mean'] = D_32_df.loc[:, self.names].mean(axis=1)
+                v_z_df['mean'] = D_32_df.loc[:, self.names].mean(axis=1)
+                for index, row in D_32_df.iterrows():
+                    row['pos'] = row.loc[self.names].max() - row['mean']
+                    row['neg'] = row['mean'] - row.loc[self.names].min()
+                
+                for index, row in v_z_df.iterrows():
+                    row['pos'] = row.loc[self.names].max() - row['mean']
+                    row['neg'] = row['mean'] - row.loc[self.names].min()
+                
+                D_32_df.to_excel(file, sheet_name='D32 Export')
+                v_z_df.to_excel(file, sheet_name='v_z Export')
 
 def show_error_popup():
     # app = QApplication([])
@@ -1969,7 +1994,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    sys.excepthook = excepthook
+    # sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
