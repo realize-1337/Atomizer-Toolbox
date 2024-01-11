@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1034</width>
-    <height>885</height>
+    <height>944</height>
    </rect>
   </property>
   <property name="font">
@@ -2187,7 +2187,7 @@
      <x>0</x>
      <y>0</y>
      <width>1034</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetting">
@@ -2213,8 +2213,16 @@
     <addaction name="actionSave_Presets"/>
     <addaction name="actionReset_Values"/>
    </widget>
+   <widget class="QMenu" name="menuPDA">
+    <property name="title">
+     <string>PDA</string>
+    </property>
+    <addaction name="actionAutomatic_Folder_Detection"/>
+    <addaction name="actionGenerate_Full_Export"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSetting"/>
+   <addaction name="menuPDA"/>
    <addaction name="menuInfo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -2289,14 +2297,36 @@
     <string>Generate Full Report</string>
    </property>
   </action>
+  <action name="actionAutomatic_Folder_Detection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Automatic Folder Detection</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Full_Export">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Generate Full Export</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup_5"/>
+  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

@@ -859,7 +859,9 @@ class UI(QMainWindow):
                     'lastFile': 'empty__',
                     'lastExport': 'empty__', 
                     'exportDecimal': 'point', 
-                    'exportHeader': False
+                    'exportHeader': False, 
+                    'PDA_auto_folder': True,
+                    'PDA_full_export': True
                 }
                 if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
                 if not os.path.exists(os.path.join(self.path, 'global', 'share')):
@@ -891,6 +893,17 @@ class UI(QMainWindow):
 
             # Load preset
             try: self.loadPreset(self.settings.get('lastFile'))
+            except: pass
+
+            # Load PDA auto folder setting
+            try: 
+                if self.settings.get('PDA_auto_folder'): self.ui.actionAutomatic_Folder_Detection.setChecked(True)
+                else: self.ui.actionAutomatic_Folder_Detection.setChecked(False)
+            except: pass
+            
+            try: 
+                if self.settings.get('PDA_full_export'): self.ui.actionGenerate_Full_Export.setChecked(True)
+                else: self.ui.self.ui.actionGenerate_Full_Export.setChecked(False)
             except: pass
         
     def loadPreset(self, path = None):
@@ -1700,14 +1713,38 @@ class UI(QMainWindow):
         ]
         if self.currentPDAFolder:folder = QFileDialog.getExistingDirectory(self, "Select Directory", directory=self.currentPDAFolder)
         else: folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        autoLoad = True
+        validNames = [['1H', '2H', 'VP'], ['1.Halbprofil', '2.Halbprofil', 'Vollprofil']]
         if folder:
-            types = ['.txt']
-            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0])]
-            if len(files) > 1:
-                self.currentPDAFolder = os.path.dirname(folder)
-                lines[num].setText(folder)
+            if self.ui.actionAutomatic_Folder_Detection.isChecked():
+                self.settings.set('PDA_auto_folder', True)
+                sub_ = os.listdir(os.path.dirname(folder))
+                top_ = os.listdir(folder)
+                sub = [os.path.join(os.path.dirname(folder), x) for x in sub_ if x in validNames[0] or x in validNames[1]]
+                top = [os.path.join(folder, x) for x in top_ if x in validNames[0] or x in validNames[1]]
+
+                if len(top) > len(sub):
+                    auto = top
+                else: auto = sub
             else: 
-                lines[num].setText('Make sure to select folder with .txt files in it.')
+                self.settings.set('PDA_auto_folder', True)
+                auto = [folder]
+            
+            for i, a in enumerate(sorted(auto)):
+                types = ['.txt']
+                files = [os.path.join(a, x) for x in os.listdir(a) if x.endswith(types[0])]
+                if len(files) > 1:
+                    if len(auto) == 1:
+                        self.currentPDAFolder = os.path.dirname(folder)
+                        lines[num].setText(folder)
+                    else:
+                        self.currentPDAFolder = os.path.dirname(auto[0])
+                        lines[i].setText(a)
+                else: 
+                    if len(auto) == 1:
+                        lines[num].setText('Make sure to select folder with .txt files in it.')
+                    else:
+                        lines[i].setText('Make sure to select folder with .txt files in it.')
     
     def createItemPDA(self, ls:list):
         lines = [
@@ -1887,6 +1924,10 @@ class UI(QMainWindow):
         fig.show()
 
     def createTotalOut(self):
+        if not self.ui.actionGenerate_Full_Export.isChecked(): 
+            self.settings.set('PDA_full_export', False)
+            return
+        self.settings.set('PDA_full_export', True)
         lines = [
             self.ui.PDA_Line_1,
             self.ui.PDA_Line_2,
@@ -1908,55 +1949,67 @@ class UI(QMainWindow):
             pos5 = np.arange(20, 105, 5)
             ind = np.concatenate((neg5, pos2, pos5))
 
-
+            largest = 0
+            for name, df in zip(self.names, self.dfs):
+                if len(df) > largest:
+                    largestName = name
+                    largest = len(df)
+                
             D_32_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg'], index=ind)
             v_z_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg'], index=ind)
-            with pd.ExcelWriter(export, engine='openpyxl') as file:
-                for df, n, m, name in zip(self.dfs, self.mean_n, self.mean_m, self.names):
-                    wb = file.book
-                    lda = [x for x in os.listdir(os.path.join(dirNames[0], name)) if x.endswith('.lda')]
-                    if lda:
-                        header = lda[0]
-                        offset = 3
-                        maxId = len(df)+4+offset
-                        startRow = 3
-                    else:
-                        maxId = len(df)+4
-                        startRow = 0
+            try:
+                with pd.ExcelWriter(export, engine='openpyxl') as file:
+                    for df, n, m, name in zip(self.dfs, self.mean_n, self.mean_m, self.names):
+                        wb = file.book
+                        lda = [x for x in os.listdir(os.path.join(dirNames[0], name)) if x.endswith('.lda')]
+                        if lda:
+                            header = lda[0]
+                            offset = 3
+                            maxId = len(df)+4+offset
+                            startRow = 3
+                        else:
+                            maxId = len(df)+4
+                            startRow = 0
+                        
+                        df.to_excel(file, sheet_name=name, index=False, startrow=startRow)
+                        sheet = wb[name]
+                        for index, row in df.iterrows():
+                            D_32_df.loc[row['x [mm]'], name] = row['D32 [µm]']
+                            v_z_df.loc[row['x [mm]'], name] = row['v_z_mean [m/s]']
+                            if name != largestName:
+                                D_32_df.loc[-1*row['x [mm]'], name] = row['D32 [µm]']
+                                v_z_df.loc[-1*row['x [mm]'], name] = row['v_z_mean [m/s]']
+                        
+                        if startRow: 
+                            sheet[f'A1'] = f'{os.path.join(dirNames[0], name, header)}'
+                            sheet['A2'] = f'{datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}'
+                        sheet[f'A{maxId}'] = 'ID_32_n [µm]'
+                        sheet[f'A{maxId+1}'] = 'ID_32_m [µm]'
+                        sheet[f'B{maxId}'] = n
+                        sheet[f'B{maxId+1}'] = m
+                        wb.save(export)
+                        meanDF.loc[len(meanDF)] = [name, n, m]
 
-                    df.to_excel(file, sheet_name=name, index=False, startrow=startRow)
-                    sheet = wb[name]
-                    for index, row in df.iterrows():
-                        D_32_df.loc[row['x [mm]'], name] = row['D32 [µm]']
-                        v_z_df.loc[row['x [mm]'], name] = row['v_z_mean [m/s]']
+                    meanDF.loc[len(meanDF)] = ['Mean', meanDF['ID_32_n'].mean(), meanDF['ID_32_m'].mean()]
+                    meanDF.set_index('Name', drop=True)
+                    meanDF.to_excel(file, sheet_name='ID_32', index=False)
+
+                    D_32_df['mean'] = D_32_df.loc[:, self.names].mean(axis=1)
+                    v_z_df['mean'] = v_z_df.loc[:, self.names].mean(axis=1)
+                    for index, row in D_32_df.iterrows():
+                        D_32_df.loc[index, 'pos'] = row.loc[self.names].max() - row['mean']
+                        D_32_df.loc[index, 'neg'] = row['mean'] - row.loc[self.names].min()
+                        
+                    for index, row in v_z_df.iterrows():
+                        v_z_df.loc[index, 'pos'] = row.loc[self.names].max() - row['mean']
+                        v_z_df.loc[index, 'neg'] = row['mean'] - row.loc[self.names].min()
                     
-                    if startRow: 
-                        sheet[f'A1'] = f'{os.path.join(dirNames[0], name, header)}'
-                        sheet['A2'] = f'{datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}'
-                    sheet[f'A{maxId}'] = 'ID_32_n [µm]'
-                    sheet[f'A{maxId+1}'] = 'ID_32_m [µm]'
-                    sheet[f'B{maxId}'] = n
-                    sheet[f'B{maxId+1}'] = m
-                    wb.save(export)
-                    meanDF.loc[len(meanDF)] = [name, n, m]
-
-                meanDF.loc[len(meanDF)] = ['Mean', meanDF['ID_32_n'].mean(), meanDF['ID_32_m'].mean()]
-                meanDF.set_index('Name', drop=True)
-                meanDF.to_excel(file, sheet_name='ID_32', index=False)
-
-                D_32_df['mean'] = D_32_df.loc[:, self.names].mean(axis=1)
-                v_z_df['mean'] = D_32_df.loc[:, self.names].mean(axis=1)
-                for index, row in D_32_df.iterrows():
-                    row['pos'] = row.loc[self.names].max() - row['mean']
-                    row['neg'] = row['mean'] - row.loc[self.names].min()
-                
-                for index, row in v_z_df.iterrows():
-                    row['pos'] = row.loc[self.names].max() - row['mean']
-                    row['neg'] = row['mean'] - row.loc[self.names].min()
-                
-                D_32_df.to_excel(file, sheet_name='D32 Export')
-                v_z_df.to_excel(file, sheet_name='v_z Export')
-
+                    D_32_df.to_excel(file, sheet_name='D32 Export')
+                    v_z_df.to_excel(file, sheet_name='v_z Export')
+            except PermissionError:
+                res = QMessageBox.critical(self, 'Error', f'Please close existing Excel file: {export}')
+                return
+            
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()
@@ -1991,7 +2044,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    # sys.excepthook = excepthook
+    sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
