@@ -1806,7 +1806,9 @@ class UI(QMainWindow):
         self.ui.PDA_table.clearContents()
         self.dfs = []
         self.m = []
+        self.m_std = []
         self.n = []
+        self.n_std = []
         self.names = []
         self.ui.PDA_D32.setDisabled(True)
         self.ui.PDA_vel.setDisabled(True)
@@ -1935,6 +1937,7 @@ class UI(QMainWindow):
         ]
         dirNames = []
         meanDF = pd.DataFrame(columns=['Name', 'ID_32_n', 'ID_32_m'])
+        saveDF = pd.DataFrame(columns=['Name', 'ID_32_n', 'ID_32_m'])
         for x in lines:
             if x.text() == '':continue
             if os.path.dirname(x.text()) not in dirNames: dirNames.append(os.path.dirname(x.text()))
@@ -1955,8 +1958,8 @@ class UI(QMainWindow):
                     largestName = name
                     largest = len(df)
                 
-            D_32_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg'], index=ind)
-            v_z_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg'], index=ind)
+            D_32_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg', 'std'], index=ind)
+            v_z_df = pd.DataFrame(columns=self.names+['mean', 'pos', 'neg', 'std'], index=ind)
             try:
                 with pd.ExcelWriter(export, engine='openpyxl') as file:
                     for df, n, m, name in zip(self.dfs, self.mean_n, self.mean_m, self.names):
@@ -1989,11 +1992,22 @@ class UI(QMainWindow):
                         sheet[f'B{maxId+1}'] = m
                         wb.save(export)
                         meanDF.loc[len(meanDF)] = [name, n, m]
+                        saveDF.loc[len(meanDF)] = [name, n, m]
 
-                    meanDF.loc[len(meanDF)] = ['Mean', meanDF['ID_32_n'].mean(), meanDF['ID_32_m'].mean()]
-                    meanDF.set_index('Name', drop=True)
-                    meanDF.to_excel(file, sheet_name='ID_32', index=False)
+                    print(saveDF)
+                    saveDF = saveDF.set_index('Name', drop=True)
+                    meanDF = meanDF.set_index('Name', drop=True)
+                    meanDF = pd.concat([meanDF, pd.DataFrame(index=['mean', 'pos', 'neg', 'std'])])
 
+                    meanDF.loc['mean'] = saveDF.mean()
+                    meanDF.loc['pos'] = [saveDF['ID_32_n'].max()-meanDF.loc['mean', 'ID_32_n'], saveDF['ID_32_m'].max()-meanDF.loc['mean', 'ID_32_m']]
+                    meanDF.loc['neg'] = [meanDF.loc['mean', 'ID_32_n']-saveDF['ID_32_n'].min(), meanDF.loc['mean', 'ID_32_m']-saveDF['ID_32_m'].min()]
+                    meanDF.loc['std'] = saveDF.std(ddof=0)
+                    
+                    meanDF.transpose().to_excel(file, sheet_name='ID_32')
+
+                    D_32_df['std'] = D_32_df.std(axis=1, ddof=0)
+                    v_z_df['std'] = v_z_df.std(axis=1, ddof=0)
                     D_32_df['mean'] = D_32_df.loc[:, self.names].mean(axis=1)
                     v_z_df['mean'] = v_z_df.loc[:, self.names].mean(axis=1)
                     for index, row in D_32_df.iterrows():
