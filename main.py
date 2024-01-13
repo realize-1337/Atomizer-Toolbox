@@ -280,8 +280,11 @@ class PDAWorker(QRunnable):
         # print(self.upperCutOff)
         # print(self.path)
         # print(self.liqDens)
-        i, j, df_x = pda.run()
-        self.signals.push.emit([i, j, self.row, df_x])
+        try:
+            i, j, df_x = pda.run()
+            self.signals.push.emit([i, j, self.row, df_x])
+        except:
+            self.signals.push.emit([None, None, None, None])
         self.signals.finished.emit()
 
 class UI(QMainWindow):
@@ -861,7 +864,8 @@ class UI(QMainWindow):
                     'exportDecimal': 'point', 
                     'exportHeader': False, 
                     'PDA_auto_folder': True,
-                    'PDA_full_export': True
+                    'PDA_full_export': True,
+                    'PDA_diagrams': 'False'
                 }
                 if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
                 if not os.path.exists(os.path.join(self.path, 'global', 'share')):
@@ -904,6 +908,11 @@ class UI(QMainWindow):
             try: 
                 if self.settings.get('PDA_full_export'): self.ui.actionGenerate_Full_Export.setChecked(True)
                 else: self.ui.self.ui.actionGenerate_Full_Export.setChecked(False)
+            except: pass
+            
+            try: 
+                if self.settings.get('PDA_diagrams'): self.ui.actionGenerate_and_save_Diagrams.setChecked(True)
+                else: self.ui.self.ui.actionGenerate_and_save_Diagrams.setChecked(False)
             except: pass
         
     def loadPreset(self, path = None):
@@ -1877,25 +1886,29 @@ class UI(QMainWindow):
 
         return df_push
     
-    def createD32Graph(self):
+    def createD32Graph(self, mode='show'):
         df_push = self.createDataFramePDA('D32')
         df_push = df_push.reindex(sorted(df_push.columns), axis=1)  
 
         fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
                                           'value':'D32 [µm]'}, markers=True)
         fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
-        fig.show()
+        if mode == 'show':
+            fig.show()
+        else: return fig
 
-    def createVelGraph(self):
+    def createVelGraph(self, mode='show'):
         df_push = self.createDataFramePDA('Vel')
         df_push = df_push.reindex(sorted(df_push.columns), axis=1)
 
         fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
                                           'value':'Axial Velocity [m/s]'}, markers=True)
         fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
-        fig.show()
+        if mode == 'show':
+            fig.show()
+        else: return fig
 
-    def createD32MeanGraph(self):
+    def createD32MeanGraph(self, mode='show'):
         df = self.createDataFramePDA('D32')
         df = df.reindex(sorted(df.columns), axis=1)
         rowMeans = df.mean(axis=1)
@@ -1908,9 +1921,11 @@ class UI(QMainWindow):
         fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
                                           'value':'Mean D32 [µm]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
-        fig.show()
+        if mode == 'show':
+            fig.show()
+        else: return fig
 
-    def createVelMeanGraph(self):
+    def createVelMeanGraph(self, mode='show'):
         df = self.createDataFramePDA('Vel')
         df = df.reindex(sorted(df.columns), axis=1)
         rowMeans = df.mean(axis=1)
@@ -1923,7 +1938,9 @@ class UI(QMainWindow):
         fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
                                           'value':'Mean Axial Velocity [m/s]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
-        fig.show()
+        if mode == 'show':
+            fig.show()
+        else: return fig
 
     def createTotalOut(self):
         if not self.ui.actionGenerate_Full_Export.isChecked(): 
@@ -2024,6 +2041,24 @@ class UI(QMainWindow):
                 res = QMessageBox.critical(self, 'Error', f'Please close existing Excel file: {export}')
                 return
             
+            if self.ui.actionGenerate_and_save_Diagrams.isChecked():
+                self.settings.set('PDA_diagrams', True)
+                figs = []
+                figs.append(self.createD32Graph(mode='save'))
+                figs.append(self.createD32MeanGraph(mode='save'))
+                figs.append(self.createVelGraph(mode='save'))
+                figs.append(self.createVelMeanGraph(mode='save'))
+                names = ['D_32', 'D_32_mean', 'vel', 'vel_mean']
+                dir = os.path.join(dirNames[0], 'diagrams')
+
+                if not os.path.exists(dir):
+                    os.mkdir(dir)
+                
+                for fig, name in zip(figs, names):
+                    fig.write_html(os.path.join(dir, f'{name}.html'))
+            else: 
+                self.settings.set('PDA_diagrams', False)
+                    
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()

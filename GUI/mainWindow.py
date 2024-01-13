@@ -1081,7 +1081,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1034, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1034, 21))
         self.menubar.setObjectName("menubar")
         self.menuSetting = QtWidgets.QMenu(parent=self.menubar)
         self.menuSetting.setObjectName("menuSetting")
@@ -1127,6 +1127,9 @@ class Ui_MainWindow(object):
         self.actionGenerate_Full_Export.setCheckable(True)
         self.actionGenerate_Full_Export.setChecked(True)
         self.actionGenerate_Full_Export.setObjectName("actionGenerate_Full_Export")
+        self.actionGenerate_and_save_Diagrams = QtGui.QAction(parent=MainWindow)
+        self.actionGenerate_and_save_Diagrams.setCheckable(True)
+        self.actionGenerate_and_save_Diagrams.setObjectName("actionGenerate_and_save_Diagrams")
         self.menuSetting.addAction(self.actionEdit_and_Create_Export_Presets)
         self.menuSetting.addAction(self.actionSetup_Bulk_Export)
         self.menuSetting.addAction(self.actionBulk_Generate)
@@ -1137,6 +1140,7 @@ class Ui_MainWindow(object):
         self.menuFile.addAction(self.actionReset_Values)
         self.menuPDA.addAction(self.actionAutomatic_Folder_Detection)
         self.menuPDA.addAction(self.actionGenerate_Full_Export)
+        self.menuPDA.addAction(self.actionGenerate_and_save_Diagrams)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuSetting.menuAction())
         self.menubar.addAction(self.menuPDA.menuAction())
@@ -1352,6 +1356,7 @@ class Ui_MainWindow(object):
         self.actionGenerate_Full_Report.setText(_translate("MainWindow", "Generate Full Report"))
         self.actionAutomatic_Folder_Detection.setText(_translate("MainWindow", "Automatic Folder Detection"))
         self.actionGenerate_Full_Export.setText(_translate("MainWindow", "Generate Full Export"))
+        self.actionGenerate_and_save_Diagrams.setText(_translate("MainWindow", "Generate and Save Diagrams"))
 
 
 if __name__ == "__main__":
