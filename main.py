@@ -2049,7 +2049,7 @@ class UI(QMainWindow):
                 figs.append(self.createVelGraph(mode='save'))
                 figs.append(self.createVelMeanGraph(mode='save'))
                 names = ['D_32', 'D_32_mean', 'vel', 'vel_mean']
-                dir = os.path.join(dirNames[0], 'diagrams')
+                dir = os.path.join(dirNames[0], 'PDA Diagrams')
 
                 if not os.path.exists(dir):
                     os.mkdir(dir)

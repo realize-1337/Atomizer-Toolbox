@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage import morphology
 import os
 import pandas as pd
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
+import plotly.express as px
 
 class multiAngle():
     def __init__(self, image:str, ref:str) -> None:
@@ -39,58 +41,92 @@ class multiAngle():
                 maxCount = count
                 maxCountRow = i
 
-        maxRow = image[i, :]
-        xLeft = np.argmax(maxRow==0)
-        xRight = np.argmax(maxRow[::-1]==0)
+        rows = np.arange(initialSkip, maxCountRow+1, (maxCountRow-initialSkip)/10)
+        # print(rows)
+        angles = []
+        for row in rows:
+            try:
+                maxRow = image[int(row), :]
+                xLeft = np.argmax(maxRow==0)
+                xRight = np.argmax(maxRow[::-1]==0)
 
-        print(f'File: {self.path}')
-        print(f'y pos = {i}')
-        print(f'xLeft = {xLeft}, xRight = {xRight}')
-        width = len(maxRow)
-        angle1 = np.tan(abs(xLeft-width/2)/i)
-        angle2 = np.tan(abs(xRight-width/2)/i)
-        print(f'Left Half angle: {np.rad2deg(angle1)} - Right Half angle: {np.rad2deg(angle2)}')
-        print('--'*20)
-
-        return [self.path, maxCount, maxCountRow]
+                width = len(maxRow)
+                angle1 = np.tan(abs(xLeft-width/2)/row)
+                angle2 = np.tan(abs(xRight-width/2)/row)
+                angles.append(np.rad2deg(angle1)+np.rad2deg(angle2))
+            except ZeroDivisionError:
+                pass
+        
+        return [self.path, maxCount, maxCountRow, np.mean(angles)]
 
 
     def createList(self) -> tuple:
         return (float(np.count_nonzero(self.imageHandling()==0)), self.path)
 
     def show(self):
-        plt.imshow(self.imageHandling())
+        image = self.imageHandling()
+        # for row in range(len(image)):
+        #     currow = image[int(row), :]
+        #     xLeft = np.argmax(currow==0)
+        #     xRight = np.argmax(currow[::-1]==0)
+        #     image[int(row), xRight:xLeft] = 0
+        edges = cv2.Canny(image, 0, 255)
+
+        plt.imshow(edges)
         plt.show()
+
+def handler(file, path=r'C:\Users\david\Desktop\Test PDA\Oben_fern', ref=r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'):
+    mA = multiAngle(os.path.join(path, file), ref)
+    return mA.createList()
+
+def handler2(file, ref=r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'):
+    try:
+        mA = multiAngle(file, ref)
+        return mA.maxWidth()
+    except: return None
 
 if __name__ == '__main__':
     files = []
-    path = r'C:\Users\david\Desktop\Duese_1\4,1_7,5_70\Oben_fern'
-    files = os.listdir(path)
+    path = r'C:\Users\david\Desktop\Test PDA\Oben_fern'
+    files = [x for x in os.listdir(path) if x.endswith('.png')]
     res = []
-    ref = r'C:\Users\david\Desktop\Duese_1\Oben_fern_ref.tif'
+    ref = r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'
 
-    for i,file in enumerate(files):
-        print(i)
-        # if i == 10: break
-        mA = multiAngle(os.path.join(path, file), ref)
-        res.append(mA.createList())
+    with Pool(16) as p, tqdm(total=len(files)) as pbar:
+        for x in p.imap_unordered(handler, files):
+            pbar.update(1)
+            res.append(x)
 
     df = pd.DataFrame(res, columns=['Count', 'File'])
     df = df.sort_values('Count', ascending=False).reset_index()
 
     max = []
+    rows = []
     for index, row in df.iterrows():
-        if index == 15: break
-        mA = multiAngle(row['File'], ref)
-        max.append(mA.maxWidth())
+        if index == 20: break
+        # mA = multiAngle(row['File'], ref)
+        # max.append(mA.maxWidth())
+        rows.append(row['File'])
+
+    with Pool(16) as p, tqdm(total=len(files)) as pbar:
+        for x in p.imap_unordered(handler2, rows):
+            pbar.update(1)
+            if not x == None:
+                max.append(x)
     
-    maxdf = pd.DataFrame(max, columns=['File', 'Count', 'Row'])
+    maxdf = pd.DataFrame(max, columns=['File', 'Count', 'Row', 'Angle'])
     maxdf = maxdf.sort_values('Count', ascending=False).reset_index()
+
+    print(f"Mean: {maxdf['Angle'].mean()}")
+    print(f"Std: {maxdf['Angle'].std(ddof=0)}")
+
 
     for index, row in maxdf.iterrows():
         mA = multiAngle(row['File'], ref)
         mA.show()
 
-    
+    fig = px.line(maxdf['Angle'], labels={'0':'Hozizontal Position [mm]',
+                                          'value':'D32 [µm]'}, markers=True)
+    fig.show()
     print(1)
 
