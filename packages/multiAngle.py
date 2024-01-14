@@ -6,6 +6,7 @@ import pandas as pd
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import plotly.express as px
+from scipy.signal import argrelextrema
 
 class multiAngle():
     def __init__(self, image:str, ref:str) -> None:
@@ -21,6 +22,7 @@ class multiAngle():
         image = cv2.imread(self.path, cv2.IMREAD_GRAYSCALE)
         pic_cor = self.correction(image)
         _, binary_image = cv2.threshold(pic_cor, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        return binary_image
 
         contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         convex_hulls = [cv2.convexHull(cnt) for cnt in contours]
@@ -85,6 +87,12 @@ def handler2(file, ref=r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'):
         return mA.maxWidth()
     except: return None
 
+def handler3(file, ref=r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'):
+        try:
+            mA = multiAngle(file, ref)
+            return mA.imageHandling()
+        except: return None
+
 if __name__ == '__main__':
     files = []
     path = r'C:\Users\david\Desktop\Test PDA\Oben_fern'
@@ -92,41 +100,77 @@ if __name__ == '__main__':
     res = []
     ref = r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'
 
+    prob_map = np.zeros_like(cv2.imread(ref, cv2.IMREAD_GRAYSCALE).astype(np.float32))
     with Pool(16) as p, tqdm(total=len(files)) as pbar:
-        for x in p.imap_unordered(handler, files):
+        for x in p.imap_unordered(handler3, [os.path.join(path, file) for file in files]):
             pbar.update(1)
-            res.append(x)
+            prob_map += (x == 0).astype(np.float32)
 
-    df = pd.DataFrame(res, columns=['Count', 'File'])
-    df = df.sort_values('Count', ascending=False).reset_index()
+    prob_map /= len(files)    
+    prob_map_scaled = (prob_map * 255).astype(np.uint8)
+    # plt.imshow(prob_map_scaled)
+    # plt.show()
 
-    max = []
-    rows = []
-    for index, row in df.iterrows():
-        if index == 20: break
-        # mA = multiAngle(row['File'], ref)
-        # max.append(mA.maxWidth())
-        rows.append(row['File'])
+    _, prob_bw = cv2.threshold(prob_map_scaled, 15, 255, cv2.THRESH_BINARY)
 
-    with Pool(16) as p, tqdm(total=len(files)) as pbar:
-        for x in p.imap_unordered(handler2, rows):
-            pbar.update(1)
-            if not x == None:
-                max.append(x)
+    y = np.zeros(len(prob_bw))
+    # for i in range(len(prob_bw)-1, -1, -1):
+    for i in range(len(prob_bw)):
+        y[i] = np.sum(prob_bw[i, :] == 255)
+
+    x = np.arange(0, len(y), 1)   
+    diff = np.diff(y[:150], 1)
+    p_ = np.poly1d(np.polyfit(x[:149], diff, 8))
+    y_ = p_(x[:149])
+    flm = argrelextrema(y_, np.less)[0][0]+5
+
+    y = y[flm:]
+    x = x[flm:]
     
-    maxdf = pd.DataFrame(max, columns=['File', 'Count', 'Row', 'Angle'])
-    maxdf = maxdf.sort_values('Count', ascending=False).reset_index()
-
-    print(f"Mean: {maxdf['Angle'].mean()}")
-    print(f"Std: {maxdf['Angle'].std(ddof=0)}")
-
-
-    for index, row in maxdf.iterrows():
-        mA = multiAngle(row['File'], ref)
-        mA.show()
-
-    fig = px.line(maxdf['Angle'], labels={'0':'Hozizontal Position [mm]',
-                                          'value':'D32 [µm]'}, markers=True)
+    p = np.poly1d(np.polyfit(x, y, 8))
+    diff = np.gradient(p(x))
+    
+    
+    fig = px.line(p(x), markers=True)
     fig.show()
+    fig = px.line(y_, markers=True)
+    fig.show()
+    fig = px.line(diff, markers=True)
+    fig.show()
+
+    y = p(x)
+
+    max = np.argmax(y)
+    end = np.argmax(y<=0)
+    if end <= flm: end = len(y)-1
+
+    print(max)
+    print(end)
+    print(p(max))
+
+    angleMax = 0
+    for i in range(end):
+        ang = 2*np.rad2deg(np.arctan(0.5*(y[i]-y[0])/(i)))
+        if ang > angleMax: 
+            angleMax = ang
+            pos = i
+    
+    angle10 = 2*np.rad2deg(np.arctan(0.5*(y[int(0.1*end)]-y[0])/(0.1*end)))
+    angle50 = 2*np.rad2deg(np.arctan(0.5*(y[int(0.5*end)]-y[0])/(0.5*end)))
+    angle90 = 2*np.rad2deg(np.arctan(0.5*(y[int(0.9*end)]-y[0])/(0.9*end)))
+
+    print(f'Max: {angleMax} @ {pos}')
+    print(f'10%: {angle10} @ {0.1*end}')
+    print(f'50%: {angle50} @ {0.5*end}')
+    print(f'90%: {angle90} @ {0.9*end}')
+
+    half = int(len(prob_bw[0,:])/2)
+    
+    prob_map_scaled = cv2.line(prob_map_scaled, (int(half+0.5*y[0]),flm), (int(half+0.5*y[pos]), flm+pos), (255, 255, 255), 5)
+    prob_map_scaled = cv2.line(prob_map_scaled, (int(half-0.5*y[0]),flm), (int(half-0.5*y[pos]), flm+pos), (255, 255, 255), 5)
+    plt.imshow(prob_map_scaled)
+    plt.show()
+
+    
     print(1)
 
