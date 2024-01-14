@@ -19,15 +19,17 @@ from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
 from openpyxl import load_workbook, Workbook
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
+import packages.multiAngle as mA
 from packages.createMatlabScripts import MLS
 from pyfluids import Fluid, FluidsList, Input
 import logging
 import traceback
-# UI_FILE = './GUI/mainWindow.ui'
-# PY_FILE = './GUI/mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+UI_FILE = './GUI/mainWindow.ui'
+PY_FILE = './GUI/mainWindow.py'
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
@@ -277,15 +279,45 @@ class PDAWorker(QRunnable):
 
     def run(self):
         pda = PDA.PDA(self.path, upperCutOff=self.upperCutOff, liqDens=self.liqDens, mode=self.mode, matPath=self.matPath, scriptPath = self.scriptPath)
-        # print(self.upperCutOff)
-        # print(self.path)
-        # print(self.liqDens)
         try:
             i, j, df_x = pda.run()
             self.signals.push.emit([i, j, self.row, df_x])
         except:
             self.signals.push.emit([None, None, None, None])
         self.signals.finished.emit()
+
+class MatplotlibWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.figure, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.figure)
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.canvas)
+                
+    def update(self):
+        self.canvas.draw()
+
+class AngleSignals(QObject):
+    finished = pyqtSignal() 
+    push = pyqtSignal(np.ndarray)
+
+class AngleWorker(QRunnable):
+
+    def __init__(self, path, ref):
+        super().__init__()
+        self.path = path
+        self.ref = ref
+        self.signals = AngleSignals()
+
+    def run(self):
+        read = mA.multiAngle(self.path, self.ref)
+        # try:
+        self.signals.push.emit(read.imageHandling())
+        self.signals.finished.emit()
+        # except:
+        #     raise ValueError
+        
 
 class UI(QMainWindow):
     def __init__(self):
@@ -358,6 +390,8 @@ class UI(QMainWindow):
         self.loadGlobalSettings()
         self.loadStyles()
         self.checkMatlabInstalled()
+        self.sprayAngleInit()
+        self.ui.angleRun.clicked.connect(self.angleRun)
         
     def liqAndGasDF(self):
         liqAndGas = pd.DataFrame()
@@ -2058,7 +2092,86 @@ class UI(QMainWindow):
                     fig.write_html(os.path.join(dir, f'{name}.html'))
             else: 
                 self.settings.set('PDA_diagrams', False)
-                    
+  
+    # SPRAY ANGLE
+    
+    def sprayAngleInit(self):
+        self.widget = MatplotlibWidget()
+        self.ui.widget.setLayout(QVBoxLayout())
+        self.ui.widget.layout().addWidget(self.widget)
+        self.angleLastRun = None
+
+    def angleReadFinished(self, read):
+        self.probMap = mA.sumProbMap(self.probMap, read)
+        self.ui.angleBar.setValue(self.ui.angleBar.value()+1)
+        if self.ui.angleBar.value() == self.ui.angleBar.maximum():
+            self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
+            pp = mA.SprayAnglePP()
+            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value())
+            self.setAngleTable(angles)
+            self.widget.update()
+
+    def redraw(self):
+        pp = mA.SprayAnglePP()
+        angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget)
+
+    def setAngleTable(self, angles):
+        labels = [
+            self.ui.angleMaxlabel,
+            self.ui.angle10label,
+            self.ui.angle50label,
+            self.ui.angle90label
+        ]
+
+        for label, item in zip(labels, angles):
+            label.setText(f'{"%.3f" % item}')
+
+    def angleRun(self):
+        allowedFileTypes = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+        files_ = os.listdir(self.ui.angleFolder.text())
+
+        if [self.ui.angleFolder.text(), self.ui.angleRef.text()] == self.angleLastRun:
+            self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
+            pp = mA.SprayAnglePP()
+            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value())
+            self.setAngleTable(angles)
+            self.widget.update()
+            return
+        else: 
+            self.angleLastRun = [self.ui.angleFolder.text(), self.ui.angleRef.text()] 
+            
+        files = []
+        for end in allowedFileTypes:
+            store = [os.path.join(self.ui.angleFolder.text(), x) for x in files_ if x.endswith(end)]
+            if len(store) > len(files):
+                files = store
+        if len(files) == 0: return
+        
+        try: 
+            ref = cv2.imread(self.ui.angleRef.text(), cv2.IMREAD_GRAYSCALE)
+            self.probMap = mA.initializeProbMap(ref)
+            self.angleCountMax = len(files)
+            self.angleCountCurrent = 0
+            self.ui.angleBar.setValue(0)
+            self.ui.angleBar.setMaximum(len(files))
+        except: 
+            return
+        
+        test = cv2.imread(files[0], cv2.IMREAD_GRAYSCALE)
+        if np.shape(test) != np.shape(ref):
+            return
+
+        threadpool = QThreadPool.globalInstance()
+        for i, item in enumerate(files):
+            worker = AngleWorker(item, ref)
+            worker.signals.push.connect(self.angleReadFinished)
+            threadpool.start(worker)
+
+        
+        
+        
+        
+                
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()
@@ -2093,7 +2206,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    sys.excepthook = excepthook
+    # sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
