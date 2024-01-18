@@ -124,14 +124,16 @@ class SprayAnglePP():
             angles[1, num] = np.rad2deg(np.arctan((y[int(0.1*end)]-y[0])/(0.1*end)))
             angles[2, num] = np.rad2deg(np.arctan((y[int(0.5*end)]-y[0])/(0.5*end)))
             angles[3, num] = np.rad2deg(np.arctan((y[int(0.9*end)]-y[0])/(0.9*end)))
-            pos[0, num] = pos_
-            pos[1, num] = int(0.1*end)
-            pos[2, num] = int(0.5*end)
-            pos[3, num] = int(0.9*end)
+            
+            # try: pos[0, num] = pos_
+            # except: pos[0, num] = None
+            # pos[1, num] = int(0.1*end)
+            # pos[2, num] = int(0.5*end)
+            # pos[3, num] = int(0.9*end)
         
         return [np.sum(angles, axis=1), pos, flm]
 
-    def createImages(self, right, left, flm:np.ndarray, angles:np.ndarray, pos:np.ndarray, prob_map_scaled, widget=None, drawNegative=False) -> list:
+    def createImages(self, right, left, flm:np.ndarray, angles:np.ndarray, prob_map_scaled, widget=None, drawNegative=False) -> list:
         '''
         Returns heatmap and heatmap with angles
         '''
@@ -142,9 +144,12 @@ class SprayAnglePP():
         else:
             fig = widget.figure
             ax = widget.ax
+            ax.clear()
         heatmap = ax.imshow(prob_map_scaled/255*100, cmap='gist_heat_r')
         colors = 'blue', 'green', 'yellow', 'purple'
-        cbar = plt.colorbar(heatmap, format='%d%%', label='Percentage of Spray Coverage')
+
+        if not len(fig.axes) > 1:
+            fig.colorbar(heatmap, format='%d%%', label='Percentage of Spray Coverage')
         for row, color in enumerate(colors):
             point1 = (int(half+right[flm[0]]),flm[0])
             point3 = (int(half-left[flm[1]]),flm[1])
@@ -158,8 +163,11 @@ class SprayAnglePP():
             extended_point3 = (0, int(point3[1] - slopeR * point3[0]))
             extended_point4 = (image_size[1], int(point3[1] + slopeR * (image_size[1] - point3[0])))
 
-            ax.axline(extended_point1, extended_point2, color=color, linewidth=1)
-            ax.axline(extended_point3, extended_point4, color=color, linewidth=1)
+            try:
+                ax.axline(extended_point1, extended_point2, color=color, linewidth=1)
+                ax.axline(extended_point3, extended_point4, color=color, linewidth=1)
+            except: 
+                pass
 
         # ax.set_aspect('equal')
         size = np.shape(prob_map_scaled)
@@ -182,7 +190,7 @@ class SprayAnglePP():
         '''
         r, l = self.findWidth(binary_map)
         angles, pos, flm = self.calculateAngles([r, l], maxLenForFLM)
-        fig, ax, figRaw, axRaw = self.createImages(r, l, flm, angles, pos, scaled_map, widget, drawNegative)
+        fig, ax, figRaw, axRaw = self.createImages(r, l, flm, angles, scaled_map, widget, drawNegative)
 
         return([angles, (fig, ax), (figRaw, axRaw)])
 
@@ -205,8 +213,8 @@ def createProbMap(prob_map:np.ndarray, num:float|int, threshold=10) -> list:
     '''
     Return binaray Prob_Map and scaled Prob_Map
     '''
-    prob_map /= num   
-    prob_map_scaled = (prob_map * 255).astype(np.uint8)
+    prob_map_uni = prob_map / num   
+    prob_map_scaled = (prob_map_uni * 255).astype(np.uint8)
 
     _, prob_bw = cv2.threshold(prob_map_scaled, threshold, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(prob_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

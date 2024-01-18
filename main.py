@@ -297,6 +297,17 @@ class MatplotlibWidget(QWidget):
                 
     def update(self):
         self.canvas.draw()
+    
+    def clear(self):
+        try:
+            self.canvas.axes.cla()
+        except: pass
+        finally: self.canvas.draw()
+    
+    def reset(self):
+        return
+        self.figure, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.figure)
 
 class AngleSignals(QObject):
     finished = pyqtSignal() 
@@ -331,7 +342,7 @@ class UI(QMainWindow):
         self.presetField()
         self.setWindowIcon(QtGui.QIcon('assets/ATT_LOGO.ico'))
         self.enableAutoCalc()
-        self.ui.pushButton_2.clicked.connect(self.calculator)
+        self.initCalculator()
         self.ui.cpToclip.clicked.connect(self.toClip)
         self.ui.cellToClip.clicked.connect(self.cellToClip)
         self.ui.actionEdit_and_Create_Export_Presets.triggered.connect(self.createExportPresets)
@@ -852,18 +863,37 @@ class UI(QMainWindow):
             self.RatiosDf = pd.DataFrame(dict)
 
         self.getAllDfs()
-        
+
+    def initCalculator(self):
+        list = [
+            self.ui.input_T,
+            self.ui.input_my,
+            self.ui.viscoGlyMass, 
+            self.ui.viscoGlyPurity
+        ]
+
+        for l in list:
+            l.valueChanged.connect(self.calculator)
+        self.calculator()
+
     def calculator(self):
         self.ui.outputLabel.setText('Berechnung läuft')
         my_target = self.ui.input_my.value()
         temp = self.ui.input_T.value()
+        purity = self.ui.viscoGlyPurity.value()
+        glyMass = self.ui.viscoGlyMass.value()
 
         calc = ca(temp, my_target)
         try: 
-            result = "%.2f" % (calc.solve()*100)
-            output = f'<u>{result} wt-% </u> of glycerin are requiered to get a viscosity of {"%.0f" % my_target} mPa s at {temp} °C.'
+            result_num = calc.solve()
+            result = "%.2f" % (result_num*100)
+            output = f'<u>{result} wt-%</u> of 100 % glycerin are requiered to get a viscosity of {"%.0f" % my_target} mPa s at {temp} °C.'
+            if glyMass != 0:
+                water = (glyMass*purity/100-glyMass*result_num)/result_num
+                output += f'<br> For a glycerin mass of {glyMass} g of purity {purity} %, <u>{"%.2f" % water} g</u> is required.'
         except: output = '<br><br>This combination of viscosity and temperature is not possible!'
         self.ui.outputLabel.setText(output)
+
 
     def createFolders(self):
         default = {
@@ -2101,19 +2131,21 @@ class UI(QMainWindow):
         self.ui.widget.layout().addWidget(self.widget)
         self.angleLastRun = None
 
+    def sprayAngleClear(self):
+        self.widget.fig, self.widget.ax = plt.subplots()
+
     def angleReadFinished(self, read):
         self.probMap = mA.sumProbMap(self.probMap, read)
         self.ui.angleBar.setValue(self.ui.angleBar.value()+1)
         if self.ui.angleBar.value() == self.ui.angleBar.maximum():
             self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
+            print(np.mean(self.probMap))
             pp = mA.SprayAnglePP()
+            # self.widget.clear()
+            self.widget.clear()
             angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value())
             self.setAngleTable(angles)
             self.widget.update()
-
-    def redraw(self):
-        pp = mA.SprayAnglePP()
-        angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget)
 
     def setAngleTable(self, angles):
         labels = [
@@ -2131,6 +2163,8 @@ class UI(QMainWindow):
         files_ = os.listdir(self.ui.angleFolder.text())
 
         if [self.ui.angleFolder.text(), self.ui.angleRef.text()] == self.angleLastRun:
+            # self.widget.reset()
+            self.widget.clear()
             self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
             pp = mA.SprayAnglePP()
             angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value())
@@ -2166,12 +2200,7 @@ class UI(QMainWindow):
             worker = AngleWorker(item, ref)
             worker.signals.push.connect(self.angleReadFinished)
             threadpool.start(worker)
-
-        
-        
-        
-        
-                
+            
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()
@@ -2206,7 +2235,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    # sys.excepthook = excepthook
+    sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')

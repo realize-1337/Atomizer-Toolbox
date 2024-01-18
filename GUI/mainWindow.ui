@@ -57,6 +57,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -107,6 +108,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -162,6 +164,7 @@
              <font>
               <family>Segoe UI Semibold</family>
               <pointsize>12</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -180,6 +183,7 @@
              <font>
               <family>Segoe UI Semibold</family>
               <pointsize>12</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -193,6 +197,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -209,6 +214,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -225,6 +231,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -238,6 +245,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -261,6 +269,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -284,6 +293,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -370,6 +380,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -421,6 +432,7 @@
              <font>
               <family>Segoe UI Semibold</family>
               <pointsize>12</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -456,6 +468,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -499,6 +512,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -524,6 +538,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -561,6 +576,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -584,6 +600,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -621,6 +638,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -686,6 +704,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -745,6 +764,7 @@
              <font>
               <family>Segoe UI Semibold</family>
               <pointsize>12</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -758,6 +778,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -797,6 +818,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -945,6 +967,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -961,6 +984,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -977,6 +1001,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -993,6 +1018,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1029,6 +1055,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1046,6 +1073,7 @@
              <font>
               <family>Segoe UI Semibold</family>
               <pointsize>12</pointsize>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1059,6 +1087,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1162,6 +1191,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1175,6 +1205,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1228,6 +1259,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1254,6 +1286,7 @@
             <property name="font">
              <font>
               <family>Segoe UI Semibold</family>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1300,14 +1333,14 @@
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <layout class="QGridLayout" name="gridLayout_8">
-          <item row="2" column="0" colspan="2">
-           <widget class="QPushButton" name="pushButton_2">
-            <property name="text">
-             <string>Start Calculation</string>
+          <item row="5" column="0" colspan="2">
+           <widget class="Line" name="line_9">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
-          <item row="3" column="0" colspan="2">
+          <item row="8" column="0" colspan="2">
            <widget class="QLabel" name="outputLabel">
             <property name="font">
              <font>
@@ -1330,10 +1363,37 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="viscoGlyPurity">
+            <property name="maximum">
+             <double>100.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>99.500000000000000</double>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_30">
             <property name="text">
              <string>Target Temperature [°C]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_63">
+            <property name="text">
+             <string>Glycerin Purity [%]</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="input_T">
+            <property name="maximum">
+             <double>100.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>20.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -1347,13 +1407,20 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="input_T">
-            <property name="maximum">
-             <double>100.000000000000000</double>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="viscoGlyMass">
+            <property name="decimals">
+             <number>1</number>
             </property>
-            <property name="value">
-             <double>20.000000000000000</double>
+            <property name="maximum">
+             <double>100000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_64">
+            <property name="text">
+             <string>Glycerin Mass [g]</string>
             </property>
            </widget>
           </item>
@@ -2313,14 +2380,14 @@
                 <item>
                  <widget class="QLineEdit" name="angleFolder">
                   <property name="text">
-                   <string>C:\Users\david\Desktop\Test PDA\Oben_fern</string>
+                   <string>C:\Users\david\Desktop\Duese_1\4,1_10_17,2\Oben_fern</string>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QLineEdit" name="angleRef">
                   <property name="text">
-                   <string>C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif</string>
+                   <string>C:\Users\david\Desktop\Duese_1\Oben_fern_ref.tif</string>
                   </property>
                  </widget>
                 </item>
@@ -2547,7 +2614,7 @@
      <x>0</x>
      <y>0</y>
      <width>1034</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetting">
@@ -2695,7 +2762,7 @@
   <buttongroup name="buttonGroup_5"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>

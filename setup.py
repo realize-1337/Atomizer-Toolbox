@@ -6,7 +6,7 @@ sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 FILE = f'{os.path.abspath("./main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.66.2'
+VERSION = '1.67-beta1'
 AUTHOR = 'David Maerker'
 
 # Aktualisiere die Abhängigkeiten mit 'pip freeze'
