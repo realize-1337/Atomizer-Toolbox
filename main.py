@@ -29,7 +29,7 @@ import logging
 import traceback
 UI_FILE = './GUI/mainWindow.ui'
 PY_FILE = './GUI/mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
@@ -113,10 +113,11 @@ class WorkerSignalsConversion(QObject):
     finishedConversion = pyqtSignal() 
 
 class WorkerConversion(QRunnable):
-    def __init__(self, file, filetype, keep=True, compression=False):
+    def __init__(self, file, filetype, keep=True, compression=False, overwrite=True):
         super().__init__()
         self.file = file
         self.keep = keep
+        self.overwrite = overwrite
         self.compression = compression
         self.filetype = filetype
         self.signals = WorkerSignalsConversion()
@@ -126,6 +127,10 @@ class WorkerConversion(QRunnable):
         path = os.path.dirname(self.file)
         logging.info('Working on it.')
         for index, frame in enumerate(container.decode(video=0)):
+            if not self.overwrite:
+                if os.path.exists(os.path.join(path, f'frame_{"%04d" % index}.{self.filetype}')): 
+                    self.signals.finishedConversion.emit()
+                    continue
             frame = frame.reformat(format='gray')
             img = frame.to_image()
             if self.compression:
@@ -329,7 +334,6 @@ class AngleWorker(QRunnable):
         # except:
         #     raise ValueError
         
-
 class UI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -1617,6 +1621,8 @@ class UI(QMainWindow):
         if self.ui.keepCine.isChecked(): keep = True
         else: keep = False
         
+        overwrite = self.ui.overwriteImagesCine.isChecked()
+
         self.ui.cineBarConversion.setMaximum(len(items)*1001)
         self.ui.cineBarConversion.setValue(0)
         style = self.ui.styleBox.currentText()
@@ -1626,15 +1632,15 @@ class UI(QMainWindow):
 
         for item in items:
             if style == '.tiff uncompressed':
-                worker = WorkerConversion(item, 'tiff', keep)
+                worker = WorkerConversion(item, 'tiff', keep, overwrite=overwrite)
             elif style == '.tiff compressed':
-                worker = WorkerConversion(item, 'tiff', keep, True)
+                worker = WorkerConversion(item, 'tiff', keep, True, overwrite=overwrite)
             elif style == '.png':
-                worker = WorkerConversion(item, 'png', keep)
+                worker = WorkerConversion(item, 'png', keep, overwrite=overwrite)
             elif style == '.jpeg':
-                worker = WorkerConversion(item, 'jpeg', keep)
+                worker = WorkerConversion(item, 'jpeg', keep, overwrite=overwrite)
             else:
-                worker = WorkerConversion(item, 'tiff', keep)
+                worker = WorkerConversion(item, 'tiff', keep, overwrite=overwrite)
             worker.signals.finishedConversion.connect(self.threadCompleteConversion)
             threadpool.start(worker)
 

@@ -2551,22 +2551,22 @@
         <item row="4" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QLabel" name="label_32">
-            <property name="text">
-             <string>Keep Cine Files? (Option disabled. Cine file will NOT be deleted)</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="keepCine">
             <property name="enabled">
              <bool>false</bool>
             </property>
             <property name="text">
-             <string/>
+             <string>Keep Cine Files? (Option disabled. Cine file will NOT be deleted)</string>
             </property>
             <property name="checked">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="overwriteImagesCine">
+            <property name="text">
+             <string>Overwrite existing images?</string>
             </property>
            </widget>
           </item>
@@ -2614,7 +2614,7 @@
      <x>0</x>
      <y>0</y>
      <width>1034</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetting">
@@ -2759,10 +2759,10 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_5"/>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_5"/>
  </buttongroups>
 </ui>
