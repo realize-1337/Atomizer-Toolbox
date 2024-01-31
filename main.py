@@ -453,6 +453,13 @@ class UI(QMainWindow):
         for i in range(1, len(order)):
             self.setTabOrder(order[i-1], order[i])
         
+        viscOrder = self.ui.input_my, self.ui.input_T, self.ui.viscoGlyPurity, self.ui.viscoGlyMass
+
+        self.setTabOrder(viscOrder[0], viscOrder[1])
+        self.setTabOrder(viscOrder[-1], viscOrder[0])
+        for i in range(1, len(viscOrder)):
+            self.setTabOrder(viscOrder[i-1], viscOrder[i])
+    
     def setCalcButtons(self):
         # self.ui.calcGas.clicked.connect(self.calcGas)
         # self.ui.calcLiq.clicked.connect(self.calcLiq)
@@ -1267,7 +1274,7 @@ class UI(QMainWindow):
         self.loadStyles()
 
     def about(self):
-        QMessageBox.information(self, 'About', 'Created by David Märker')
+        QMessageBox.information(self, 'About', 'Created by David Märker <br> <a href="https://github.com/realize-1337">Github Profile</a>')
 
     def openPath(self):
         subprocess.Popen(rf'explorer /select,"{self.path}"')
@@ -2135,7 +2142,11 @@ class UI(QMainWindow):
         self.widget = MatplotlibWidget()
         self.ui.widget.setLayout(QVBoxLayout())
         self.ui.widget.layout().addWidget(self.widget)
+        self.ui.angleLoadFolder.clicked.connect(self.loadSprayAngleFolder)
+        self.ui.angleLoadRef.clicked.connect(self.loadSprayAngleRef)
         self.angleLastRun = None
+        self.angleLastFolder = None
+        self.angleLastRef = None
 
     def sprayAngleClear(self):
         self.widget.fig, self.widget.ax = plt.subplots()
@@ -2144,12 +2155,13 @@ class UI(QMainWindow):
         self.probMap = mA.sumProbMap(self.probMap, read)
         self.ui.angleBar.setValue(self.ui.angleBar.value()+1)
         if self.ui.angleBar.value() == self.ui.angleBar.maximum():
+            draws = [self.ui.angleMax.isChecked(), self.ui.angle10.isChecked(), self.ui.angle50.isChecked(), self.ui.angle90.isChecked()]
             self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
             print(np.mean(self.probMap))
             pp = mA.SprayAnglePP()
             # self.widget.clear()
             self.widget.clear()
-            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value())
+            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value(), draw=draws)
             self.setAngleTable(angles)
             self.widget.update()
 
@@ -2161,19 +2173,22 @@ class UI(QMainWindow):
             self.ui.angle90label
         ]
 
-        for label, item in zip(labels, angles):
-            label.setText(f'{"%.3f" % item}')
+        colors = 'blue', 'green', 'yellow', 'purple'
+
+        for label, item, color in zip(labels, angles, colors):
+            label.setText(f'{"%.3f" % item} ({color})')
 
     def angleRun(self):
         allowedFileTypes = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
         files_ = os.listdir(self.ui.angleFolder.text())
+        draws = [self.ui.angleMax.isChecked(), self.ui.angle10.isChecked(), self.ui.angle50.isChecked(), self.ui.angle90.isChecked()]
 
         if [self.ui.angleFolder.text(), self.ui.angleRef.text()] == self.angleLastRun:
             # self.widget.reset()
             self.widget.clear()
             self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
             pp = mA.SprayAnglePP()
-            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value())
+            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value(), draw=draws)
             self.setAngleTable(angles)
             self.widget.update()
             return
@@ -2206,7 +2221,35 @@ class UI(QMainWindow):
             worker = AngleWorker(item, ref)
             worker.signals.push.connect(self.angleReadFinished)
             threadpool.start(worker)
-            
+
+    def loadSprayAngleFolder(self):
+        if not self.angleLastFolder:
+            folder = QFileDialog.getExistingDirectory(self, "Select Directory")
+        else: 
+            folder = QFileDialog.getExistingDirectory(self, "Select Directory", directory=self.angleLastFolder)
+        if folder:
+            types = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+            files = [os.path.join(folder, x) for x in os.listdir(folder) if x.endswith(types[0]) or x.endswith(types[1]) or x.endswith(types[2]) or x.endswith(types[3]) or x.endswith(types[4])]
+            if len(files) > 1:
+                self.angleLastFolder = folder
+                self.ui.angleFolder.setText(folder)
+            else:
+                self.ui.angleFolder.setText('')
+
+    def loadSprayAngleRef(self):
+        if not self.angleLastRef:
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.angleLastRef, options=QFileDialog.Option.ReadOnly)
+        else: 
+            filename, null = QFileDialog.getOpenFileName(self, directory=self.path, options=QFileDialog.Option.ReadOnly)
+        if not filename: return
+        types = ['.png', '.tif', '.tiff', '.jpeg', '.jpg']
+        match = [filename for x in types if filename.endswith(x)]
+        if match:
+            self.ui.angleRef.setText(match[0])
+            self.lastAngleRef = os.path.dirname(match[0])
+        else: 
+            self.ui.angleRef.setText('')
+
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()

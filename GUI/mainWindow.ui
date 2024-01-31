@@ -2171,6 +2171,12 @@
        <layout class="QGridLayout" name="gridLayout_15">
         <item row="3" column="0">
          <widget class="QPushButton" name="angleSaveReport">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>To be inplemented.</string>
+          </property>
           <property name="text">
            <string>Save Report</string>
           </property>
@@ -2380,14 +2386,20 @@
                 <item>
                  <widget class="QLineEdit" name="angleFolder">
                   <property name="text">
-                   <string>C:\Users\david\Desktop\Duese_1\4,1_10_17,2\Oben_fern</string>
+                   <string/>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Enter Path or select via Button --&gt;</string>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QLineEdit" name="angleRef">
                   <property name="text">
-                   <string>C:\Users\david\Desktop\Duese_1\Oben_fern_ref.tif</string>
+                   <string/>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Enter Path or select via Button --&gt;</string>
                   </property>
                  </widget>
                 </item>
@@ -2425,6 +2437,9 @@
                     <height>20</height>
                    </size>
                   </property>
+                  <property name="toolTip">
+                   <string>Minumum spray coverage (5 % if often a good option)</string>
+                  </property>
                   <property name="text">
                    <string>Threshold</string>
                   </property>
@@ -2432,6 +2447,9 @@
                 </item>
                 <item>
                  <widget class="QDoubleSpinBox" name="angleThreshold">
+                  <property name="toolTip">
+                   <string>Minumum spray coverage (5 % if often a good option)</string>
+                  </property>
                   <property name="suffix">
                    <string>%</string>
                   </property>
@@ -2455,6 +2473,9 @@
                     <height>20</height>
                    </size>
                   </property>
+                  <property name="toolTip">
+                   <string>Area in from the top of the image to search for the start of the spray. Can be adjusted according to the images. </string>
+                  </property>
                   <property name="text">
                    <string>Top Area limit</string>
                   </property>
@@ -2462,6 +2483,9 @@
                 </item>
                 <item>
                  <widget class="QSpinBox" name="angleTopArea">
+                  <property name="toolTip">
+                   <string>Area in from the top of the image to search for the start of the spray. Can be adjusted according to the images.</string>
+                  </property>
                   <property name="suffix">
                    <string> px</string>
                   </property>
@@ -2488,6 +2512,9 @@
                     <height>20</height>
                    </size>
                   </property>
+                  <property name="toolTip">
+                   <string>Force to skip the top 20 pixel from the top of the spray. This is required to prevent issues, however, it can be set to diffrent values if necessary (altough not intended). </string>
+                  </property>
                   <property name="text">
                    <string>Additional Skip</string>
                   </property>
@@ -2495,6 +2522,9 @@
                 </item>
                 <item>
                  <widget class="QSpinBox" name="angleSkip">
+                  <property name="toolTip">
+                   <string>Force to skip the top 20 pixel from the top of the spray. This is required to prevent issues, however, it can be set to diffrent values if necessary (altough not intended). </string>
+                  </property>
                   <property name="maximum">
                    <number>200</number>
                   </property>
@@ -2760,9 +2790,9 @@
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_5"/>
+  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

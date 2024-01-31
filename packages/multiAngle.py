@@ -133,7 +133,7 @@ class SprayAnglePP():
         
         return [np.sum(angles, axis=1), pos, flm]
 
-    def createImages(self, right, left, flm:np.ndarray, angles:np.ndarray, prob_map_scaled, widget=None, drawNegative=False) -> list:
+    def createImages(self, right, left, flm:np.ndarray, angles:np.ndarray, prob_map_scaled, widget=None, drawNegative=False, draw:list=[True, True, True, True]) -> list:
         '''
         Returns heatmap and heatmap with angles
         '''
@@ -151,6 +151,7 @@ class SprayAnglePP():
         if not len(fig.axes) > 1:
             fig.colorbar(heatmap, format='%d%%', label='Percentage of Spray Coverage')
         for row, color in enumerate(colors):
+            if draw[row] == False: continue
             point1 = (int(half+right[flm[0]]),flm[0])
             point3 = (int(half-left[flm[1]]),flm[1])
 
@@ -182,7 +183,7 @@ class SprayAnglePP():
 
         return [fig, ax, fig2, ax2]
     
-    def run(self, binary_map:np.ndarray, scaled_map:np.ndarray, widget, initialSkip=10, maxLenForFLM=150, drawNegative=True) -> list:
+    def run(self, binary_map:np.ndarray, scaled_map:np.ndarray, widget, initialSkip=10, maxLenForFLM=150, drawNegative=True, draw:list=[True, True, True, True]) -> list:
         '''
         Handles the post processing of spray angle calculation.
         Returns found angles, heatmap image and heatmap image with spray angles.
@@ -190,7 +191,7 @@ class SprayAnglePP():
         '''
         r, l = self.findWidth(binary_map)
         angles, pos, flm = self.calculateAngles([r, l], maxLenForFLM)
-        fig, ax, figRaw, axRaw = self.createImages(r, l, flm, angles, scaled_map, widget, drawNegative)
+        fig, ax, figRaw, axRaw = self.createImages(r, l, flm, angles, scaled_map, widget, drawNegative, draw)
 
         return([angles, (fig, ax), (figRaw, axRaw)])
 
