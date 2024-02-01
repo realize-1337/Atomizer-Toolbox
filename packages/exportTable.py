@@ -1,18 +1,12 @@
 import os
-import sys
 import re
-import copy
 currentDir = os.path.dirname(__file__)
 parentDir = os.path.dirname(currentDir)
-sys.path.append(parentDir)
-import subprocess
 from packages.exportDB import exportDB
 from functools import partial
 import json
-import pandas as pd
 from PyQt6.QtWidgets import *
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject
+from PyQt6 import QtGui, QtWidgets
 # UI_FILE = './GUI/tableExport.ui'
 # PY_FILE = './GUI/tableExport.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])

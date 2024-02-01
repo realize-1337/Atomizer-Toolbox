@@ -4,11 +4,9 @@ import numpy as np
 from scipy.optimize import curve_fit, least_squares
 from sklearn.metrics import r2_score
 from openpyxl import load_workbook
-import time
 import plotly.express as px
 import os
 from scipy.io import loadmat
-import tracemalloc
 try: 
     import matlab.engine
 except: 
