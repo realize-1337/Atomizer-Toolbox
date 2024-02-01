@@ -15,10 +15,10 @@ from functools import partial
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from PyQt6.QtWidgets import *
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
-from openpyxl import load_workbook, Workbook
+from openpyxl import load_workbook
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
@@ -26,7 +26,6 @@ import packages.multiAngle as mA
 from packages.createMatlabScripts import MLS
 from pyfluids import Fluid, FluidsList, Input
 import logging
-import traceback
 UI_FILE = './GUI/mainWindow.ui'
 PY_FILE = './GUI/mainWindow.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])

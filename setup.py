@@ -24,7 +24,7 @@ except:
 print("Führe PyInstaller aus...")
 makeSpec = [
     "pyi-makespec",
-    "--onefile",   # Eine einzelne ausführbare Datei erstellen
+    "--onedir",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
     "--noconsole", 
     # "--windowed",

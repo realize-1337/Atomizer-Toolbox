@@ -1,4 +1,3 @@
-import os
 from skimage import io, color, filters, morphology, measure
 import numpy as np
 import matplotlib.pyplot as plt

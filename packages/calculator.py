@@ -1,10 +1,7 @@
 import math
-import sympy as sp
 
 class Calculator():
     def __init__(self, targetTemp, targetViscosity=0) -> None:
-        self.c = sp.Symbol('c')
-        self.a = sp.Symbol('a')
         self.T = targetTemp
         self.my = targetViscosity
         
