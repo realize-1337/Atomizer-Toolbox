@@ -155,3 +155,4 @@ cython_debug/
 /build
 /.VSCodeCounter
 /AtomizerToolbox_V1.67
+/installer/resources
