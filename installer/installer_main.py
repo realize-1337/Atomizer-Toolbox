@@ -1,4 +1,4 @@
-LATEST_URL = r'https://github.com/realize-1337/Atomizer-Toolbox/releases/download/latest/release.zip'
+LATEST_URL = r'https://github.com/realize-1337/Atomizer-Toolbox/releases/latest/download/release.zip'
 
 import os
 import sys
@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt, QEvent, QCoreApplication
 import subprocess
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from installer import Ui_Dialog as main
 import requests
         
