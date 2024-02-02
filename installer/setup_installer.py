@@ -22,7 +22,7 @@ makeSpec = [
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
     "--noconsole", 
     # "--windowed",
-    "--name", f"{PROJECTNAME}_V{VERSION}",
+    "--name", f"{PROJECTNAME}",
     "--icon", f"{os.path.relpath('../../assets/ATT_LOGO.ico')}",
     # "--exclude-module", "module_to_exclude",
     # "--hidden-import", "matlab",
@@ -44,7 +44,7 @@ runSpec = [
     'pyinstaller',
     '--distpath', 'installer',
     "--workpath", "build/work",
-    f'{os.path.abspath(f"build/spec/{PROJECTNAME}_V{VERSION}.spec")}'
+    f'{os.path.abspath(f"build/spec/{PROJECTNAME}.spec")}'
 ]
 
 try: 
@@ -54,10 +54,10 @@ except subprocess.CalledProcessError as e:
     print(' ERROR '*10)
     print('#'*100)
     print('Trying to automatically adjust spec file')
-    with open(os.path.abspath(f"build/spec/{PROJECTNAME}_V{VERSION}.spec"), "r") as specFile:
+    with open(os.path.abspath(f"build/spec/{PROJECTNAME}.spec"), "r") as specFile:
         lines = specFile.readlines()
 
-    with open(os.path.abspath(f"build/spec/{PROJECTNAME}_V{VERSION}.spec"), "w") as specFile:
+    with open(os.path.abspath(f"build/spec/{PROJECTNAME}.spec"), "w") as specFile:
         specFile.write(lines[0])
         specFile.write('import sys; \n')
         specFile.write('sys.setrecursionlimit(sys.getrecursionlimit()*10);\n')

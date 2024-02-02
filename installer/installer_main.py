@@ -7,6 +7,11 @@ from PyQt6.QtWidgets import *
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QEvent, QCoreApplication
 import subprocess
+import winreg
+import shutil
+import json
+import winshell
+from win32com.client import Dispatch
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
@@ -22,6 +27,7 @@ class UI(QDialog):
         self.setWindowIcon(QtGui.QIcon('./assets/ATT_LOGO.ico'))
         self.setWindowTitle('Atomizer ToolBox Online Installer')
         self.initInstaller()
+        self.running = False
 
     def initInstaller(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Install')
@@ -88,7 +94,9 @@ class UI(QDialog):
         if self.checkInstalled():
             if self.alreadyInstalled() == False: 
                 return
-            
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.path.removeEventFilter(self)
         if not os.path.exists(self.ui.path.text()):
             os.mkdir(self.ui.path.text())
         
@@ -99,11 +107,65 @@ class UI(QDialog):
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
             zip_ref.extractall(os.path.dirname(zip_file_path)
                                )
-        os.remove(zip_file_path)    
+        os.remove(zip_file_path)
+        self.createRegistryKeys(self.ui.path.text())    
         self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
+        self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
         print('Installing')
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Abort).setText('Close')
+        QMessageBox.information(self, 'Information', 'The first start of the Atomizer Toolbox might take up to a minute depending on the used hardware.')
 
+    def createRegistryKeys(self, path):
+        key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AtomizerToolbox"
 
+        appdata = os.path.join(os.getenv('LOCALAPPDATA'), 'AtomizerToolbox')
+        if not os.path.exists(appdata):
+            os.mkdir(appdata)
+        uninstall = os.path.join(path, 'uninstall.exe')
+        shutil.copy(uninstall, os.path.join(appdata, 'uninstall.exe'))
+        uninstall = os.path.join(appdata, 'uninstall.exe')
+
+        settings = {'path':path}
+        loc = os.path.join(appdata, 'loc.json')
+        with open(loc, 'w') as file:
+            json.dump(settings, file, indent=4)
+
+        icon = os.path.join(path, 'AtomizerToolbox.exe')
+        version_loc = os.path.join(path, 'assets', 'versioninfo.json')
+        with open(version_loc, 'r') as file:
+            version = json.load(file)['currentVersion']
+        try: 
+            winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, key_path)
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path, 0, winreg.KEY_WRITE)
+            winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, "Atomizer Toolbox")
+            winreg.SetValueEx(key, "DisplayIcon", 0, winreg.REG_SZ, icon)
+            winreg.SetValueEx(key, "Publisher", 0, winreg.REG_SZ, "David Maerker")
+            winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, f"{version}")
+            winreg.SetValueEx(key, "UninstallString", 0, winreg.REG_SZ, uninstall)
+            winreg.CloseKey(key)
+        except Exception as e:
+            print(f'Key {e} not saved!')
+        print('Registry Done!')
+
+    def createShortCut(self, desk_=False, start_=False):
+        if desk_:
+            desk = winshell.desktop()
+            path = self.ui.path.text()
+            shell = Dispatch('WScript.Shell')
+            shortcut = shell.CreateShortCut(os.path.join(desk, 'Atomizer Toolbox.lnk'))
+            shortcut.Targetpath = os.path.join(path, 'AtomizerToolbox.exe')
+            shortcut.WorkingDirectory = path
+            shortcut.IconLocation = os.path.join(path, 'AtomizerToolbox.exe')
+            shortcut.save()
+        if start_:
+            start = winshell.start_menu()
+            path = self.ui.path.text()
+            shell = Dispatch('WScript.Shell')
+            shortcut = shell.CreateShortCut(os.path.join(start, 'Atomizer Toolbox.lnk'))
+            shortcut.Targetpath = os.path.join(path, 'AtomizerToolbox.exe')
+            shortcut.WorkingDirectory = path
+            shortcut.IconLocation = os.path.join(path, 'AtomizerToolbox.exe')
+            shortcut.save()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
