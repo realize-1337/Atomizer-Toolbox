@@ -12,6 +12,7 @@ import shutil
 import json
 import winshell
 from win32com.client import Dispatch
+import ctypes
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
@@ -38,6 +39,15 @@ class UI(QDialog):
         print(self.defaultFolder)
         self.ui.path.setText(self.defaultFolder)
         self.ui.path.installEventFilter(self)
+        try:
+            admin = ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            admin = False
+        
+        if not admin:
+            QMessageBox.information(self, 'Information', 'Your are not running as Admin. <br> This might cause issues if you don\'t have priviliges to write to the install folder. <br> Make sure to select a valid folder or run again as admin.')
+
+
 
     def get_default_install_folder(self):
         if sys.platform == 'win32':
@@ -53,6 +63,8 @@ class UI(QDialog):
             if event.button() == Qt.MouseButton.LeftButton:
                 folder = QFileDialog.getExistingDirectory(self, "Select Directory", directory=self.get_default_install_folder())
                 if folder:
+                    if len(os.listdir(folder)) > 0:
+                        folder = os.path.join(folder, 'Atomizer Toolbox')
                     self.ui.path.setText(folder)
         return super().eventFilter(obj, event)
         
