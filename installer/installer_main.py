@@ -1,4 +1,5 @@
 LATEST_URL = r'https://github.com/realize-1337/Atomizer-Toolbox/releases/latest/download/release.zip'
+LATEST_SC = 'https://api.github.com/repos/realize-1337/Atomizer-Toolbox/releases/latest'
 
 import os
 import sys
@@ -13,6 +14,7 @@ import json
 import winshell
 from win32com.client import Dispatch
 import ctypes
+from subprocess import Popen
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
@@ -29,12 +31,16 @@ class UI(QDialog):
         self.setWindowTitle('Atomizer ToolBox Online Installer')
         self.initInstaller()
         self.running = False
+        print(sys.executable)
 
     def initInstaller(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Install')
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setText('Compile')
 
         self.ui.buttonBox.accepted.disconnect()
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).disconnect()
         self.ui.buttonBox.accepted.connect(self.install)
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).clicked.connect(self.compile)
         self.defaultFolder = os.path.join(self.get_default_install_folder(), 'Atomizer ToolBox')
         print(self.defaultFolder)
         self.ui.path.setText(self.defaultFolder)
@@ -46,8 +52,6 @@ class UI(QDialog):
         
         if not admin:
             QMessageBox.information(self, 'Information', 'Your are not running as Admin. <br> This might cause issues if you don\'t have priviliges to write to the install folder. <br> Make sure to select a valid folder or run again as admin.')
-
-
 
     def get_default_install_folder(self):
         if sys.platform == 'win32':
@@ -63,7 +67,7 @@ class UI(QDialog):
             if event.button() == Qt.MouseButton.LeftButton:
                 folder = QFileDialog.getExistingDirectory(self, "Select Directory", directory=self.get_default_install_folder())
                 if folder:
-                    if len(os.listdir(folder)) > 0:
+                    if len(os.listdir(folder)) > 0 and (not 'setup.py' in os.listdir(folder) or not 'assets' in os.listdir(folder)) :
                         folder = os.path.join(folder, 'Atomizer Toolbox')
                     self.ui.path.setText(folder)
         return super().eventFilter(obj, event)
@@ -108,6 +112,7 @@ class UI(QDialog):
                 return
 
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(False)
         self.ui.path.removeEventFilter(self)
         if not os.path.exists(self.ui.path.text()):
             os.mkdir(self.ui.path.text())
@@ -178,6 +183,41 @@ class UI(QDialog):
             shortcut.WorkingDirectory = path
             shortcut.IconLocation = os.path.join(path, 'AtomizerToolbox.exe')
             shortcut.save()
+
+    def compile(self):
+        if self.checkInstalled():
+            if self.alreadyInstalled() == False: 
+                return
+
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(False)
+        self.ui.path.removeEventFilter(self)
+        if not os.path.exists(self.ui.path.text()):
+            os.mkdir(self.ui.path.text())
+        response = requests.get(LATEST_SC)
+        release_info = response.json()
+
+        tag_name = release_info['tag_name']
+        print(tag_name)
+        zip_url = rf"https://github.com/realize-1337/Atomizer-Toolbox/archive/{tag_name}.zip"
+        zip_file_path = os.path.join(self.ui.path.text(), 'source.zip')
+
+        self.download_file_with_progress(zip_url, zip_file_path)
+        self.ui.pbar.setMaximum(100)
+        self.ui.pbar.setValue(100)
+        self.ui.pbar.setFormat('Download complete. Unpacking download')
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(os.path.dirname(zip_file_path)
+                               )
+        os.remove(zip_file_path)
+        folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{tag_name}')
+        items = os.listdir(folder)
+        
+        self.ui.pbar.setFormat('Compile in progress. This will take a while.')
+                # Run Another Python File
+        # os.system(f"start /wait cmd /c cd \"{folder}\" & setup.bat")
+        subprocess.run(f'{os.path.join(folder, "setup.bat")}', shell=True)
+        
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

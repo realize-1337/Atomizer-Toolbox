@@ -1,3 +1,4 @@
+# All imports for the main.py
 import av
 import os
 import sys
@@ -29,6 +30,8 @@ import logging
 UI_FILE = './GUI/mainWindow.ui'
 PY_FILE = './GUI/mainWindow.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# The subprocess is used to compile the .ui file to a .py file. 
+# This is only neccessary after changes in the .ui file with qt designer or qt creator, make sure to comment it out before compiling
 from GUI.mainWindow import Ui_MainWindow as main
 import packages.exportTable as ex
 import packages.bulkExport as bulkex
@@ -47,6 +50,16 @@ try:
     pyi_splash.close()
 except:
     pass
+
+# Important:
+# Multithreading does NOT work in pyqt. 
+# If you want to run processes at the same time, you have to create a worker of class QRunnable
+# The corrospondig signal class is requiered for communication between the main process and the multiple processes from the QRunnable class
+
+# Make sure to check the classes below to understand how it works
+# I technically created packages for most classes in the package folder, 
+# however, this sometimes lead to performace issues during class creation, 
+# as a workarround, the packages have been imported manually to some classes but not for all
 
 class WorkerSignals(QObject):
     finished = pyqtSignal() 
@@ -332,13 +345,19 @@ class AngleWorker(QRunnable):
         self.signals.finished.emit()
         # except:
         #     raise ValueError
-        
+
+# ---- End of processes ----        
+# ---- Start of main programm ----
+
 class UI(QMainWindow):
     def __init__(self):
+        '''
+        Initialization of the main programm.
+        '''
         super().__init__()
         self.ui = main()
         self.ui.setupUi(self)
-        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')):
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')): # Creation of a user settings folder. Try not to change the path, or make sure to change in packages as well if neccessary
             os.mkdir(os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox'))
         self.path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox')
         self.resultLabels = self.createLabelList()
@@ -346,6 +365,7 @@ class UI(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('assets/ATT_LOGO.ico'))
         self.enableAutoCalc()
         self.initCalculator()
+        # ---- Connecting button presses with corrosponding functions of the programm ---
         self.ui.cpToclip.clicked.connect(self.toClip)
         self.ui.cellToClip.clicked.connect(self.cellToClip)
         self.ui.actionEdit_and_Create_Export_Presets.triggered.connect(self.createExportPresets)
@@ -394,6 +414,7 @@ class UI(QMainWindow):
         self.ui.PDA_vel.setDisabled(True)
         self.ui.PDA_D32_mean.setDisabled(True)
         self.ui.PDA_Vel_mean.setDisabled(True)
+        # ---- End of button functions ----
         self.currentPDAFolder = None
         self.settings_dict = {}
         self.createFolders()
@@ -406,8 +427,14 @@ class UI(QMainWindow):
         self.checkMatlabInstalled()
         self.sprayAngleInit()
         self.ui.angleRun.clicked.connect(self.angleRun)
-        
-    def liqAndGasDF(self):
+
+# ---- Annular atomizer calculator from here ----
+
+    def liqAndGasDF(self) -> pd.DataFrame: 
+        '''
+        Creation of dataframes with data for liquid and gas
+        Returns pandas dataframe with the values
+        '''
         liqAndGas = pd.DataFrame()
         liquidData = {
             'type': ['Liquid'],
@@ -430,7 +457,11 @@ class UI(QMainWindow):
 
         return liqAndGas
 
-    def GeometryDF(self):
+    def GeometryDF(self)->pd.DataFrame:
+        '''
+        Creation of dataframes with Geometry of atomizer
+        Return pandas dataframe with data
+        '''
         geometry = {
             'type': ['Geometry'],
             'Inner Tube Diameter [mm]': [self.innerTube*1000],
@@ -445,7 +476,10 @@ class UI(QMainWindow):
         newRow = pd.DataFrame(data=geometry).set_index('type')
         return newRow
 
-    def tabOrder(self):
+    def tabOrder(self) -> None:
+        '''
+        Initilized Tab order to use the tabulator key to move between input fields
+        '''
         order = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.liquidTemp, self.ui.liquidVisc, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.innerStreamUnit, self.ui.sheetStreamValue, self.ui.sheetStreamUnit, self.ui.outerStreamValue, self.ui.outerStreamUnit, self.ui.cpToclip]
         self.setTabOrder(order[0], order[1])
         self.setTabOrder(order[-1], order[0])
@@ -459,9 +493,10 @@ class UI(QMainWindow):
         for i in range(1, len(viscOrder)):
             self.setTabOrder(viscOrder[i-1], viscOrder[i])
     
-    def setCalcButtons(self):
-        # self.ui.calcGas.clicked.connect(self.calcGas)
-        # self.ui.calcLiq.clicked.connect(self.calcLiq)
+    def setCalcButtons(self)-> None:
+        '''
+        Intilization of calculation functions for the Annular Atomzier Tab
+        '''
         self.ui.liquidVisc.textChanged.connect(self.calcLiq)
         self.ui.liquidTemp.textChanged.connect(self.calcLiq)
         self.ui.gasTemp.textChanged.connect(self.calcGas)
@@ -470,7 +505,10 @@ class UI(QMainWindow):
         self.calcLiq()
         self.calcGas()
         
-    def enableAutoCalc(self):
+    def enableAutoCalc(self) -> None:
+        '''
+        Initializes automatic calculation in the Annular Atomizer tab
+        '''
         # self.ui.liquidTemp.valueChanged.connect(self.calcLiq)
         # self.ui.liquidVisc.valueChanged.connect(self.calcLiqDens)
         # self.ui.gasTemp.valueChanged.connect(self.calcGas)
@@ -490,8 +528,12 @@ class UI(QMainWindow):
         self.ui.sheetStreamUnit.currentTextChanged.connect(self.readValues)
         self.ui.outerStreamUnit.currentTextChanged.connect(self.readValues)
 
-    def calcLiq(self):
-        
+    def calcLiq(self)->bool:
+        '''
+        Calculation of liquid data like density, surface tension, ...
+        Returns bool to check if calculation was successful, e.g. if data are out of bounds like viscosity of 9999 mPa s at 100 °C
+        '''
+       
         if self.ui.liquidType.currentText() == 'Water':
             water_ = Fluid(FluidsList.Water).with_state(Input.temperature(self.ui.liquidTemp.value()), Input.pressure(101325))
             self.ui.liquidVisc.setValue(water_.dynamic_viscosity*1000)
@@ -527,7 +569,11 @@ class UI(QMainWindow):
             self.liqSurface = surfaceMix
         return check
         
-    def calcGas(self):
+    def calcGas(self)->bool:
+        '''
+        Calculation of gas data like density, ...
+        Returns bool to check if calculation was successful.
+        '''
         try:
             if self.ui.gasType.currentText() == 'Air':
                 air_ = Fluid(FluidsList.Air).with_state(Input.temperature(self.ui.gasTemp.value()), Input.pressure(101325))
@@ -540,7 +586,10 @@ class UI(QMainWindow):
             pass
             return False
 
-    def createLabelList(self):
+    def createLabelList(self)->list:
+        '''
+        Initialize list of labels of the calculator to be used for filling them with values
+        '''
         resutlLabels = []
         resutlLabels.append(self.ui.innerMFR)
         resutlLabels.append(self.ui.sheetMFR)
@@ -583,7 +632,11 @@ class UI(QMainWindow):
             label.setText('-')
         return resutlLabels
 
-    def readValues(self):
+    # readValues(self) is important and handles the most tasks
+    def readValues(self)-> None:
+        '''
+        Read current input and runs calculation
+        '''
         if not self.calcLiq() or not self.calcGas(): return 0
         # Atomizer Geometry
         self.Lc = []
@@ -679,8 +732,10 @@ class UI(QMainWindow):
 
         self.fillFirstResults()
 
-    def orifice(self):
-        
+    def orifice(self)->None:
+        '''
+        Calculation of the orifices of the atomizer
+        '''
         self.innerArea = math.pi/4*self.innerTube**2
         self.innerAreaWithWall = math.pi*(self.innerTube/2+self.innerWall)**2
 
@@ -697,7 +752,10 @@ class UI(QMainWindow):
         }
         # print(self.orificeDict)
 
-    def fillFirstResults(self):
+    def fillFirstResults(self)->None:
+        '''
+        Inputs the calculated values to the labels
+        '''
         streamValuesString = [[0]*5 for i in range(3)]
         for j in range(len(self.streamValues[0])-1):
             for i in range(3):
@@ -725,7 +783,10 @@ class UI(QMainWindow):
         self.resultLabels[10].setText(streamValuesString[1][4])
         self.resultLabels[11].setText(streamValuesString[2][4])
 
-        def StreamDF():
+        def StreamDF()->pd.DataFrame:
+            '''
+            Sets up multiple dataframes with current values, which are the used with the export of calculated data
+            '''
             dict = {
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'],
                 'Fluid Type': [self.streamValues[0][-1].capitalize(), self.streamValues[1][-1].capitalize(), self.streamValues[2][-1].capitalize()],
@@ -740,7 +801,10 @@ class UI(QMainWindow):
         self.StreamDf = StreamDF()
         self.calcDimless()
 
-    def calcDimless(self):
+    def calcDimless(self)-> None:
+        '''
+        Calculation of diml. numbers (Re, Oh, We, ...)
+        '''
         rhos = {
             'gas': self.gasDens,
             'liquid': self.liqDens
@@ -770,7 +834,10 @@ class UI(QMainWindow):
         self.sheetDimless.append(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
         self.outerDimless.append(dL.Oh(visc[self.streamValues[2][5]], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
 
-        def ReWeOhDF():
+        def ReWeOhDF()->pd.DataFrame:
+            '''
+            Creates a dict of dataframes with diml. numbers for each stream
+            '''
             dict = {
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'], 
                 'Reynolds': [self.innerDimless[0], self.sheetDimless[0], self.outerDimless[0]],
@@ -781,6 +848,9 @@ class UI(QMainWindow):
             return pd.DataFrame(dict).set_index('type')
 
         self.ReOhWeDf = ReWeOhDF()
+
+        # --- Creation of strings for labels ---
+        # Labels have to be filled with strings and not numbers directly
 
         strings = []
         for item in self.innerDimless:
@@ -804,7 +874,7 @@ class UI(QMainWindow):
         for i in range(len(strings)):
             self.resultLabels[12+i].setText(strings[i])
 
-        # GLR 
+        # GLR and momentum flux calculation 
 
         gasMF = 0
         liqMF = 0
@@ -818,7 +888,8 @@ class UI(QMainWindow):
             elif self.streamValues[i][-1] == 'liquid':
                 liqMF += self.streamValues[i][0]
                 liqMom_flux += self.streamValues[i][3]
-    
+
+        #
         self.RatiosDf = pd.DataFrame(columns=['GLR', 'GLI', 'GLO', 'Momentum Flux Ratio', 'Inner Momentum Flux Ratio', 'Outer Momentum Flux Ratio'])
 
         if liqMF != 0 and liqMom_flux != 0:
@@ -874,38 +945,12 @@ class UI(QMainWindow):
 
         self.getAllDfs()
 
-    def initCalculator(self):
-        list = [
-            self.ui.input_T,
-            self.ui.input_my,
-            self.ui.viscoGlyMass, 
-            self.ui.viscoGlyPurity
-        ]
+    # --- Handling of export of data to excel or clipboard ---
 
-        for l in list:
-            l.valueChanged.connect(self.calculator)
-        self.calculator()
-
-    def calculator(self):
-        self.ui.outputLabel.setText('Berechnung läuft')
-        my_target = self.ui.input_my.value()
-        temp = self.ui.input_T.value()
-        purity = self.ui.viscoGlyPurity.value()
-        glyMass = self.ui.viscoGlyMass.value()
-
-        calc = ca(temp, my_target)
-        try: 
-            result_num = calc.solve()
-            result = "%.2f" % (result_num*100)
-            output = f'<u>{result} wt-%</u> of 100 % glycerin are requiered to get a viscosity of {"%.0f" % my_target} mPa s at {temp} °C.'
-            if glyMass != 0:
-                water = (glyMass*purity/100-glyMass*result_num)/result_num
-                output += f'<br> For a glycerin mass of {glyMass} g of purity {purity} %, <u>{"%.2f" % water} g</u> is required.'
-        except: output = '<br><br>This combination of viscosity and temperature is not possible!'
-        self.ui.outputLabel.setText(output)
-
-
-    def createFolders(self):
+    def createFolders(self)-> None:
+        '''
+        Creates hidden export folders in the user folder to handle the data of the export
+        '''
         default = {
                 'lastFile': 'empty__',
                 'lastExport': 'empty__', 
@@ -928,7 +973,10 @@ class UI(QMainWindow):
             self.settings = settings(os.path.join(self.path, 'global', 'global_settings.json'))
             self.exportDB = exportDB(os.path.join(self.path, 'global', 'export.db'))
 
-    def loadGlobalSettings(self):
+    def loadGlobalSettings(self)->None:
+        '''
+        Loads user settings
+        '''
         path = os.path.join(self.path, 'global', 'global_settings.json')
         if not os.path.exists(path):
             try: 
@@ -990,6 +1038,9 @@ class UI(QMainWindow):
             except: pass
         
     def loadPreset(self, path = None):
+        '''
+        Load atomizer presets if existing
+        '''
         if not path: filename, null = QFileDialog.getOpenFileName(self, directory=self.path, filter='*.json', options=QFileDialog.Option.ReadOnly)
         elif path == 'empty__': return 0
         else: filename = path
@@ -1016,6 +1067,9 @@ class UI(QMainWindow):
         self.settings.set('lastFile', filename)
 
     def savePreset(self):
+        '''
+        Save presets
+        '''
         filename, null = QFileDialog.getSaveFileName(self, directory=self.path, filter='*.json')
 
         export = {}
@@ -1042,6 +1096,9 @@ class UI(QMainWindow):
         self.settings.set('lastFile', filename)
 
     def presetField(self):
+        '''
+        Setup of empty presets
+        '''
         fields = [self.ui.innerTube, self.ui.innerWall, self.ui.annularSheet, self.ui.middleWall, self.ui.outerSheet, self.ui.outerWall, self.ui.liquidTemp, self.ui.liquidVisc, self.ui.gasTemp, self.ui.innerStreamValue, self.ui.sheetStreamValue, self.ui.outerStreamValue]
         defaults = [3, 0.1, 1, 0.1, 1, 0, 20, 1, 20, 0, 0, 0]
         self.presetFields = fields
@@ -1059,6 +1116,9 @@ class UI(QMainWindow):
         self.presetRadioDefault = defaults
 
     def resetValues(self):
+        '''
+        Resets label fields to the default value
+        '''
         for i in range(len(self.presetFields)):
             self.presetFields[i].setValue(self.presetFieldsDeafault[i])
         
@@ -1325,7 +1385,40 @@ class UI(QMainWindow):
     def bulkExport(self):
         self.bulk = bulkex.UI(self)
         self.bulk.exec()
-        
+
+    # --- End of Annular Atomizer Tab ---
+    # --- Start of ViscoCalc Tab ---
+
+    def initCalculator(self):
+        list = [
+            self.ui.input_T,
+            self.ui.input_my,
+            self.ui.viscoGlyMass, 
+            self.ui.viscoGlyPurity
+        ]
+
+        for l in list:
+            l.valueChanged.connect(self.calculator)
+        self.calculator()
+
+    def calculator(self):
+        self.ui.outputLabel.setText('Berechnung läuft')
+        my_target = self.ui.input_my.value()
+        temp = self.ui.input_T.value()
+        purity = self.ui.viscoGlyPurity.value()
+        glyMass = self.ui.viscoGlyMass.value()
+
+        calc = ca(temp, my_target)
+        try: 
+            result_num = calc.solve()
+            result = "%.2f" % (result_num*100)
+            output = f'<u>{result} wt-%</u> of 100 % glycerin are requiered to get a viscosity of {"%.0f" % my_target} mPa s at {temp} °C.'
+            if glyMass != 0:
+                water = (glyMass*purity/100-glyMass*result_num)/result_num
+                output += f'<br> For a glycerin mass of {glyMass} g of purity {purity} %, <u>{"%.2f" % water} g</u> is required.'
+        except: output = '<br><br>This combination of viscosity and temperature is not possible!'
+        self.ui.outputLabel.setText(output)
+
     # FREQUENCY ANALYSIS
 
     def nextPic(self):

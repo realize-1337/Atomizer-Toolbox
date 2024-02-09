@@ -61,7 +61,9 @@ class Excel2DB():
 
 if __name__ == '__main__':
     topFolder = 'F:\\'
+    topFolder = r'C:\Users\david\Desktop\60_cut'
     pattern = r'.*(Duese.*)\\'
+    pattern = r'.*(D.*)\\'
     found = []
     for root, sub, files in os.walk(topFolder):
         for file in files:

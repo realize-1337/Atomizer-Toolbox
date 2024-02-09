@@ -20,10 +20,11 @@ makeSpec = [
     "pyi-makespec",
     "--onefile",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
-    "--noconsole", 
+    # "--noconsole", 
     # "--windowed",
     "--name", f"{PROJECTNAME}",
     "--icon", f"{os.path.relpath('../../assets/ATT_LOGO.ico')}",
+    "--version-file", f"{os.path.relpath('../../version_sign/versionfile.txt')}",
     # "--exclude-module", "module_to_exclude",
     # "--hidden-import", "matlab",
     # "--upx-dir", "path/to/upx",
