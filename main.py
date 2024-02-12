@@ -27,8 +27,8 @@ import packages.multiAngle as mA
 from packages.createMatlabScripts import MLS
 from pyfluids import Fluid, FluidsList, Input
 import logging
-UI_FILE = './GUI/mainWindow.ui'
-PY_FILE = './GUI/mainWindow.py'
+UI_FILE = os.path.abspath('GUI\mainWindow.ui')
+PY_FILE = os.path.abspath('GUI\mainWindow.py')
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 # The subprocess is used to compile the .ui file to a .py file. 
 # This is only neccessary after changes in the .ui file with qt designer or qt creator, make sure to comment it out before compiling
@@ -2253,7 +2253,7 @@ class UI(QMainWindow):
             pp = mA.SprayAnglePP()
             # self.widget.clear()
             self.widget.clear()
-            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value(), draw=draws)
+            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws)
             self.setAngleTable(angles)
             self.widget.update()
 
@@ -2280,7 +2280,7 @@ class UI(QMainWindow):
             self.widget.clear()
             self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
             pp = mA.SprayAnglePP()
-            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.angleSkip.value(), self.ui.angleTopArea.value(), draw=draws)
+            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws)
             self.setAngleTable(angles)
             self.widget.update()
             return
@@ -2376,7 +2376,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    sys.excepthook = excepthook
+    # sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')

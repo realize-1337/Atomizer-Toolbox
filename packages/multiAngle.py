@@ -88,7 +88,7 @@ class SprayAnglePP():
             
         return [left, right]
 
-    def calculateAngles(self, arr:list|np.ndarray, maxLenForFLM=150) -> list:
+    def calculateAngles(self, arr:list|np.ndarray, maxLenForFLM=150, flmSkip=20) -> list:
         if type(arr) != list:
             arr = [arr]
 
@@ -103,7 +103,7 @@ class SprayAnglePP():
             diff = np.diff(y[:maxLenForFLM], 1)
             p_ = np.poly1d(np.polyfit(x[:maxLenForFLM-1], diff, 8))
             y_ = p_(x[:maxLenForFLM-1])
-            flm[num] = argrelextrema(y_, np.less)[0][0]+20
+            flm[num] = argrelextrema(y_, np.less)[0][0]+flmSkip
 
             y = y[flm[num]:]
             x = x[flm[num]:]
@@ -183,14 +183,14 @@ class SprayAnglePP():
 
         return [fig, ax, fig2, ax2]
     
-    def run(self, binary_map:np.ndarray, scaled_map:np.ndarray, widget, initialSkip=10, maxLenForFLM=150, drawNegative=True, draw:list=[True, True, True, True]) -> list:
+    def run(self, binary_map:np.ndarray, scaled_map:np.ndarray, widget, flmSkip=20, maxLenForFLM=150, drawNegative=True, draw:list=[True, True, True, True]) -> list:
         '''
         Handles the post processing of spray angle calculation.
         Returns found angles, heatmap image and heatmap image with spray angles.
         Angles are max, 10, 50, 90.
         '''
         r, l = self.findWidth(binary_map)
-        angles, pos, flm = self.calculateAngles([r, l], maxLenForFLM)
+        angles, pos, flm = self.calculateAngles([r, l], maxLenForFLM, flmSkip)
         fig, ax, figRaw, axRaw = self.createImages(r, l, flm, angles, scaled_map, widget, drawNegative, draw)
 
         return([angles, (fig, ax), (figRaw, axRaw)])

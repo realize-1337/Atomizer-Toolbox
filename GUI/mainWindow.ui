@@ -2503,9 +2503,9 @@
                </layout>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_14">
+               <layout class="QVBoxLayout" name="verticalLayout_24">
                 <item>
-                 <widget class="QLabel" name="label_61">
+                 <widget class="QLabel" name="label_32">
                   <property name="maximumSize">
                    <size>
                     <width>16777215</width>
@@ -2513,23 +2513,23 @@
                    </size>
                   </property>
                   <property name="toolTip">
-                   <string>Force to skip the top 20 pixel from the top of the spray. This is required to prevent issues, however, it can be set to diffrent values if necessary (altough not intended). </string>
+                   <string>Change this value if the automatic finding of the spray start does not work properly.</string>
                   </property>
                   <property name="text">
-                   <string>Additional Skip</string>
+                   <string>Automatic Nozzle Detection Offset</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="angleSkip">
+                 <widget class="QSpinBox" name="FLM_offset">
                   <property name="toolTip">
-                   <string>Force to skip the top 20 pixel from the top of the spray. This is required to prevent issues, however, it can be set to diffrent values if necessary (altough not intended). </string>
+                   <string>Change this value if the automatic finding of the spray start does not work properly. Higher Values can solve the problem, if the spray start is detected on the nozzle instead of below it</string>
                   </property>
                   <property name="maximum">
-                   <number>200</number>
+                   <number>1000</number>
                   </property>
                   <property name="value">
-                   <number>20</number>
+                   <number>40</number>
                   </property>
                  </widget>
                 </item>
@@ -2789,10 +2789,10 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_5"/>
   <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_4"/>
  </buttongroups>
 </ui>
