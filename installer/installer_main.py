@@ -17,7 +17,7 @@ import ctypes
 from subprocess import Popen
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from installer import Ui_Dialog as main
 import requests
 
