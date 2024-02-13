@@ -3,22 +3,40 @@
 
 ## How to use
 
-Currently there are two options to use the software.
+Currently there are multiple options to use the software.
 
-Either you can download a compiled version from the release tab
-However, I would highly recommend to build your own executable file. This is required if matlab is not installed in the default location (`C:\Program Files\MATLAB`)
+IMPORTANT: This software can has a few matlab features. In order to gurantee comparability to previous works, sometimes the matlab scripts have been directly implemented into the software. This is due to difference in matlab and python libaries, which should technically do the same. Spoiler: They don't.
+If you want to use these features, make sure to have matlab installed.
 
-## How to build your own .exe
-
-IMPORTANT: This software can has a few matlab features. In order to gurantee comparability to previous works, sometimes the matlab scripts have been directly implemented into the software. This is due to difference in matlab and python libaries, which should technically do the same. Spoiler: They don't
-
-If you want to use these features, make sure to have matlab installed
+Either you can download a compiled version from the release tab.
+However, I would highly recommend to build your own executable file. This is required if matlab is not installed in the default location (`C:\Program Files\MATLAB`) or if issues occur.
 
 #### Prerequisites:
 - [Python 3.11](https://www.python.org/downloads/release/python-3117/) (as of the time writing in late 2023, no newer python verion is supported for matlab functionalities)
 - Matlab (optional, but recommended, must have Matlab engine for python support, usally most recent versions should have it)
 
-The installation of these softwares is straight forward and needs to be conducted now.
+Note: Python is only requiered if you want to compile your own version.
+Make sure the add Python to the PATH variable in Windows (set checkbox during Python installation)!
+
+## Using the installer - The easiest way
+
+DISCLAIMER: I don't have a Microsoft Developer License, which comes with an annul cost. 
+The compiled installer and the compiled app can be detected by Microsoft defender as a virus. 
+You can find the VirusTotal scan [here](https://www.virustotal.com/gui/file/2a27348e21ef5464707e7358ac525ea5ff7565bf7449eb9ffc5b2500553eb3e4?nocache=1).
+
+The installer can be downloaded from the releases or via [this link](https://github.com/realize-1337/Atomizer-Toolbox/releases/download/1.68.0/AtomizerToolbox.Installer.exe).
+
+Once downloaded you can just run the installer. 
+The installer should be run as admin. 
+You technically can run it as local user, however, the possible install locations may be limited. 
+
+There are two options for installation: 
+- Install: Downloads the current pre-compiled release and installs it as a software in Windows
+- Compile: Downloads the current release source code and compiles it on the local machine. Afterwards, it will be installed as a software in windows. Note: [Python 3.11](https://www.python.org/downloads/release/python-3117/) must be installed.
+
+## How to build your own .exe - The manual way
+Python required!
+
 If you are familiar with git, you can clone the repository. However, since you are reading this, you are probably not. 
 Download the source code as a .zip file from the green button on the very top of this website. 
 Unzip the file to a location of your choice. 
