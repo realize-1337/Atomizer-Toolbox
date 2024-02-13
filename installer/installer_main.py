@@ -248,8 +248,6 @@ class UI(QDialog):
         self.createRegistryKeys(self.ui.path.text())    
         self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
         self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
-        print('Installing')
-        print('***COMPILE COMPLETED - GO BACK TO THE INSTALLER***\n'*20)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Abort).setText('Close')
         QMessageBox.information(self, 'Information', 'The first start of the Atomizer Toolbox might take up to a minute depending on the used hardware.')
 

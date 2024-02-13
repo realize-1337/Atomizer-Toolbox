@@ -40,6 +40,7 @@ makeSpec = [
     "--add-data", f"{os.path.join(dir_path, 'packages')}/*.py;packages",
     "--add-data", f"{os.path.join(dir_path, 'matlab_scripts')}/*.m;matlab_scripts",
     "--add-data", f"{os.path.join(dir_path, 'assets')};assets",
+    "--version-file", f"{os.path.join(dir_path, 'version_sign/versionfile_installer.txt')}",
     # "--exclude-module", "module_to_exclude",
     "--hidden-import", "sympy",
     "--hidden-import", "skimage",

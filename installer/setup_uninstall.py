@@ -11,7 +11,8 @@ PROJECTNAME = 'uninstall'
 AUTHOR = 'David Maerker'
 
 # Führe PyInstaller aus
-print("Führe PyInstaller aus...")
+# print("Führe PyInstaller aus...")
+print('Compiling uninstaller')
 makeSpec = [
     "pyi-makespec",
     "--onefile",   # Eine einzelne ausführbare Datei erstellen
