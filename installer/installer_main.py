@@ -6,7 +6,7 @@ import sys
 import zipfile
 from PyQt6.QtWidgets import *
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QEvent, QCoreApplication, QRunnable, pyqtSignal, QObject, QThreadPool
+from PyQt6.QtCore import Qt, QEvent, QCoreApplication, QRunnable, pyqtSignal, QObject, QThreadPool, QProcess, QTextStream
 import subprocess
 import winreg
 import shutil
@@ -17,7 +17,7 @@ import ctypes
 from subprocess import Popen
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from installer import Ui_Dialog as main
 import requests
 
@@ -37,6 +37,7 @@ class Worker(QRunnable):
 class UI(QDialog):
     def __init__(self):
         super().__init__()
+        print('***DO NOT CLOSE THIS WINDOW***\n'*20)
         self.ui = main()
         self.ui.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('./assets/ATT_LOGO.ico'))
@@ -44,7 +45,11 @@ class UI(QDialog):
         self.initInstaller()
         self.running = False
         print(sys.executable)
-        print('***DO NOT CLOSE THIS WINDOW***\n'*20)
+
+        self.process = QProcess()
+        self.process.readyRead.connect(self.read_output)
+        self.process.finished.connect(self.compileComplete)
+        
 
     def initInstaller(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Install')
@@ -231,12 +236,13 @@ class UI(QDialog):
         self.ui.pbar.setMaximum(100)
         self.ui.pbar.setValue(100)
         self.ui.pbar.setFormat('Compile in progress. This will take a while. You can track the progress in the command window.')
-        QMessageBox.information(self, 'Information', 'Compile starts when you press \"Ok\". You can track the progress in the command window. <br> Do not close the Installer unless it says compile completed. <br> There might be error messages during the compilation process, they usually can be ignored.')
+        # QMessageBox.information(self, 'Information', 'Compile starts when you press \"Ok\". You can track the progress in the command window. <br> Do not close the Installer unless it says compile completed. <br> There might be error messages during the compilation process, they usually can be ignored.')
 
-        threadpool = QThreadPool.globalInstance()
-        worker = Worker(os.path.join(folder, "setup.bat"))
-        worker.signals.finished.connect(self.compileComplete)
-        threadpool.start(worker)
+        # threadpool = QThreadPool.globalInstance()
+        # worker = Worker(os.path.join(folder, "setup.bat"))
+        # worker.signals.finished.connect(self.compileComplete)
+        # threadpool.start(worker)
+        self.run_batch_file(os.path.join(folder, "setup.bat"))
                 
     def compileComplete(self):
         self.ui.pbar.setMaximum(100)
@@ -245,14 +251,25 @@ class UI(QDialog):
         folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{self.tag_name}')
         shutil.copytree(os.path.join(folder, 'AtomizerToolbox'), os.path.dirname(folder), dirs_exist_ok=True)
         shutil.rmtree(folder)
-        # self.createRegistryKeys(self.ui.path.text())    
-        # self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
-        # self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
+        self.createRegistryKeys(self.ui.path.text())    
+        self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
+        self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
         print('Installing')
         print('***COMPILE COMPLETED - GO BACK TO THE INSTALLER***\n'*20)
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Abort).setText('Close')
         QMessageBox.information(self, 'Information', 'The first start of the Atomizer Toolbox might take up to a minute depending on the used hardware.')
 
+    def run_batch_file(self, path):
+        try:
+            self.process.start("cmd.exe", ["/c", path])
+            self.ui.output_textedit.clear()
+        except:
+            pass
+
+    def read_output(self):
+        output = self.process.readAllStandardOutput().data().decode()
+        self.ui.output_textedit.insertPlainText(output)
+        self.ui.output_textedit.verticalScrollBar().setValue(self.ui.output_textedit.verticalScrollBar().maximum())
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

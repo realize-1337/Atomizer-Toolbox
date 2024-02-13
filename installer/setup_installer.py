@@ -5,7 +5,7 @@ sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 FILE = f'{os.path.abspath("installer/installer_main.py")}'
 PROJECTNAME = 'AtomizerToolbox Installer'
-VERSION = '1.0'
+VERSION = '1.1'
 AUTHOR = 'David Maerker'
 
 # Aktualisiere die Abhängigkeiten mit 'pip freeze'
@@ -20,7 +20,7 @@ makeSpec = [
     "pyi-makespec",
     "--onefile",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
-    # "--noconsole", 
+    "--noconsole", 
     # "--windowed",
     "--name", f"{PROJECTNAME}",
     "--icon", f"{os.path.relpath('../../assets/ATT_LOGO.ico')}",

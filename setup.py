@@ -27,7 +27,7 @@ except:
     raise ModuleNotFoundError()
 
 # Führe PyInstaller aus
-print("Führe PyInstaller aus...")
+print("Running PyInstaller ...")
 makeSpec = [
     "pyi-makespec",
     "--onedir",   # Eine einzelne ausführbare Datei erstellen
@@ -67,12 +67,10 @@ runSpec = [
     f'{os.path.join(dir_path, f"build/spec/{PROJECTNAME}.spec")}'
 ]
 
+
 try: 
     subprocess.run(runSpec, check=True)
 except subprocess.CalledProcessError as e:
-    print('#'*100)
-    print(' ERROR '*10)
-    print('#'*100)
     print('Trying to automatically adjust spec file')
     with open(os.path.join(dir_path, f"build/spec/{PROJECTNAME}.spec"), "r") as specFile:
         lines = specFile.readlines()
@@ -82,6 +80,7 @@ except subprocess.CalledProcessError as e:
         specFile.write('import sys; \n')
         specFile.write('sys.setrecursionlimit(sys.getrecursionlimit()*10);\n')
         specFile.writelines(lines[1:])
+    print('Edit done! Working on compile. Please wait ...')
     subprocess.run(runSpec)
 except subprocess.CalledProcessError as e:
     raise SystemExit(e)
@@ -90,4 +89,6 @@ try:
     shutil.copy(os.path.join(dir_path, 'installer/uninstall.exe'), os.path.join(dir_path, 'AtomizerToolbox/uninstall.exe'))
 except: 
     pass
+
+print('***Compile Done***\n'*10)
 
