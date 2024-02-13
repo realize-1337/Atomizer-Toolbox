@@ -44,7 +44,7 @@ except subprocess.CalledProcessError as e:
 runSpec = [
     'pyinstaller',
     '--distpath', 'installer',
-    "--workpath", "build/work",
+    "--workpath", f"build/work",
     f'{os.path.abspath(f"build/spec/{PROJECTNAME}.spec")}'
 ]
 
