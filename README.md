@@ -3,8 +3,6 @@
 
 ## How to use
 
-Currently there are multiple options to use the software.
-
 IMPORTANT: This software has a few matlab features. In order to gurantee comparability to previous works, sometimes the matlab scripts have been directly implemented into the software. This is due to difference in matlab and python libaries, which should technically do the same. Spoiler: They don't.
 If you want to use these features, make sure to have matlab installed.
 
@@ -20,7 +18,7 @@ Make sure the add Python to the PATH variable in Windows (set checkbox during Py
 
 ## Using the installer - The easiest way
 
-DISCLAIMER: I don't have a Microsoft Developer License, which comes with an annul cost. 
+DISCLAIMER: I don't have a Microsoft Developer License, which comes with an annual cost. 
 The compiled installer and the compiled app can be detected by Microsoft defender as a virus. 
 You can find the VirusTotal scan [here](https://www.virustotal.com/gui/file/2a27348e21ef5464707e7358ac525ea5ff7565bf7449eb9ffc5b2500553eb3e4?nocache=1).
 
