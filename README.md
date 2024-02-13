@@ -5,7 +5,7 @@
 
 Currently there are multiple options to use the software.
 
-IMPORTANT: This software can has a few matlab features. In order to gurantee comparability to previous works, sometimes the matlab scripts have been directly implemented into the software. This is due to difference in matlab and python libaries, which should technically do the same. Spoiler: They don't.
+IMPORTANT: This software has a few matlab features. In order to gurantee comparability to previous works, sometimes the matlab scripts have been directly implemented into the software. This is due to difference in matlab and python libaries, which should technically do the same. Spoiler: They don't.
 If you want to use these features, make sure to have matlab installed.
 
 Either you can download a compiled version from the release tab.
