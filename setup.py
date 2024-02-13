@@ -6,13 +6,17 @@ import json
 import shutil
 sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
-FILE = f'{os.path.abspath("./main.py")}'
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print(dir_path)
+
+FILE = f'{os.path.join(dir_path, "main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
 VERSION = '1.68.0'
 AUTHOR = 'David Maerker'
 
+
 settings = {'currentVersion': VERSION}
-versionInfo = os.path.abspath('assets/versioninfo.json')
+versionInfo = os.path.join(dir_path, 'assets/versioninfo.json')
 with open(versionInfo, 'w') as file:
     json.dump(settings, file, indent=4)
 
@@ -31,11 +35,11 @@ makeSpec = [
     "--noconsole", 
     # "--windowed",
     "--name", f"{PROJECTNAME}",
-    "--icon", f"{os.path.relpath('../../assets/ATT_LOGO.ico')}",
-    "--add-data", f"{os.path.relpath('../../GUI')}\\*.py;GUI",
-    "--add-data", f"../../packages/*.py;packages",
-    "--add-data", f"../../matlab_scripts/*.m;matlab_scripts",
-    "--add-data", f"{os.path.relpath('../../assets')};assets",
+    "--icon", f"{os.path.join(dir_path, 'assets/ATT_LOGO.ico')}",
+    "--add-data", f"{os.path.join(dir_path, 'GUI')}\\*.py;GUI",
+    "--add-data", f"{os.path.join(dir_path, 'packages')}/*.py;packages",
+    "--add-data", f"{os.path.join(dir_path, 'matlab_scripts')}/*.m;matlab_scripts",
+    "--add-data", f"{os.path.join(dir_path, 'assets')};assets",
     # "--exclude-module", "module_to_exclude",
     "--hidden-import", "sympy",
     "--hidden-import", "skimage",
@@ -43,12 +47,12 @@ makeSpec = [
     # "--hidden-import", "matlab",
     # "--upx-dir", "path/to/upx",
     # "--additional-hooks-dir", "path/to/hooks",
-    "--specpath", "build/spec",
+    "--specpath", f"{os.path.join(dir_path, 'build/spec')}",
     # "--additional-hook-dir=hooks",
     # "--paths", "<path to the "matlab" folder>"
     # "--workpath", "work_directory",
     "--log-level", "WARN",
-    '--splash', f"{os.path.relpath('../../assets/splash_screen.png')}",
+    '--splash', f"{os.path.join(dir_path, 'assets/splash_screen.png')}",
     FILE
 ]
 try:
@@ -58,9 +62,9 @@ except subprocess.CalledProcessError as e:
 
 runSpec = [
     'pyinstaller',
-    '--distpath', '',
+    '--distpath', f'{dir_path}',
     "--workpath", "build/work",
-    f'{os.path.abspath(f"build/spec/{PROJECTNAME}.spec")}'
+    f'{os.path.join(dir_path, f"build/spec/{PROJECTNAME}.spec")}'
 ]
 
 try: 
@@ -70,10 +74,10 @@ except subprocess.CalledProcessError as e:
     print(' ERROR '*10)
     print('#'*100)
     print('Trying to automatically adjust spec file')
-    with open(os.path.abspath(f"build/spec/{PROJECTNAME}.spec"), "r") as specFile:
+    with open(os.path.join(dir_path, f"build/spec/{PROJECTNAME}.spec"), "r") as specFile:
         lines = specFile.readlines()
 
-    with open(os.path.abspath(f"build/spec/{PROJECTNAME}.spec"), "w") as specFile:
+    with open(os.path.join(dir_path, f"build/spec/{PROJECTNAME}.spec"), "w") as specFile:
         specFile.write(lines[0])
         specFile.write('import sys; \n')
         specFile.write('sys.setrecursionlimit(sys.getrecursionlimit()*10);\n')
@@ -83,7 +87,7 @@ except subprocess.CalledProcessError as e:
     raise SystemExit(e)
 
 try: 
-    shutil.copy(os.path.abspath('installer/uninstall.exe'), os.path.abspath('AtomizerToolbox/uninstall.exe'))
+    shutil.copy(os.path.join(dir_path, 'installer/uninstall.exe'), os.path.join(dir_path, 'AtomizerToolbox/uninstall.exe'))
 except: 
     pass
 

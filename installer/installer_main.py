@@ -43,13 +43,15 @@ class UI(QDialog):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).clicked.connect(self.compile)
         self.defaultFolder = os.path.join(self.get_default_install_folder(), 'Atomizer ToolBox')
         print(self.defaultFolder)
+        return_code = subprocess.call(["python", "--version"])
+        if return_code == 0: self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(True)
+        else: self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setEnabled(False)
         self.ui.path.setText(self.defaultFolder)
         self.ui.path.installEventFilter(self)
         try:
             admin = ctypes.windll.shell32.IsUserAnAdmin()
         except:
             admin = False
-        
         if not admin:
             QMessageBox.information(self, 'Information', 'Your are not running as Admin. <br> This might cause issues if you don\'t have priviliges to write to the install folder. <br> Make sure to select a valid folder or run again as admin.')
 
@@ -211,12 +213,12 @@ class UI(QDialog):
                                )
         os.remove(zip_file_path)
         folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{tag_name}')
-        items = os.listdir(folder)
+        items = [os.path.join(folder, x) for x in os.listdir(folder)]
         
         self.ui.pbar.setFormat('Compile in progress. This will take a while.')
                 # Run Another Python File
-        # os.system(f"start /wait cmd /c cd \"{folder}\" & setup.bat")
-        subprocess.run(f'{os.path.join(folder, "setup.bat")}', shell=True)
+        os.system(f"start /wait cmd /c {os.path.join(folder, 'setup.bat')}")
+        shutil.rmtree(items)
         
 
 if __name__ == '__main__':
