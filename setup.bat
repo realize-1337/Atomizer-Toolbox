@@ -1,13 +1,22 @@
-if not exist venv (
-    python -m venv venv
+@echo off
+setlocal
+
+REM Get the full path to the folder containing this batch script
+set "script_dir=%~dp0"
+
+REM Check if the virtual environment folder exists
+if not exist "%script_dir%\venv" (
+    python -m venv "%script_dir%\venv"
 )
 
 REM Activate the virtual environment and install requirements
-call .\venv\Scripts\activate.bat 
-call pip install -r requirements.txt
+call "%script_dir%\venv\Scripts\activate.bat"
+call pip install -r "%script_dir%\requirements.txt"
 
 REM Run setup.py
-call python setup.py
+call python "%script_dir%\setup.py"
 
 REM Deactivate the virtual environment
-call .\venv\Scripts\deactivate.bat
+call "%script_dir%\venv\Scripts\deactivate.bat"
+
+endlocal

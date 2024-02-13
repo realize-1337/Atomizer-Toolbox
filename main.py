@@ -21,6 +21,7 @@ from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
 from openpyxl import load_workbook
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 import packages.multiAngle as mA
@@ -28,7 +29,8 @@ from packages.createMatlabScripts import MLS
 from pyfluids import Fluid, FluidsList, Input
 import logging
 UI_FILE = os.path.abspath('GUI\mainWindow.ui')
-PY_FILE = os.path.abspath('GUI\mainWindow.py')
+UI_FILE = 'GUI\mainWindow.ui'
+PY_FILE = 'GUI\mainWindow.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 # The subprocess is used to compile the .ui file to a .py file. 
 # This is only neccessary after changes in the .ui file with qt designer or qt creator, make sure to comment it out before compiling
@@ -311,15 +313,79 @@ class MatplotlibWidget(QWidget):
         self.canvas = FigureCanvas(self.figure)
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.canvas)
-                
+        self.canvas.mpl_connect('button_press_event', self.get_coordinates)
+        self.l_cord = []
+        self.r_cord = []
+        self.lines = []
+        self.leftPoint = None
+        self.rightPoint = None
+
+    def get_coordinates(self, event):
+        if event.button == 1:
+            x = event.xdata
+            y = event.ydata
+
+            for line in self.l_cord:
+                line.remove()
+                self.l_cord = []
+
+            self.ax.scatter(x, y, color='red', marker='x')
+            self.l_cord.append(self.ax.collections[-1])
+            self.leftPoint = (x, y)
+
+            self.canvas.draw()
+
+        if event.button == 3:
+            x = event.xdata
+            y = event.ydata
+
+            for line in self.r_cord:
+                line.remove()
+                self.r_cord = []
+
+            self.ax.scatter(x, y, color='blue', marker='x')
+            self.r_cord.append(self.ax.collections[-1])
+            self.rightPoint = (x, y)
+
+            self.canvas.draw()
+
     def update(self):
         self.canvas.draw()
     
+    def clearPoints(self):
+        try:
+            for line in self.r_cord:
+                line.remove()
+                self.r_cord = []
+        except: pass
+        try: 
+            for line in self.l_cord:
+                line.remove()
+                self.l_cord = []
+        except: pass
+        finally: 
+            self.canvas.draw()
+            self.leftPoint = None
+            self.rightPoint = None
+
+    def drawPoints(self):
+        if self.leftPoint != None:
+            self.l_cord = []
+            self.ax.scatter(self.leftPoint[0], self.leftPoint[1], color='red', marker='x')
+            self.l_cord.append(self.ax.collections[-1])
+            self.canvas.draw()
+            
+        if self.rightPoint != None:
+            self.r_cord = []
+            self.ax.scatter(self.rightPoint[0], self.rightPoint[1], color='blue', marker='x')
+            self.r_cord.append(self.ax.collections[-1])
+            self.canvas.draw()
+
     def clear(self):
         try:
             self.canvas.axes.cla()
         except: pass
-        finally: self.canvas.draw()
+        self.canvas.draw()
     
     def reset(self):
         return
@@ -987,7 +1053,9 @@ class UI(QMainWindow):
                     'exportHeader': False, 
                     'PDA_auto_folder': True,
                     'PDA_full_export': True,
-                    'PDA_diagrams': 'False'
+                    'PDA_diagrams': 'False',
+                    'SpA_norm': 'True',
+                    'SpA_maxW': 'True'
                 }
                 if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
                 if not os.path.exists(os.path.join(self.path, 'global', 'share')):
@@ -1035,6 +1103,16 @@ class UI(QMainWindow):
             try: 
                 if self.settings.get('PDA_diagrams'): self.ui.actionGenerate_and_save_Diagrams.setChecked(True)
                 else: self.ui.self.ui.actionGenerate_and_save_Diagrams.setChecked(False)
+            except: pass
+            
+            try: 
+                if self.settings.get('SpA_norm'): self.ui.actionNormalized_Propabilty_Map.setChecked(True)
+                else: self.ui.actionNormalized_Propabilty_Map.setChecked(False)
+            except: pass
+            
+            try: 
+                if self.settings.get('SpA_maxW'): self.ui.actionMax_Width_Mode.setChecked(True)
+                else: self.ui.actionMax_Width_Mode.setChecked(False)
             except: pass
         
     def loadPreset(self, path = None):
@@ -2239,7 +2317,11 @@ class UI(QMainWindow):
         self.angleLastRun = None
         self.angleLastFolder = None
         self.angleLastRef = None
-
+        self.ui.resetSprayPoints.clicked.connect(self.widget.clearPoints)
+        self.setSpAState()
+        self.ui.actionNormalized_Propabilty_Map.changed.connect(self.setSpAState)
+        self.ui.actionMax_Width_Mode.changed.connect(self.setSpAState)
+        
     def sprayAngleClear(self):
         self.widget.fig, self.widget.ax = plt.subplots()
 
@@ -2248,14 +2330,23 @@ class UI(QMainWindow):
         self.ui.angleBar.setValue(self.ui.angleBar.value()+1)
         if self.ui.angleBar.value() == self.ui.angleBar.maximum():
             draws = [self.ui.angleMax.isChecked(), self.ui.angle10.isChecked(), self.ui.angle50.isChecked(), self.ui.angle90.isChecked()]
-            self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
+            if self.ui.actionNormalized_Propabilty_Map.isChecked():
+                self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, np.max(self.probMap), int(self.ui.angleThreshold.value()/100*255))
+            else:
+                self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
             print(np.mean(self.probMap))
             pp = mA.SprayAnglePP()
             # self.widget.clear()
             self.widget.clear()
-            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws)
-            self.setAngleTable(angles)
+            try:
+                if self.ui.actionMax_Width_Mode.isChecked():
+                    angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws, mode='maxW', maxAngleSkip=self.ui.minSkipMaxAngle.value())
+                else:
+                    angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws, mode='maxA', maxAngleSkip=self.ui.minSkipMaxAngle.value())
+                self.setAngleTable(angles)
+            except: pass
             self.widget.update()
+            self.widget.drawPoints()
 
     def setAngleTable(self, angles):
         labels = [
@@ -2278,11 +2369,20 @@ class UI(QMainWindow):
         if [self.ui.angleFolder.text(), self.ui.angleRef.text()] == self.angleLastRun:
             # self.widget.reset()
             self.widget.clear()
-            self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
+            if self.ui.actionNormalized_Propabilty_Map.isChecked():
+                self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, np.max(self.probMap), int(self.ui.angleThreshold.value()/100*255))
+            else:
+                self.binaryMap, self.scaledMap = mA.createProbMap(self.probMap, self.ui.angleBar.maximum(), int(self.ui.angleThreshold.value()/100*255))
             pp = mA.SprayAnglePP()
-            angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws)
-            self.setAngleTable(angles)
+            try:
+                if self.ui.actionMax_Width_Mode.isChecked():
+                    angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws, mode='maxW', maxAngleSkip=self.ui.minSkipMaxAngle.value())
+                else:
+                    angles, image, imageRaw = pp.run(self.binaryMap, self.scaledMap, self.widget, self.ui.FLM_offset.value(), self.ui.angleTopArea.value(), draw=draws, mode='maxA', maxAngleSkip=self.ui.minSkipMaxAngle.value())
+                self.setAngleTable(angles)
+            except: pass
             self.widget.update()
+            self.widget.drawPoints()
             return
         else: 
             self.angleLastRun = [self.ui.angleFolder.text(), self.ui.angleRef.text()] 
@@ -2342,6 +2442,18 @@ class UI(QMainWindow):
         else: 
             self.ui.angleRef.setText('')
 
+    def setSpAState(self):
+        if self.ui.actionMax_Width_Mode.isChecked():
+            self.settings.set('SpA_maxW', True)
+            self.ui.maxAngleDesc.setText('Angle referenced to widest point')
+        else: 
+            self.settings.set('SpA_maxW', False)
+            self.ui.maxAngleDesc.setText('Maximum Angle')
+        
+        if self.ui.actionNormalized_Propabilty_Map.isChecked():
+            self.settings.set('SpA_norm', True)
+        else: self.settings.set('SpA_norm', False)
+
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()
@@ -2376,7 +2488,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    # sys.excepthook = excepthook
+    sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')

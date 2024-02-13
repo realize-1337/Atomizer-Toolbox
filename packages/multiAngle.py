@@ -88,9 +88,14 @@ class SprayAnglePP():
             
         return [left, right]
 
-    def calculateAngles(self, arr:list|np.ndarray, maxLenForFLM=150, flmSkip=20) -> list:
+    def calculateAngles(self, arr:list|np.ndarray, maxLenForFLM=150, flmSkip=20, maxAngleSkip=10, widget=None) -> list:
         if type(arr) != list:
             arr = [arr]
+        
+        trigger = False
+        if widget.leftPoint and widget.rightPoint:
+            trigger = True
+            flm_preset = [widget.leftPoint, widget.rightPoint]
 
         flm = np.zeros(2, dtype=np.uint16)
         angles = np.zeros((4, 2))
@@ -98,27 +103,77 @@ class SprayAnglePP():
         # print(arr)
         # print('RUN ANGLE')
         for num, y in enumerate(arr):
-            print(num)
             x = np.arange(0, len(y), 1)   
             diff = np.diff(y[:maxLenForFLM], 1)
             p_ = np.poly1d(np.polyfit(x[:maxLenForFLM-1], diff, 8))
             y_ = p_(x[:maxLenForFLM-1])
-            flm[num] = argrelextrema(y_, np.less)[0][0]+flmSkip
+            if not trigger:
+                flm[num] = argrelextrema(y_, np.less)[0][0]+flmSkip
+            else: flm[num] = int(flm_preset[num][1])
 
             y = y[flm[num]:]
             x = x[flm[num]:]
             p = np.poly1d(np.polyfit(x, y, 8))
             y = p(x)
+            if trigger: y[0] = flm_preset[num][0]
+            end = np.argmax(y<=0)
+            if end <= flm[num]: end = len(y)-1
+
+            angleMax = 0
+            for i in range(maxAngleSkip, end):
+                ang = np.rad2deg(np.arctan((y[i]-y[0])/(i)))
+                if ang > angleMax: 
+                    angleMax = ang
+                    pos_ = i
+
+            angles[0, num] = angleMax
+            angles[1, num] = np.rad2deg(np.arctan((y[int(0.1*end)]-y[0])/(0.1*end)))
+            angles[2, num] = np.rad2deg(np.arctan((y[int(0.5*end)]-y[0])/(0.5*end)))
+            angles[3, num] = np.rad2deg(np.arctan((y[int(0.9*end)]-y[0])/(0.9*end)))
+            
+            # try: pos[0, num] = pos_
+            # except: pos[0, num] = None
+            # pos[1, num] = int(0.1*end)
+            # pos[2, num] = int(0.5*end)
+            # pos[3, num] = int(0.9*end)
+        
+        return [np.sum(angles, axis=1), pos, flm]
+    
+    def calculateAnglesMaxWidth(self, arr:list|np.ndarray, maxLenForFLM=150, flmSkip=20, maxAngleSkip=10, widget=None) -> list:
+        if type(arr) != list:
+            arr = [arr]
+
+        trigger = False
+        if widget.leftPoint and widget.rightPoint:
+            trigger = True
+            flm_preset = [widget.leftPoint, widget.rightPoint]
+
+        flm = np.zeros(2, dtype=np.uint16)
+        angles = np.zeros((4, 2))
+        pos = np.zeros((4, 2), dtype=np.uint16)
+        # print(arr)
+        # print('RUN ANGLE')
+        for num, y in enumerate(arr):
+            x = np.arange(0, len(y), 1)   
+            diff = np.diff(y[:maxLenForFLM], 1)
+            p_ = np.poly1d(np.polyfit(x[:maxLenForFLM-1], diff, 8))
+            y_ = p_(x[:maxLenForFLM-1])
+            if not trigger:
+                flm[num] = argrelextrema(y_, np.less)[0][0]+flmSkip
+            else: flm[num] = int(flm_preset[num][1])
+
+            y = y[flm[num]:]
+            x = x[flm[num]:]
+            p = np.poly1d(np.polyfit(x, y, 8))
+            y = p(x)
+            if trigger: y[0] = 0.5*abs(flm_preset[0][0]-flm_preset[1][0])
 
             end = np.argmax(y<=0)
             if end <= flm[num]: end = len(y)-1
 
             angleMax = 0
-            for i in range(10, end):
-                ang = np.rad2deg(np.arctan((y[i]-y[0])/(i)))
-                if ang > angleMax: 
-                    angleMax = ang
-                    pos_ = i
+            maxPoint = np.argmax(y[maxAngleSkip:])
+            angleMax = np.rad2deg(np.arctan((y[maxPoint]-y[0])/(maxPoint)))
 
             angles[0, num] = angleMax
             angles[1, num] = np.rad2deg(np.arctan((y[int(0.1*end)]-y[0])/(0.1*end)))
@@ -148,12 +203,21 @@ class SprayAnglePP():
         heatmap = ax.imshow(prob_map_scaled/255*100, cmap='gist_heat_r')
         colors = 'blue', 'green', 'yellow', 'purple'
 
+        trigger = False
+        if widget.leftPoint and widget.rightPoint:
+            trigger = True
+            flm_preset = [widget.leftPoint, widget.rightPoint]
+
         if not len(fig.axes) > 1:
             fig.colorbar(heatmap, format='%d%%', label='Percentage of Spray Coverage')
         for row, color in enumerate(colors):
             if draw[row] == False: continue
-            point1 = (int(half+right[flm[0]]),flm[0])
-            point3 = (int(half-left[flm[1]]),flm[1])
+            if trigger:
+                point1 = flm_preset[1]
+                point3 = flm_preset[0]
+            else:
+                point1 = (int(half+right[flm[0]]),flm[0])
+                point3 = (int(half-left[flm[1]]),flm[1])
 
             slopeL = np.tan(np.deg2rad(-90-0.5*angles[row]))
             slopeR = np.tan(np.deg2rad(-90+0.5*angles[row]))
@@ -169,7 +233,7 @@ class SprayAnglePP():
                 ax.axline(extended_point3, extended_point4, color=color, linewidth=1)
             except: 
                 pass
-
+        
         # ax.set_aspect('equal')
         size = np.shape(prob_map_scaled)
         ax.set_xlim(0, size[1])
@@ -183,14 +247,19 @@ class SprayAnglePP():
 
         return [fig, ax, fig2, ax2]
     
-    def run(self, binary_map:np.ndarray, scaled_map:np.ndarray, widget, flmSkip=20, maxLenForFLM=150, drawNegative=True, draw:list=[True, True, True, True]) -> list:
+    def run(self, binary_map:np.ndarray, scaled_map:np.ndarray, widget, flmSkip=20, maxLenForFLM=150, drawNegative=True, draw:list=[True, True, True, True], maxAngleSkip=10, mode='maxW') -> list:
         '''
         Handles the post processing of spray angle calculation.
         Returns found angles, heatmap image and heatmap image with spray angles.
         Angles are max, 10, 50, 90.
         '''
         r, l = self.findWidth(binary_map)
-        angles, pos, flm = self.calculateAngles([r, l], maxLenForFLM, flmSkip)
+        print(f'Left Preset Point: {widget.leftPoint}')
+        print(f'Right Preset Point: {widget.rightPoint}')
+        if mode == 'maxW':
+            angles, pos, flm = self.calculateAnglesMaxWidth([r, l], maxLenForFLM, flmSkip, maxAngleSkip, widget)
+        else:
+            angles, pos, flm = self.calculateAngles([r, l], maxLenForFLM, flmSkip, maxAngleSkip, widget)
         fig, ax, figRaw, axRaw = self.createImages(r, l, flm, angles, scaled_map, widget, drawNegative, draw)
 
         return([angles, (fig, ax), (figRaw, axRaw)])
@@ -214,7 +283,7 @@ def createProbMap(prob_map:np.ndarray, num:float|int, threshold=10) -> list:
     '''
     Return binaray Prob_Map and scaled Prob_Map
     '''
-    prob_map_uni = prob_map / num   
+    prob_map_uni = prob_map / num     
     prob_map_scaled = (prob_map_uni * 255).astype(np.uint8)
 
     _, prob_bw = cv2.threshold(prob_map_scaled, threshold, 255, cv2.THRESH_BINARY)

@@ -8,10 +8,10 @@ sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 FILE = f'{os.path.abspath("./main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = 1.67
+VERSION = '1.68.0'
 AUTHOR = 'David Maerker'
 
-settings = {'currentVersion':VERSION}
+settings = {'currentVersion': VERSION}
 versionInfo = os.path.abspath('assets/versioninfo.json')
 with open(versionInfo, 'w') as file:
     json.dump(settings, file, indent=4)

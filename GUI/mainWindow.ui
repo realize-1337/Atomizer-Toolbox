@@ -2169,194 +2169,6 @@
         <string>Spray Angle</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_15">
-        <item row="3" column="0">
-         <widget class="QPushButton" name="angleSaveReport">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="toolTip">
-           <string>To be inplemented.</string>
-          </property>
-          <property name="text">
-           <string>Save Report</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="angleRun">
-          <property name="text">
-           <string>Run</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_17">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_23">
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_19">
-              <item>
-               <widget class="QLabel" name="label_56">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Angle  at 10% stream length</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="angle10label">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>--</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="angle10">
-                <property name="text">
-                 <string>Draw 10%</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_22">
-              <item>
-               <widget class="QLabel" name="label_58">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Angle at 50 % stream length</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="angle50label">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>--</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="angle50">
-                <property name="text">
-                 <string>Draw 50 %</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_23">
-              <item>
-               <widget class="QLabel" name="label_60">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Angle at 90 % stream length</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="angle90label">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>--</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="angle90">
-                <property name="text">
-                 <string>Draw 90 %</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_21">
-              <item>
-               <widget class="QLabel" name="label_62">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Max Angle</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="angleMaxlabel">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>--</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="angleMax">
-                <property name="text">
-                 <string>Draw Max</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </item>
         <item row="0" column="0">
          <layout class="QGridLayout" name="gridLayout_14">
           <item row="0" column="0">
@@ -2438,7 +2250,7 @@
                    </size>
                   </property>
                   <property name="toolTip">
-                   <string>Minumum spray coverage (5 % if often a good option)</string>
+                   <string>Minumum spray coverage (1 % if often a good option for a normalized map)</string>
                   </property>
                   <property name="text">
                    <string>Threshold</string>
@@ -2448,16 +2260,19 @@
                 <item>
                  <widget class="QDoubleSpinBox" name="angleThreshold">
                   <property name="toolTip">
-                   <string>Minumum spray coverage (5 % if often a good option)</string>
+                   <string>Minumum spray coverage (1 % if often a good option for a normalized map)</string>
                   </property>
                   <property name="suffix">
-                   <string>%</string>
+                   <string> %</string>
                   </property>
                   <property name="maximum">
                    <double>100.000000000000000</double>
                   </property>
+                  <property name="singleStep">
+                   <double>0.500000000000000</double>
+                  </property>
                   <property name="value">
-                   <double>5.000000000000000</double>
+                   <double>1.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -2525,11 +2340,44 @@
                   <property name="toolTip">
                    <string>Change this value if the automatic finding of the spray start does not work properly. Higher Values can solve the problem, if the spray start is detected on the nozzle instead of below it</string>
                   </property>
+                  <property name="suffix">
+                   <string> px</string>
+                  </property>
                   <property name="maximum">
                    <number>1000</number>
                   </property>
                   <property name="value">
                    <number>40</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_14">
+                <item>
+                 <widget class="QLabel" name="label_65">
+                  <property name="maximumSize">
+                   <size>
+                    <width>16777215</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Mininum Skip for Max Angle</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="minSkipMaxAngle">
+                  <property name="suffix">
+                   <string> px</string>
+                  </property>
+                  <property name="maximum">
+                   <number>1000</number>
+                  </property>
+                  <property name="value">
+                   <number>50</number>
                   </property>
                  </widget>
                 </item>
@@ -2550,6 +2398,212 @@
            </layout>
           </item>
          </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="angleRun">
+          <property name="text">
+           <string>Run</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_17">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_23">
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_19">
+              <item>
+               <widget class="QLabel" name="label_56">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Angle  at 10% stream length</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="angle10label">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>--</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="angle10">
+                <property name="text">
+                 <string>Draw 10%</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_22">
+              <item>
+               <widget class="QLabel" name="label_58">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Angle at 50 % stream length</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="angle50label">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>--</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="angle50">
+                <property name="text">
+                 <string>Draw 50 %</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_23">
+              <item>
+               <widget class="QLabel" name="label_60">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Angle at 90 % stream length</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="angle90label">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>--</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="angle90">
+                <property name="text">
+                 <string>Draw 90 %</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_21">
+              <item>
+               <widget class="QLabel" name="maxAngleDesc">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Max Angle</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="angleMaxlabel">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>--</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="angleMax">
+                <property name="text">
+                 <string>Draw Max</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_19">
+          <item>
+           <widget class="QLabel" name="label_61">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>If the nozzle detection does not work properly, you can use right and left click to set the beginning of the spray.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="resetSprayPoints">
+            <property name="text">
+             <string>Reset manual spray starting points</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="3" column="0">
+         <widget class="Line" name="line_10">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -2678,9 +2732,17 @@
     <addaction name="actionGenerate_Full_Export"/>
     <addaction name="actionGenerate_and_save_Diagrams"/>
    </widget>
+   <widget class="QMenu" name="menuSpray_Angle">
+    <property name="title">
+     <string>Spray Angle</string>
+    </property>
+    <addaction name="actionNormalized_Propabilty_Map"/>
+    <addaction name="actionMax_Width_Mode"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSetting"/>
    <addaction name="menuPDA"/>
+   <addaction name="menuSpray_Angle"/>
    <addaction name="menuInfo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -2785,14 +2847,36 @@
     <string>Generate and Save Diagrams</string>
    </property>
   </action>
+  <action name="actionNormalized_Propabilty_Map">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Normalized Propabilty Map</string>
+   </property>
+  </action>
+  <action name="actionMax_Width_Mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Max Width Mode</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_5"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup_5"/>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
  </buttongroups>
 </ui>
