@@ -10,10 +10,11 @@ Either you can download a compiled version from the release tab.
 However, I would highly recommend to build your own executable file. This is required if matlab is not installed in the default location (`C:\Program Files\MATLAB`) or if issues occur.
 
 #### Prerequisites:
+Note: Python is only requiered if you want to compile your own version.
+
 - [Python 3.11](https://www.python.org/downloads/release/python-3117/) (as of the time writing in late 2023, no newer python verion is supported for matlab functionalities)
 - Matlab (optional, but recommended, must have Matlab engine for python support, usally most recent versions should have it)
 
-Note: Python is only requiered if you want to compile your own version.
 Make sure the add Python to the PATH variable in Windows (set checkbox during Python installation)!
 
 ## Using the installer - The easiest way
@@ -31,6 +32,10 @@ You technically can run it as local user, however, the possible install location
 There are two options for installation: 
 - Install: Downloads the current pre-compiled release and installs it as a software in Windows
 - Compile: Downloads the current release source code and compiles it on the local machine. Afterwards, it will be installed as a software in windows. Note: [Python 3.11](https://www.python.org/downloads/release/python-3117/) must be installed.
+
+## Download the portable version
+Download the current [release.zip](https://github.com/realize-1337/Atomizer-Toolbox/releases/latest/download/release.zip).
+Unzip the file and run the AtomizerToolbox.exe
 
 ## How to build your own .exe - The manual way
 Python required!
