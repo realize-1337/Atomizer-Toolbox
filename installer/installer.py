@@ -53,6 +53,7 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.startmenuShortcut)
         self.gridLayout.addLayout(self.horizontalLayout, 2, 0, 1, 3)
         self.output_textedit = QtWidgets.QPlainTextEdit(parent=Dialog)
+        self.output_textedit.setReadOnly(True)
         self.output_textedit.setObjectName("output_textedit")
         self.gridLayout.addWidget(self.output_textedit, 3, 0, 1, 3)
 

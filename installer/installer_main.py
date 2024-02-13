@@ -37,7 +37,6 @@ class Worker(QRunnable):
 class UI(QDialog):
     def __init__(self):
         super().__init__()
-        print('***DO NOT CLOSE THIS WINDOW***\n'*20)
         self.ui = main()
         self.ui.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('./assets/ATT_LOGO.ico'))
@@ -45,6 +44,7 @@ class UI(QDialog):
         self.initInstaller()
         self.running = False
         print(sys.executable)
+        self.ui.output_textedit.setVisible(False)
 
         self.process = QProcess()
         self.process.readyRead.connect(self.read_output)
@@ -236,12 +236,6 @@ class UI(QDialog):
         self.ui.pbar.setMaximum(100)
         self.ui.pbar.setValue(100)
         self.ui.pbar.setFormat('Compile in progress. This will take a while. You can track the progress in the command window.')
-        # QMessageBox.information(self, 'Information', 'Compile starts when you press \"Ok\". You can track the progress in the command window. <br> Do not close the Installer unless it says compile completed. <br> There might be error messages during the compilation process, they usually can be ignored.')
-
-        # threadpool = QThreadPool.globalInstance()
-        # worker = Worker(os.path.join(folder, "setup.bat"))
-        # worker.signals.finished.connect(self.compileComplete)
-        # threadpool.start(worker)
         self.run_batch_file(os.path.join(folder, "setup.bat"))
                 
     def compileComplete(self):
@@ -260,6 +254,7 @@ class UI(QDialog):
         QMessageBox.information(self, 'Information', 'The first start of the Atomizer Toolbox might take up to a minute depending on the used hardware.')
 
     def run_batch_file(self, path):
+        self.ui.output_textedit.setVisible(True)
         try:
             self.process.start("cmd.exe", ["/c", path])
             self.ui.output_textedit.clear()

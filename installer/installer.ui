@@ -96,7 +96,11 @@
     </layout>
    </item>
    <item row="3" column="0" colspan="3">
-    <widget class="QPlainTextEdit" name="output_textedit"/>
+    <widget class="QPlainTextEdit" name="output_textedit">
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
