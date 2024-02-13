@@ -14,6 +14,9 @@ call "%script_dir%\venv\Scripts\activate.bat"
 call pip install -r "%script_dir%\requirements.txt"
 
 REM Run setup.py
+call python "%script_dir%\installer\setup_uninstall.py"
+
+REM Run setup.py
 call python "%script_dir%\setup.py"
 
 REM Deactivate the virtual environment

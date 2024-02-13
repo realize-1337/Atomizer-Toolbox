@@ -6,7 +6,7 @@ import sys
 import zipfile
 from PyQt6.QtWidgets import *
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QEvent, QCoreApplication
+from PyQt6.QtCore import Qt, QEvent, QCoreApplication, QRunnable, pyqtSignal, QObject, QThreadPool
 import subprocess
 import winreg
 import shutil
@@ -20,7 +20,19 @@ PY_FILE = 'installer\installer.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 from installer import Ui_Dialog as main
 import requests
-        
+
+class WorkerSignals(QObject):
+    finished = pyqtSignal() 
+
+class Worker(QRunnable):
+    def __init__(self, path):
+        super().__init__()
+        self.signals = WorkerSignals()
+        self.path = path
+
+    def run(self):
+        subprocess.run(self.path)
+        self.signals.finished.emit()        
 
 class UI(QDialog):
     def __init__(self):
@@ -32,6 +44,7 @@ class UI(QDialog):
         self.initInstaller()
         self.running = False
         print(sys.executable)
+        print('***DO NOT CLOSE THIS WINDOW***\n'*20)
 
     def initInstaller(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Install')
@@ -200,6 +213,7 @@ class UI(QDialog):
         release_info = response.json()
 
         tag_name = release_info['tag_name']
+        self.tag_name = tag_name
         print(tag_name)
         zip_url = rf"https://github.com/realize-1337/Atomizer-Toolbox/archive/{tag_name}.zip"
         zip_file_path = os.path.join(self.ui.path.text(), 'source.zip')
@@ -213,13 +227,32 @@ class UI(QDialog):
                                )
         os.remove(zip_file_path)
         folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{tag_name}')
-        items = [os.path.join(folder, x) for x in os.listdir(folder)]
         
-        self.ui.pbar.setFormat('Compile in progress. This will take a while.')
-                # Run Another Python File
-        os.system(f"start /wait cmd /c {os.path.join(folder, 'setup.bat')}")
-        shutil.rmtree(items)
-        
+        self.ui.pbar.setMaximum(100)
+        self.ui.pbar.setValue(100)
+        self.ui.pbar.setFormat('Compile in progress. This will take a while. You can track the progress in the command window.')
+        QMessageBox.information(self, 'Information', 'Compile starts when you press \"Ok\". You can track the progress in the command window. <br> Do not close the Installer unless it says compile completed. <br> There might be error messages during the compilation process, they usually can be ignored.')
+
+        threadpool = QThreadPool.globalInstance()
+        worker = Worker(os.path.join(folder, "setup.bat"))
+        worker.signals.finished.connect(self.compileComplete)
+        threadpool.start(worker)
+                
+    def compileComplete(self):
+        self.ui.pbar.setMaximum(100)
+        self.ui.pbar.setValue(100)
+        self.ui.pbar.setFormat('Compile in completed.')
+        folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{self.tag_name}')
+        shutil.copytree(os.path.join(folder, 'AtomizerToolbox'), os.path.dirname(folder), dirs_exist_ok=True)
+        shutil.rmtree(folder)
+        # self.createRegistryKeys(self.ui.path.text())    
+        # self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
+        # self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
+        print('Installing')
+        print('***COMPILE COMPLETED - GO BACK TO THE INSTALLER***\n'*20)
+        self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Abort).setText('Close')
+        QMessageBox.information(self, 'Information', 'The first start of the Atomizer Toolbox might take up to a minute depending on the used hardware.')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="7" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="toolTip">
+      <string>Compile function requires Python to be installed.</string>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
