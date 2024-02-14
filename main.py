@@ -2448,7 +2448,7 @@ class UI(QMainWindow):
             self.ui.maxAngleDesc.setText('Angle referenced to widest point')
         else: 
             self.settings.set('SpA_maxW', False)
-            self.ui.maxAngleDesc.setText('Maximum Angle')
+            self.ui.maxAngleDesc.setText('Mean Angle')
         
         if self.ui.actionNormalized_Propabilty_Map.isChecked():
             self.settings.set('SpA_norm', True)

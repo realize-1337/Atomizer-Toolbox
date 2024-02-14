@@ -156,3 +156,4 @@ cython_debug/
 /.VSCodeCounter
 /AtomizerToolbox
 /installer/resources
+/installer/certificate.pfx

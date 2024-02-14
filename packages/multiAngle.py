@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import os
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
@@ -115,28 +116,20 @@ class SprayAnglePP():
             x = x[flm[num]:]
             p = np.poly1d(np.polyfit(x, y, 8))
             y = p(x)
-            if trigger: y[0] = flm_preset[num][0]
+            
+            if trigger: y[0] = 0.5*abs(flm_preset[0][0]-flm_preset[1][0])
             end = np.argmax(y<=0)
             if end <= flm[num]: end = len(y)-1
 
-            angleMax = 0
-            for i in range(maxAngleSkip, end):
-                ang = np.rad2deg(np.arctan((y[i]-y[0])/(i)))
-                if ang > angleMax: 
-                    angleMax = ang
-                    pos_ = i
+            angleMean = np.zeros_like(x)   
+            angleMean = np.rad2deg(np.arctan((y-y[0])/(x)))
 
-            angles[0, num] = angleMax
+            angles[0, num] = np.mean(angleMean[:end])
             angles[1, num] = np.rad2deg(np.arctan((y[int(0.1*end)]-y[0])/(0.1*end)))
             angles[2, num] = np.rad2deg(np.arctan((y[int(0.5*end)]-y[0])/(0.5*end)))
             angles[3, num] = np.rad2deg(np.arctan((y[int(0.9*end)]-y[0])/(0.9*end)))
-            
-            # try: pos[0, num] = pos_
-            # except: pos[0, num] = None
-            # pos[1, num] = int(0.1*end)
-            # pos[2, num] = int(0.5*end)
-            # pos[3, num] = int(0.9*end)
-        
+
+            print(f'Mean angle: {angles[0, num]}')
         return [np.sum(angles, axis=1), pos, flm]
     
     def calculateAnglesMaxWidth(self, arr:list|np.ndarray, maxLenForFLM=150, flmSkip=20, maxAngleSkip=10, widget=None) -> list:
@@ -154,7 +147,7 @@ class SprayAnglePP():
         # print(arr)
         # print('RUN ANGLE')
         for num, y in enumerate(arr):
-            x = np.arange(0, len(y), 1)   
+            x = np.arange(0, len(y), 1)              
             diff = np.diff(y[:maxLenForFLM], 1)
             p_ = np.poly1d(np.polyfit(x[:maxLenForFLM-1], diff, 8))
             y_ = p_(x[:maxLenForFLM-1])
@@ -168,6 +161,9 @@ class SprayAnglePP():
             y = p(x)
             if trigger: y[0] = 0.5*abs(flm_preset[0][0]-flm_preset[1][0])
 
+            angleTest = np.zeros_like(x)   
+            angleTest = np.rad2deg(np.arctan((y-y[0])/(x)))
+            
             end = np.argmax(y<=0)
             if end <= flm[num]: end = len(y)-1
 
