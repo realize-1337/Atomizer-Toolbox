@@ -11,7 +11,7 @@ print(dir_path)
 
 FILE = f'{os.path.join(dir_path, "main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.68.1'
+VERSION = '1.68.2'
 AUTHOR = 'David Maerker'
 
 

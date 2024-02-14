@@ -314,6 +314,7 @@ class MatplotlibWidget(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.canvas)
         self.canvas.mpl_connect('button_press_event', self.get_coordinates)
+        self.canvas.mpl_connect('scroll_event', self.on_scroll)
         self.l_cord = []
         self.r_cord = []
         self.lines = []
@@ -346,6 +347,26 @@ class MatplotlibWidget(QWidget):
             self.ax.scatter(x, y, color='blue', marker='x')
             self.r_cord.append(self.ax.collections[-1])
             self.rightPoint = (x, y)
+
+            self.canvas.draw()
+
+    def on_scroll(self, event):
+        if event.inaxes is not None:
+            ax = event.inaxes
+
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+
+            x_center = event.xdata
+            y_center = event.ydata
+
+            zoom_factor = 0.9 if event.button == 'up' else 1.1
+
+            new_xlim = (xlim[0] - x_center) * zoom_factor + x_center, (xlim[1] - x_center) * zoom_factor + x_center
+            new_ylim = (ylim[0] - y_center) * zoom_factor + y_center, (ylim[1] - y_center) * zoom_factor + y_center
+
+            ax.set_xlim(new_xlim)
+            ax.set_ylim(new_ylim)
 
             self.canvas.draw()
 
