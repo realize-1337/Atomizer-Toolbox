@@ -23,7 +23,7 @@ def removeInstall():
     files = dict['files']
     input('Press Enter to continue ...')
     for file in files[::-1]:
-        shutil.rmtree(file, ignore_errors=True)
+        shutil.rmtree(os.path.join(dir, file), ignore_errors=True)
 
 
 if __name__ == '__main__':
