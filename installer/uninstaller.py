@@ -24,6 +24,10 @@ def removeInstall():
     input('Press Enter to continue ...')
     for file in files[::-1]:
         shutil.rmtree(os.path.join(dir, file), ignore_errors=True)
+        try: os.remove(os.path.join(dir, file))
+        except: pass
+    if os.listdir(dir) == []:
+        shutil.rmtree(dir)
 
 
 if __name__ == '__main__':
