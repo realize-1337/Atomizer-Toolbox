@@ -6,7 +6,7 @@ sys.setrecursionlimit(sys.getrecursionlimit()*5)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 print(dir_path)
 
-FILE = f'{os.path.join(dir_path, "setup_uninstall.py")}'
+FILE = f'{os.path.join(dir_path, "uninstaller.py")}'
 PROJECTNAME = 'uninstall'
 AUTHOR = 'David Maerker'
 
@@ -17,7 +17,7 @@ makeSpec = [
     "pyi-makespec",
     "--onefile",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
-    "--noconsole", 
+    #"--noconsole", 
     # "--windowed",
     "--name", f"{PROJECTNAME}",
     "--icon", f"{os.path.join(os.path.dirname(dir_path), 'assets/ATT_LOGO.ico')}",
