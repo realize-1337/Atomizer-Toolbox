@@ -20,10 +20,10 @@ def removeInstall():
     with open(loc, 'r') as file:
         dict = json.load(file)
     dir = dict['path']
+    files = dict['files']
     input('Press Enter to continue ...')
-    files = os.listdir(dir)
-    if 'AtomizerToolbox.exe' in files and 'uninstall.exe' in files:
-        shutil.rmtree(dir)
+    for file in files[::-1]:
+        shutil.rmtree(file, ignore_errors=True)
 
 
 if __name__ == '__main__':

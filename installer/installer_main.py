@@ -50,7 +50,6 @@ class UI(QDialog):
         self.process.readyRead.connect(self.read_output)
         self.process.finished.connect(self.compileComplete)
         
-
     def initInstaller(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Install')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Save).setText('Compile')
@@ -142,17 +141,17 @@ class UI(QDialog):
         
         self.ui.pbar.setFormat('Download complete. Unpacking download')
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            zip_ref.extractall(os.path.dirname(zip_file_path)
-                               )
+            zip_ref.extractall(os.path.dirname(zip_file_path))
+            files = zip_ref.namelist()
         os.remove(zip_file_path)
-        self.createRegistryKeys(self.ui.path.text())    
+        self.createRegistryKeys(self.ui.path.text(), files)    
         self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
         self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
         print('Installing')
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Abort).setText('Close')
         QMessageBox.information(self, 'Information', 'The first start of the Atomizer Toolbox might take up to a minute depending on the used hardware.')
 
-    def createRegistryKeys(self, path):
+    def createRegistryKeys(self, path, files=None):
         key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AtomizerToolbox"
 
         appdata = os.path.join(os.getenv('LOCALAPPDATA'), 'AtomizerToolbox')
@@ -162,7 +161,8 @@ class UI(QDialog):
         shutil.copy(uninstall, os.path.join(appdata, 'uninstall.exe'))
         uninstall = os.path.join(appdata, 'uninstall.exe')
 
-        settings = {'path':path}
+        settings = {'path':path, 
+                    'files':files}
         loc = os.path.join(appdata, 'loc.json')
         with open(loc, 'w') as file:
             json.dump(settings, file, indent=4)
@@ -244,8 +244,9 @@ class UI(QDialog):
         self.ui.pbar.setFormat('Compile in completed.')
         folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{self.tag_name}')
         shutil.copytree(os.path.join(folder, 'AtomizerToolbox'), os.path.dirname(folder), dirs_exist_ok=True)
+        files = os.listdir(os.path.join(folder, 'AtomizerToolbox'))
         shutil.rmtree(folder)
-        self.createRegistryKeys(self.ui.path.text())    
+        self.createRegistryKeys(self.ui.path.text(), files)    
         self.ui.pbar.setFormat('Install complete. Cleanup done. Enjoy!')
         self.createShortCut(self.ui.desktopShortcut.isChecked(), self.ui.startmenuShortcut.isChecked())
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Abort).setText('Close')
