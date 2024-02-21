@@ -23,7 +23,7 @@ DISCLAIMER: I don't have a Microsoft Developer License, which comes with an annu
 The compiled installer and the compiled app can be detected by Microsoft defender as a virus. 
 You can find the VirusTotal scan [here](https://www.virustotal.com/gui/file/2a27348e21ef5464707e7358ac525ea5ff7565bf7449eb9ffc5b2500553eb3e4?nocache=1).
 
-The installer can be downloaded from the releases or via [this link](https://github.com/realize-1337/Atomizer-Toolbox/releases/download/1.68.0/AtomizerToolbox.Installer.exe).
+The installer can be downloaded from the releases or via [this link](https://github.com/realize-1337/Atomizer-Toolbox/releases/download/1.68.3/AtomizerToolboxInstaller.exe).
 
 Once downloaded you can just run the installer. 
 The installer should be run as admin. 
