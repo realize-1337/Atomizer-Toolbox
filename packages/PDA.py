@@ -5,6 +5,8 @@ from scipy.optimize import curve_fit, least_squares
 from sklearn.metrics import r2_score
 from openpyxl import load_workbook
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import os
 from scipy.io import loadmat
 try: 
@@ -643,13 +645,117 @@ class PDA():
         self.writeToExcel(df_x, ID_32_n_x, ID_32_m_x)
         return(ID_32_n_x, ID_32_m_x, df_x)
 
-if __name__ == '__main__':
-    # _path = r'M:\Duese_4\Ole_Erw\2_60_72\VP'
-    _path = r'M:\Duese_4\Ole_Erw\2_60_72\2H'
-    path = os.path.join(os.path.expanduser('~'), 'Atomizer Toolbox', 'global', 'Folder1.mat')
-    # _path = r'M:\Duese_4\Ole_Erw\2_60_34\1H'
+    def plot(self, bin_width=100, show_multi=True, show_std=True, show_totalTime=True):
+        fullDict_x = {}
+        fullDict_y = {}
+        figs = []
+        heights = []
+        std = []
+        pos = []
+        totalTime = []
+        totalCount = []
+        for file in os.listdir(self.path):
+            if file.endswith('.txt'):
+                print(file)
+                x, y, z = self.findPos(os.path.join(self.path, file))
+                innerDict = {}
+                innerDebug = {}
+                innerDict['x'] = x
+                innerDict['y'] = y
+                innerDict['z'] = z
+                df = self.pandasFromCSV(os.path.join(self.path, file))
 
-    pda = PDA(_path, matPath=path, mode='py_ex')
-    # pda = PDA(_path, matPath=path, mode='py')
-    pda.run()
+                if x == 0 and y != 0:
+                    fullDict_x[f'{x}'] = innerDict
+                elif x != 0 and y == 0:
+                    fullDict_x[f'{x}'] = innerDict
+                else:
+                    fullDict_x[f'{x}'] = innerDict
+                    fullDict_y[f'{y}'] = innerDict
+
+                bins = range(0, int(np.ceil(max(df['AT']))) + bin_width, bin_width)
+
+                df['bin'] = pd.cut(df['AT'], bins=bins)
+                bin_counts = df.groupby('bin').size().reset_index(name='count')
+                bin_counts['bin'] = bin_counts['bin'].astype(str)
+
+                fig = px.bar(bin_counts, x='bin', y='count', labels={'bin': 'Bin', 'count': 'Count'}, title=f'Droplets in each bin @ x = {x} mm')
+                figs.append(fig)
+                heights.append(500)
+                std.append(np.std(bin_counts['count']))
+                pos.append(x)
+                totalTime.append(np.max(df['AT'])/1000)
+                totalCount.append(len(df))
+
+        if show_multi:
+            multiFig = make_subplots(rows=len(figs), cols=1, row_heights=heights)
+            for i, fig in enumerate(figs):
+                multiFig.add_trace(fig.data[0], row=i+1, col=1)
+
+            multiFig.update_layout(height=500*len(figs))
+            multiFig.update_layout(title=f'{self.path}')
+            multiFig.show()
+
+        if show_std:
+            df = pd.DataFrame(data={'pos':pos,
+                                    'std':std})
+            fig = px.line(df, x='pos', y='std', title=f'Std in {self.path}. Mean value = {np.mean(std)}')
+            fig.show()
+
+        if show_totalTime:
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            df = pd.DataFrame(data={'pos':pos,
+                                    'totalTime':totalTime,
+                                    'totalCount':totalCount})
+            fig.add_trace(
+            go.Scatter(x=df['pos'], y=df['totalTime'], name="Total Time [s]"),
+                secondary_y=False,
+            )
+            fig.add_trace(
+                go.Scatter(x=df['pos'], y=df['totalCount'], name="Droplet Count"),
+                secondary_y=True,
+            )
+
+            fig.update_layout(
+                title_text=f"Total time and droplet count for {self.path}"
+            )
+            fig.show()
+
+
+
+
+if __name__ == '__main__':
+
+    path_ = r'H:\Duese_3\100\2_13,7_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=527.63)
+    pda.plot(bin_width=5, show_multi=False, show_std=False)
+    
+    path_ = r'H:\Duese_3\200\2_13,8_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=570.03)
+    pda.plot(bin_width=5, show_multi=False, show_std=False)
+    
+    path_ = r'H:\Duese_1\Wasser\2_4,5_68,3\VP'
+    pda = PDA(path=path_, upperCutOff=179.48)
+    pda.plot(bin_width=5, show_multi=False, show_std=False)
+    
+    path_ = r'H:\Duese_1\100\2_9,1_68,3\VP'
+    pda = PDA(path=path_, upperCutOff=361.24)
+    pda.plot(bin_width=5, show_multi=False, show_std=False)
+
+    path_ = r'H:\Duese_2\Wasser\2_4,5_68,7\VP'
+    pda = PDA(path=path_, upperCutOff=172.43)
+    pda.plot(bin_width=5, show_multi=False)
+
+    path_ = r'H:\Duese_3\100\2_60_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=689.4)
+    pda.plot(bin_width=5, show_multi=False)
+    
+    path_ = r'H:\Duese_3\100\2_68,5_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=723.04)
+    pda.plot(bin_width=5, show_multi=False)
+    
+    path_ = r'H:\Duese_2\100\2_12,4_68,7\VP'
+    pda = PDA(path=path_, upperCutOff=423.82)
+    pda.plot(bin_width=5, show_multi=False)
+
 
