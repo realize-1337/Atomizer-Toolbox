@@ -645,10 +645,11 @@ class PDA():
         self.writeToExcel(df_x, ID_32_n_x, ID_32_m_x)
         return(ID_32_n_x, ID_32_m_x, df_x)
 
-    def plot(self, bin_width=100, show_multi=True, show_std=True, show_totalTime=True):
+    def plot(self, bin_width=100, show_multi=True, show_std=True, show_totalTime=True, show_size=True, multi_size=False, height=800):
         fullDict_x = {}
         fullDict_y = {}
         figs = []
+        figs_size = []
         heights = []
         std = []
         pos = []
@@ -677,11 +678,15 @@ class PDA():
 
                 df['bin'] = pd.cut(df['AT'], bins=bins)
                 bin_counts = df.groupby('bin').size().reset_index(name='count')
+                mean_size = df.groupby('bin')['Diameter'].mean().reset_index()
                 bin_counts['bin'] = bin_counts['bin'].astype(str)
+                mean_size['bin'] = mean_size['bin'].astype(str)
 
                 fig = px.bar(bin_counts, x='bin', y='count', labels={'bin': 'Bin', 'count': 'Count'}, title=f'Droplets in each bin @ x = {x} mm')
                 figs.append(fig)
-                heights.append(500)
+                fig = px.bar(mean_size, x='bin', y='Diameter', labels={'bin': 'Bin', 'Diameter': 'Mean Diameter'}, title=f'Droplets mean size in each bin @ x = {x} mm')
+                figs_size.append(fig)
+                heights.append(height)
                 std.append(np.std(bin_counts['count']))
                 pos.append(x)
                 totalTime.append(np.max(df['AT'])/1000)
@@ -692,8 +697,27 @@ class PDA():
             for i, fig in enumerate(figs):
                 multiFig.add_trace(fig.data[0], row=i+1, col=1)
 
-            multiFig.update_layout(height=500*len(figs))
+            multiFig.update_layout(height=height*len(figs))
             multiFig.update_layout(title=f'{self.path}')
+            multiFig.show()
+
+        if show_size:
+            multiFig = make_subplots(rows=len(figs), cols=1, row_heights=heights)
+            for i, fig in enumerate(figs_size):
+                multiFig.add_trace(fig.data[0], row=i+1, col=1)
+
+            multiFig.update_layout(height=height*len(figs))
+            multiFig.update_layout(title=f'Mean Droplet size {self.path}')
+            multiFig.show()
+
+        if multi_size:
+            multiFig = make_subplots(rows=len(figs), cols=2, row_heights=heights)
+            for i, (fig, fig_size) in enumerate(zip(figs, figs_size)):
+                multiFig.add_trace(fig.data[0], row=i+1, col=1)
+                multiFig.add_trace(fig_size.data[0], row=i+1, col=2)
+
+            multiFig.update_layout(height=height*len(figs))
+            multiFig.update_layout(title=f'{self.path}<br>Left side: Count<br>Right Side: Mean diameter')
             multiFig.show()
 
         if show_std:
@@ -726,36 +750,58 @@ class PDA():
 
 if __name__ == '__main__':
 
-    path_ = r'H:\Duese_3\100\2_13,7_69,9\VP'
-    pda = PDA(path=path_, upperCutOff=527.63)
-    pda.plot(bin_width=5, show_multi=False, show_std=False)
-    
-    path_ = r'H:\Duese_3\200\2_13,8_69,9\VP'
-    pda = PDA(path=path_, upperCutOff=570.03)
-    pda.plot(bin_width=5, show_multi=False, show_std=False)
-    
+    std=False
+    multi=False
+    time=False
+    size=False
+    multi_size=True
+    width = 100
+
     path_ = r'H:\Duese_1\Wasser\2_4,5_68,3\VP'
     pda = PDA(path=path_, upperCutOff=179.48)
-    pda.plot(bin_width=5, show_multi=False, show_std=False)
-    
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+
     path_ = r'H:\Duese_1\100\2_9,1_68,3\VP'
     pda = PDA(path=path_, upperCutOff=361.24)
-    pda.plot(bin_width=5, show_multi=False, show_std=False)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
 
     path_ = r'H:\Duese_2\Wasser\2_4,5_68,7\VP'
     pda = PDA(path=path_, upperCutOff=172.43)
-    pda.plot(bin_width=5, show_multi=False)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+
+    path_ = r'H:\Duese_2\100\2_12,4_68,7\VP'
+    pda = PDA(path=path_, upperCutOff=423.82)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+
+    path_ = r'H:\Duese_3\Wasser\2_11,2_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=244.26)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+
+    path_ = r'H:\Duese_3\100\2_13,7_69,9\VP' 
+    pda = PDA(path=path_, upperCutOff=527.63)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
 
     path_ = r'H:\Duese_3\100\2_60_69,9\VP'
     pda = PDA(path=path_, upperCutOff=689.4)
-    pda.plot(bin_width=5, show_multi=False)
-    
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+
     path_ = r'H:\Duese_3\100\2_68,5_69,9\VP'
     pda = PDA(path=path_, upperCutOff=723.04)
-    pda.plot(bin_width=5, show_multi=False)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
     
-    path_ = r'H:\Duese_2\100\2_12,4_68,7\VP'
-    pda = PDA(path=path_, upperCutOff=423.82)
-    pda.plot(bin_width=5, show_multi=False)
-
-
+    path_ = r'H:\Duese_3\200\2_13,8_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=570.03)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+    
+    path_ = r'H:\Duese_4\Wasser\2_20_68,4\VP'
+    pda = PDA(path=path_, upperCutOff=444.86)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+    
+    path_ = r'H:\Duese_4\Wasser\2_45_68,4\VP'
+    pda = PDA(path=path_, upperCutOff=526.52)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+    
+    path_ = r'H:\Duese_4\100\2_24,4_68,4\VP'
+    pda = PDA(path=path_, upperCutOff=517.05)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size)
+    
