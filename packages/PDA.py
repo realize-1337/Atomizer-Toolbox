@@ -87,7 +87,7 @@ class PDA():
             df = df[df['Vel'] != 0]
         return df
     
-    def calcDias(self, df:pd.DataFrame()) -> list:
+    def calcDias(self, df:pd.DataFrame) -> list:
         D10 = df['Diameter'].mean()
         D20 = ((df['Diameter']**2).mean())**0.5
         D30 = ((df['Diameter']**3).mean())**(1/3)

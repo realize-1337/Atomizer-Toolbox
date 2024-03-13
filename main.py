@@ -106,7 +106,7 @@ class FreqWorker(QRunnable):
         return pic_cor
 
     def run(self):
-        image = cv2.imread(self.path, cv2.IMREAD_GRAYSCALE)
+        image = cv2.imread(os.path.normpath(rf'{self.path}'), cv2.IMREAD_GRAYSCALE)
         pic_cor = self.correction(image)
         _, binary_image = cv2.threshold(pic_cor, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
@@ -172,7 +172,7 @@ class DropletsWorker(QRunnable):
         self.scale = scale
 
     def getImage(self):
-        droplets_img = cv2.imread(self.path)
+        droplets_img = cv2.imread(os.path.normpath(rf'{self.path}'))
         self.droplets_gray = cv2.cvtColor(droplets_img, cv2.COLOR_BGR2GRAY)
         diff_img = cv2.absdiff(self.droplets_gray, self.refImage)
         return diff_img
@@ -1732,7 +1732,7 @@ class UI(QMainWindow):
         self.ui.cineLoadBar.setValue(0)
         self.ui.clearRef.setDisabled(True)
         try:
-            refImage = cv2.imread(ref, cv2.IMREAD_GRAYSCALE)
+            refImage = cv2.imread(os.path.normpath(rf'{ref}', cv2.IMREAD_GRAYSCALE))
         except:
             QMessageBox.information(self, 'Error', 'Please select reference image')
             return
@@ -1916,7 +1916,7 @@ class UI(QMainWindow):
             self.ui.dropletTable.setItem(i, 1, diaItem)
 
     def generateReport(self):
-        background_img = cv2.imread(self.ui.label_34.text())
+        background_img = cv2.imread(os.path.normpath(rf'{self.ui.label_34.text()}'))
         background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
         export = os.path.join(self.ui.label_33.text(), 'droplet_report.pdf')
         items = []
@@ -1943,7 +1943,7 @@ class UI(QMainWindow):
         self.ui.dropletTable.setRowCount(0)
 
         self.dropletthreadpool = QThreadPool.globalInstance()
-        background_img = cv2.imread(self.ui.label_34.text())
+        background_img = cv2.imread(os.path.normpath(rf'{self.ui.label_34.text()}'))
         background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
         self.ui.dropletProgress.setMaximum(len(self.dropletFiles))
         self.ui.dropletProgress.setValue(0)
@@ -2416,7 +2416,7 @@ class UI(QMainWindow):
         if len(files) == 0: return
         
         try: 
-            ref = cv2.imread(self.ui.angleRef.text(), cv2.IMREAD_GRAYSCALE)
+            ref = cv2.imread(os.path.normpath(rf'{self.ui.angleRef.text()}'), cv2.IMREAD_GRAYSCALE)
             self.probMap = mA.initializeProbMap(ref)
             self.angleCountMax = len(files)
             self.angleCountCurrent = 0
@@ -2425,7 +2425,7 @@ class UI(QMainWindow):
         except: 
             return
         
-        test = cv2.imread(files[0], cv2.IMREAD_GRAYSCALE)
+        test = cv2.imread(os.path.normpath(rf'{files[0]}'), cv2.IMREAD_GRAYSCALE)
         if np.shape(test) != np.shape(ref):
             return
 

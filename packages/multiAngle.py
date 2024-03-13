@@ -11,7 +11,7 @@ class multiAngle():
     def __init__(self, image:str, ref:str|np.ndarray) -> None:
         self.path = image
         if type(ref) == str:
-            self.ref = cv2.imread(ref, cv2.IMREAD_GRAYSCALE)
+            self.ref = cv2.imread(os.path.normpath(rf'{ref}'), cv2.IMREAD_GRAYSCALE)
         else:
             self.ref = ref
 
@@ -21,7 +21,7 @@ class multiAngle():
         return pic_cor
     
     def imageHandling(self) -> np.ndarray:
-        image = cv2.imread(self.path, cv2.IMREAD_GRAYSCALE)
+        image = cv2.imread(os.path.normpath(rf'{self.path}'), cv2.IMREAD_GRAYSCALE)
         pic_cor = self.correction(image)
         _, binary_image = cv2.threshold(pic_cor, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         return binary_image
@@ -264,7 +264,7 @@ class SprayAnglePP():
 def initializeProbMap(raw:np.ndarray|str) -> np.ndarray:
     try:
         if type(raw) == str:
-            return np.zeros_like(cv2.imread(ref, cv2.IMREAD_GRAYSCALE), dtype=np.float32)
+            return np.zeros_like(cv2.imread(os.path.normpath(rf'{ref}'), cv2.IMREAD_GRAYSCALE), dtype=np.float32)
         else: 
             return np.zeros_like(raw, dtype=np.float32)
     except: raise ValueError
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     res = []
     ref = r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'
    
-    prob_map = np.zeros_like(cv2.imread(ref, cv2.IMREAD_GRAYSCALE).astype(np.float32))
+    prob_map = np.zeros_like(cv2.imread(os.path.normpath(rf'{ref}'), cv2.IMREAD_GRAYSCALE).astype(np.float32))
     with Pool(16) as p, tqdm(total=len(files)) as pbar:
         for x in p.imap_unordered(handler3, [os.path.join(path, file) for file in files]):
             pbar.update(1)
