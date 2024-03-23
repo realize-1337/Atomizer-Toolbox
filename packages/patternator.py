@@ -34,16 +34,43 @@ class pat():
             center.append(0.5*(m1+m2))
         return center
     
-    def calcAreas(self, centers:list)->np.ndarray:
+    def calcAreas(self)->np.ndarray:
         delta = self.a+self.h
         colCenters = np.arange(0.5*self.h+0.5*self.a, 0.5*2*self.cols*delta, delta)
         print(colCenters)
         areas = np.zeros_like(colCenters)
         areas = np.pi*((colCenters+0.5*self.a)**2-(colCenters-0.5*self.a)**2)
-        factor = areas/(self.a*self.b)/2
-        fig = px.line(factor)
-        fig.show()
         return(areas)
+    
+    def work_fit(self, areas, params):
+        a, c, w = params
+        liq = self.df['m_l'].to_numpy()[0]
+        time = np.mean(self.df['time [s]'].to_numpy())
+        dens = self.df['rho_l'].to_numpy()[0]
+        x_data = np.arange(self.cols)
+        arr = self.gaussian(x_data, *params)
+        arr = self.lorentz(x_data, *params)
+
+        left = arr[:int(c-0.5)][::-1]
+        right = arr[int(c-0.5):]
+        factor = areas/(self.a*self.b)/2
+        
+        # this are the volumes of liquid in each ring [m**3]
+        volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
+        volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+
+        if dens == 1236.27:
+            volLeft = volLeft*(1-0.0431)
+            volRight = volRight*(1-0.0431)
+        if dens == 1222.96:
+            volLeft = volLeft*(1-0.0163)
+            volRight = volRight*(1-0.0163)
+        
+        total = np.sum(np.concatenate((volLeft, volRight)))
+        input = liq/3600*time/dens
+        diff = input-total
+        print('Fitted:')
+        print(f'Difference: {diff}\nRelative Difference: {diff/input*100}%')
     
     def work(self, areas, centers):
         liq = self.df['m_l'].to_numpy()
@@ -69,12 +96,9 @@ class pat():
             total = np.sum(np.concatenate((volLeft, volRight)))
             input = liq[i]/3600*time[i]/dens[i]
             diff = input-total
-            print(f'Difference: {diff} \n Relative Difference: {diff/input*100}%')
+            print(f'Difference: {diff}\nRelative Difference: {diff/input*100}%')
 
     def fit(self, centers):
-        def gaussian(x, A, xc, w):
-            return A*np.exp(-0.5*((x-xc)/w)**2)
-        
         def find_nearest(array, value):
             array = np.asarray(array)
             idx = (np.abs(array - value)).argmin()
@@ -82,10 +106,7 @@ class pat():
 
         params = []
         integ = []
-        # delta = self.a+self.h
-        # x_data = np.arange(self.h+0.5*self.a, self.cols*delta, delta)
         x_data = np.arange(self.cols)
-        time = self.df['time [s]'].to_numpy()
         for i in range(len(self.arr)):
             c = centers[i]
             left = self.arr[i, :int(c-0.5)][::-1]
@@ -95,67 +116,72 @@ class pat():
             max_point = np.argmax(self.arr[i, :])
             FWHM = abs(find_nearest(left, max/2) - find_nearest(right, max/2))
 
-            popt, pcov = curve_fit(gaussian, xdata=x_data, ydata=self.arr[i, :], method='lm', p0=[max, x_data[max_point], FWHM], xtol=1e-9, gtol=1e-9)
+            popt, pcov = curve_fit(self.gaussian, xdata=x_data, ydata=self.arr[i, :], method='lm', p0=[max, x_data[max_point], FWHM], xtol=1e-9, gtol=1e-9)
             params.append([*popt])
 
-            y, err = quad(gaussian, -np.inf, np.inf, args=(popt[0],popt[1],popt[2], ))
-            integ.append(y/time[i])
+            y, err = quad(self.gaussian, -np.inf, np.inf, args=(popt[0],popt[1],popt[2], ))
+            integ.append(y)
 
         return [params, integ]
+    
+    def fit_lorentz(self, centers):
+        def find_nearest(array, value):
+            array = np.asarray(array)
+            idx = (np.abs(array - value)).argmin()
+            return array[idx]
 
-    def workWithFit(self, areas, A, w, c=56.5):
-        liq = self.df['m_l'].to_numpy()[0]
-        time = np.mean(self.df['time [s]'].to_numpy())
-        dens = self.df['rho_l'].to_numpy()[0]
-
-        def gaussian(x, A, xc, w):
-            return A*np.exp(-0.5*((x-xc)/w)**2)
-
+        params = []
+        integ = []
         x_data = np.arange(self.cols)
-        arr = gaussian(x_data, A, c, w)
+        for i in range(len(self.arr)):
+            c = centers[i]
+            left = self.arr[i, :int(c-0.5)][::-1]
+            right = self.arr[i, int(c-0.5):]
 
-        left = arr[:int(c-0.5)][::-1]
-        right = arr[int(c-0.5):]
-        factor = areas/(self.a*self.b)/2
-        
-        # this are the volumes of liquid in each ring [m**3]
-        volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
-        volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+            max = np.max(self.arr[i, :])
+            max_point = np.argmax(self.arr[i, :])
+            FWHM = abs(find_nearest(left, max/2) - find_nearest(right, max/2))
 
-        if dens == 1236.27:
-            volLeft = volLeft*(1-0.0431)
-            volRight = volRight*(1-0.0431)
-        if dens == 1222.96:
-            volLeft = volLeft*(1-0.0163)
-            volRight = volRight*(1-0.0163)
-        
+            popt, pcov = curve_fit(self.lorentz, xdata=x_data, ydata=self.arr[i, :], method='lm', p0=[max, x_data[max_point], FWHM], xtol=1e-9, gtol=1e-9)
+            params.append([*popt])
 
-        total = np.sum(np.concatenate((volLeft, volRight)))
-        input = liq/3600*time/dens
-        diff = input-total
-        print(f'Difference: {diff} \n Relative Difference: {diff/input*100}%')
+            y, err = quad(self.lorentz, -np.inf, np.inf, args=(popt[0],popt[1],popt[2], ))
+            integ.append(y)
+
+        return [params, integ]
+    
+    @staticmethod
+    def gaussian(x, A, xc, w):
+            return A*np.exp(-0.5*((x-xc)/w)**2)
+    
+    @staticmethod
+    def lorentz(x, A, xc, w):
+            return 2*A/np.pi*(w/(4*(x-xc)**2+w**2))
+    
+
 
 if __name__ == '__main__':
     pat = pat(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator.xlsx')
     centers = pat.findCenter()
-    areas = pat.calcAreas(centers)
-
-    print(areas)
-    fig = px.line(areas)
-    fig.show()
-
+    areas = pat.calcAreas()
+    
     pat.work(areas, centers)
-    params, integ = pat.fit(centers)
-
+    params, integ = pat.fit_lorentz(centers)
+    time = pat.df['time [s]'].to_numpy()
+    
+    y_mean = 0
     a_mean = 0
     w_mean = 0
-    for A, xc, w in params:
-        a_mean += A
-        w_mean += w
-    a_mean /= len(params)
-    w_mean /= len(params)
-    print(params)
-    print(integ)
+    for t, y, p in zip(time, integ, params):
+        a, xc, w = p
+        y_mean += t*y
+        a_mean += t*a
+        w_mean += t*w
+    y_mean /= np.sum(time)
+    a_mean /= np.sum(time)
+    w_mean /= np.sum(time)
 
-    pat.workWithFit(areas, a_mean, w_mean)
+    p_inf = [a_mean, 55.6, w_mean]
+    pat.work_fit(areas, p_inf)
+
     pass
