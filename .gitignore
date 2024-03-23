@@ -157,3 +157,4 @@ cython_debug/
 /AtomizerToolbox
 /installer/resources
 /installer/certificate.pfx
+/test
