@@ -298,115 +298,21 @@ def handler3(file, ref=r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'):
 
 if __name__ == '__main__':
     files = []
-    path = r'C:\Users\david\Desktop\Test PDA\Oben_fern'
+    path = r'H:\Duese_1\Wasser\2_60_68,3\Oben_fern'
     files = [x for x in os.listdir(path) if x.endswith('.png')]
     res = []
-    ref = r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'
+    ref = r'H:\Duese_1\Wasser\Oben_fern_ref.tif'
    
     prob_map = np.zeros_like(cv2.imread(os.path.normpath(rf'{ref}'), cv2.IMREAD_GRAYSCALE).astype(np.float32))
-    with Pool(16) as p, tqdm(total=len(files)) as pbar:
-        for x in p.imap_unordered(handler3, [os.path.join(path, file) for file in files]):
-            pbar.update(1)
-            prob_map += (x == 0).astype(np.float32)
+    for file in files:
+        ma = multiAngle(os.path.join(path, file), ref)
+        image = ma.imageHandling()
+        plt.imshow(image, interpolation='nearest', cmap='Greys_r')
+        plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False)
+        plt.xticks([])
+        plt.yticks([])
 
-    prob_map /= len(files)    
-    prob_map_scaled = (prob_map * 255).astype(np.uint8)
-    # plt.imshow(prob_map_scaled)
-    # plt.show()
-
-    _, prob_bw = cv2.threshold(prob_map_scaled, 10, 255, cv2.THRESH_BINARY)
-    contours, hierarchy = cv2.findContours(prob_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    filled_image = np.zeros_like(prob_bw)
-    cv2.drawContours(filled_image, contours, -1, (255), thickness=cv2.FILLED)
-    prob_bw = filled_image
-
-    test = SprayAnglePP()
-    left, right = test.findWidth(prob_bw)
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(x=np.arange(len(left)), y=left, mode='lines', name='Left'))
-    # fig.add_trace(go.Scatter(x=np.arange(len(right)), y=right, mode='lines', name='Right'))
-    # fig.update_layout(title='Line Plot of Two 1D Numpy Arrays',
-    #               xaxis_title='Index',
-    #               yaxis_title='Values')
-    # fig.show()
-
-
-    flm_max = 0
-    flm = np.zeros(2, dtype=np.uint16)
-    # flm = np.array([30, 30])
-    fits = []
-    angles = np.zeros((4, 2))
-    pos = np.zeros((4, 2), dtype=np.uint16)
-    for num, y in enumerate([right, left]):
-        x = np.arange(0, len(y), 1)   
-        diff = np.diff(y[:150], 1)
-        p_ = np.poly1d(np.polyfit(x[:149], diff, 8))
-        y_ = p_(x[:149])
-        # fig = px.line(y_, markers=True)
-        # fig.show()
-        flm[num] = argrelextrema(y_, np.less)[0][0]+20
-
-        y = y[flm[num]:]
-        x = x[flm[num]:]
-        p = np.poly1d(np.polyfit(x, y, 8))
-        fits.append(p)
-        y = p(x)
-
-        max = np.argmax(y)
-        end = np.argmax(y<=0)
-        if end <= flm[num]: end = len(y)-1
-
-        angleMax = 0
-        for i in range(10, end):
-            ang = np.rad2deg(np.arctan((y[i]-y[0])/(i)))
-            if ang > angleMax: 
-                angleMax = ang
-                pos_ = i
-
-        angles[0, num] = angleMax
-        angles[1, num] = np.rad2deg(np.arctan((y[int(0.1*end)]-y[0])/(0.1*end)))
-        angles[2, num] = np.rad2deg(np.arctan((y[int(0.5*end)]-y[0])/(0.5*end)))
-        angles[3, num] = np.rad2deg(np.arctan((y[int(0.9*end)]-y[0])/(0.9*end)))
-        pos[0, num] = pos_
-        pos[1, num] = int(0.1*end)
-        pos[2, num] = int(0.5*end)
-        pos[3, num] = int(0.9*end)
-
-    angles = np.sum(angles, axis=1)
-   
-    half = int(len(prob_bw[0,:])/2)
-
-    # print(angles)
-
-    fig, ax = plt.subplots()
-    heatmap = ax.imshow(prob_map_scaled, cmap='gist_heat_r')
-    colors = 'blue', 'green', 'yellow', 'purple'
-    for row, color in enumerate(colors):
-        point1 = (int(half+right[flm[0]]),flm[0])
-        point3 = (int(half-left[flm[1]]),flm[1])
-
-        slopeL = np.tan(np.deg2rad(-90-0.5*angles[row]))
-        slopeR = np.tan(np.deg2rad(-90+0.5*angles[row]))
-
-        image_size = np.shape(prob_map_scaled)
-        extended_point1 = (0, int(point1[1] - slopeL * point1[0]))
-        extended_point2 = (image_size[1], int(point1[1] + slopeL * (image_size[1] - point1[0])))
-        extended_point3 = (0, int(point3[1] - slopeR * point3[0]))
-        extended_point4 = (image_size[1], int(point3[1] + slopeR * (image_size[1] - point3[0])))
-
-        ax.axline(extended_point1, extended_point2, color=color, linewidth=1)
-        ax.axline(extended_point3, extended_point4, color=color, linewidth=1)
-
-        # prob_map_scaled = cv2.line(prob_map_scaled, extended_point1, extended_point2, (255, 255, 255), 5)
-        # prob_map_scaled = cv2.line(prob_map_scaled, extended_point3, extended_point4, (255, 255, 255), 5)
-    # plt.imshow(prob_map_scaled, cmap='hot_r')
-    ax.set_aspect('equal')
-    size = np.shape(prob_map_scaled)
-    ax.set_xlim(0, size[1])
-    ax.set_ylim(size[0], 0)
-
-    plt.show()
-
+        plt.show()
+        pass
     
-    print(1)
 

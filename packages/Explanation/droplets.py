@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load images
-droplets_img = cv2.imread(r'M:\Duese_3\Wasser\4,1_11,7_17,2\Unten\frame_0888.png')
-background_img = cv2.imread(r'M:\Duese_3\Wasser\Unten_ref.tif')
+droplets_img = cv2.imread(r'H:\Duese_4\Wasser\2_60_68,4\Unten\frame_0026.png')
+background_img = cv2.imread(r'H:\Duese_4\Wasser\Unten_ref.tif')
 
 # Preprocess images (if needed, e.g., convert to grayscale)
 # For example, if the droplets are in grayscale and background in color
@@ -14,7 +14,8 @@ background_gray = cv2.cvtColor(background_img, cv2.COLOR_BGR2GRAY)
 # Find the difference between the two images
 diff_img = cv2.absdiff(droplets_gray, background_gray)
 
-_, thresholded_img = cv2.threshold(diff_img, 40, 255, cv2.THRESH_BINARY)
+
+_, thresholded_img = cv2.threshold(diff_img, 60, 255, cv2.THRESH_BINARY)
 contours, _ = cv2.findContours(thresholded_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 # Find the largest droplet
@@ -29,7 +30,7 @@ for contour in contours:
         circularity = (4 * 3.1416 * area) / (perimeter * perimeter)
         
         # Define circularity threshold (adjust as needed)
-        circularity_threshold = 0.6
+        circularity_threshold = 0.85
         
         if circularity > circularity_threshold:
             round_contours.append(contour)
@@ -53,7 +54,7 @@ print(f"The diameter of the largest contour is: {diameter}")
 
 circle_img = np.zeros_like(droplets_gray)
 
-cv2.circle(circle_img, (int(x), int(y)), int(radius), (255, 255, 255), 2)
+cv2.circle(circle_img, (int(x), int(y)), 5*int(radius), (255, 255, 255), 5)
 
 # Overlay the circle image on the original droplets_gray image
 result_img = cv2.cvtColor(droplets_gray, cv2.COLOR_GRAY2BGR)
@@ -61,20 +62,22 @@ result_img = cv2.addWeighted(result_img, 1, cv2.cvtColor(circle_img, cv2.COLOR_G
 
 
 # Display the result
-fig, axs = plt.subplots(1, 3, figsize=(12, 6))
+fig, axs = plt.subplots(1, 2, figsize=(2*result_img.shape[1]/100.0, result_img.shape[0]/100.0), dpi=300)
 
-axs[0].text(0.5, 0.5, f'Largest Droplet\n{"%.2f" % diameter} px', ha='center', va='center', fontsize=12)
-axs[0].axis('off')
-axs[1].imshow(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB))
-axs[1].set_title(f'Highlighted Circle')
-axs[2].imshow(thresholded_img, cmap='gray')
-axs[2].set_title('Thresholded Image')
+axs[0].imshow(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB))
+axs[0].set_title(f'Highlighted Circle')
+axs[1].imshow(thresholded_img, cmap='gray')
+axs[1].set_title('Thresholded Image')
 
 
 
 plt.tight_layout()
+axs[0].set_xticks([])
+axs[0].set_yticks([])
+axs[1].set_xticks([])
+axs[1].set_yticks([])
 plt.show()
-plt.savefig
+# plt.savefig
 
 
 

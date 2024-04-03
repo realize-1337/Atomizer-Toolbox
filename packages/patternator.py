@@ -44,7 +44,6 @@ class pat():
         self.arr = arr.astype(np.float32)
         
     def findCenter(self)->list:
-        self.read()
         max = np.argmax(self.arr, axis=1)
         max_2 = []
         for i, m in enumerate(max):
@@ -60,31 +59,86 @@ class pat():
             center.append(0.5*(m1+m2))
         return center
     
+    def off(self)->list:
+        
+        tup = []
+        for i in range(len(self.arr)):
+            max = np.argmax(self.arr[i, :])
+            # print(max)
+            left = self.arr[i, max-1]
+            right = self.arr[i, max+1]
+            delta_left = (self.arr[i, max]-left)/self.arr[i, max]
+            delta_right = (self.arr[i, max]-right)/self.arr[i, max]
+            tup.append((delta_left, delta_right))
+
+        centers = []
+        for i, t in enumerate(tup):
+            max = np.argmax(self.arr[i, :])
+            l, r = t
+            if r == 0: centers.append([2, max, max+1])
+            elif l == 0: centers.append([2, max, max-1])
+            elif l/r > 2: centers.append([2, max, max-1])
+            elif l/r <0.5: centers.append([2, max, max+1])
+            else: centers.append([1, max, None])
+        print(centers)
+        return centers
+
     def calcAreas(self)->np.ndarray:
         delta = self.a+self.h
         colCenters = np.arange(self.h+0.5*self.a, self.cols*delta, delta)
         areas = np.zeros_like(colCenters)
         areas = np.pi*((colCenters+0.5*self.a)**2-(colCenters-0.5*self.a)**2)
-        return(areas)
+        return areas
+
+    def calcNewArea(self, mode=2):
+        delta = self.a+self.h
+        if mode == 2:
+            colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta)
+            areas = np.zeros_like(colCenters)
+            areas = np.pi*((colCenters+0.5*self.a)**2-(colCenters-0.5*self.a)**2)
+        else:
+            colCenters = np.arange(0, self.cols*delta, delta)
+            areas = np.zeros_like(colCenters)
+            areas = np.pi*((colCenters+0.5*self.a)**2-(colCenters-0.5*self.a)**2)
+            areas[0] = np.pi*(0.5*self.a)**2
+        return areas
+
         
-    def exData(self, areas, centers, glue=2, printIndividual=False):
+    def exData(self, glue=2, printIndividual=False):
+        centers = self.off()
         liq = self.df['m_l'].to_numpy()
         time = self.df['time [s]'].to_numpy()
         dens = self.df['rho_l'].to_numpy()
         rel = []
         zero = int(self.current_it-3)
-        for i, c in enumerate(centers):
-            if c > 57:
-                left = self.arr[i, :int(c-0.5)][::-1]
-                right = self.arr[i, int(c-0.5):]
-            else: 
-                left = self.arr[i, :int(c+0.5)][::-1]
-                right = self.arr[i, int(c+0.5):]
-            factor = areas/(self.a*self.b)/2
+        for i, trip in enumerate(centers):
+            m, c, c2 = trip
+            if m == 2:
+                if c < c2: # Max ist rechts
+                    left = self.arr[i, :c][::-1]
+                    right = self.arr[i, c:]
+                else: # Max is links
+                    left = self.arr[i, :c+1][::-1]
+                    right = self.arr[i, c+1:]
 
-            # this are the volumes of liquid in each ring [m**3]
-            volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
-            volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+                areas = self.calcNewArea(m)
+                factor = areas/(self.a*self.b)/2
+
+                # this are the volumes of liquid in each ring [m**3]
+                volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
+                volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+            else: 
+                left = np.copy(self.arr[i, :c+1][::-1])
+                left[0] = 0.5*float(left[0])
+                right = np.copy(self.arr[i, c:])
+                right[0] = 0.5*float(right[0])
+                areas = self.calcNewArea(m)
+                factor = areas/(self.a*self.b)/2
+                # this are the volumes of liquid in each ring [m**3]
+                volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
+                volLeft[0] = volLeft[0]/2
+                volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+                volRight[0] = volRight[0]/2
 
             if dens[i] == 1236.27:
                 volLeft = volLeft*(1-0.0431)
@@ -106,6 +160,7 @@ class pat():
         print(f'Average: {"%.3f" % np.mean(np.array(rel))}%')
     
     def fit_lorentz(self, centers, r_limit=0.95):
+        newCen = self.off()
         def find_nearest(array, value):
             array = np.asarray(array)
             idx = (np.abs(array - value)).argmin()
@@ -131,6 +186,7 @@ class pat():
             right = self.arr[i, int(c-0.5):]/time[i]
             
             w_n = np.argmax(left[left>0][::-1]) + np.argmax(right[right>0][::-1])
+            if newCen[i][0] == 1: w_n -= 0.5
             if w < w_n: w = w_n
 
             max = np.max(self.arr[i, :])
@@ -185,7 +241,8 @@ class pat():
             self.exportDF['fitDelta'].iloc[zero+i] = diff/input*100
         pass
     
-    def exDataPDA(self, areas, centers, glue=2, printIndividual=False):
+    def exDataPDA(self, centers, glue=2, printIndividual=False):
+        areas = self.calcAreas()
         liq = self.df['m_l'].to_numpy()
         time = self.df['time [s]'].to_numpy()
         dens = self.df['rho_l'].to_numpy()
@@ -246,8 +303,6 @@ class pat():
 
         input = liq/3600*time # input in kg
         diff = input-volume*dens*1e-9
-        print('Fitted:')
-        print(f'Relative Difference: {"%.3f" % (diff/input*100)}%')
         
         zero = int(self.current_it-3)
         for i in range(3):
@@ -261,10 +316,10 @@ class pat():
     def run(self)->pd.DataFrame:
         for i in range(int(self.it)):
             # try:
-                centers = self.findCenter()
-                areas = self.calcAreas()
-                self.exData(areas, centers, printIndividual=True)
+                self.read()
+                self.exData(printIndividual=True)
 
+                centers = self.findCenter()
                 params, integ, r_2, width = self.fit_lorentz(centers)
                 a_mean = 0
                 w_mean = 0
@@ -272,13 +327,13 @@ class pat():
                 for p, r in zip(params, r_2):
                     if r == np.nan or np.nan in p: continue
                     a, xc, w = p
-                    a_mean += r**3*a
-                    w_mean += r**3*w
-                    xc_mean += r**3*xc
+                    a_mean += a
+                    w_mean += w
+                    xc_mean += xc
                 r_2 = np.array(r_2)
-                a_mean /= np.nansum(r_2**3)
-                w_mean /= np.nansum(r_2**3)
-                xc_mean /= np.nansum(r_2**3)
+                a_mean /= np.nansum(r_2)
+                w_mean /= np.nansum(r_2)
+                xc_mean /= np.nansum(r_2)
 
                 
                 p_inf = [a_mean, xc_mean, w_mean]
@@ -293,14 +348,26 @@ class pat():
                 for i in range(3):
                     self.exportDF['Width[mm]'].iloc[zero+i] = width*(self.a+self.h)
                     self.exportDF['Fit-R2'].iloc[zero+i] = r_2[i]
-                self.exDataPDA(areas, centers)
+                self.exDataPDA(centers)
                 self.lorentzVolumePDA(p_inf)
             # except: pass
         
         self.exportDF = self.exportDF.fillna('n/a')
         return self.exportDF
+    
+        for i in range(int(self.it)):
+            off = self.off()
+            for l, r in off:
+                ratio = l/r
+                if ratio > 1 : ratio = 1/ratio
+                print(f'Links/Max: {"%.2f"%(l*100)} % -- Recht/Max: {"%.2f"%(r*100)}  % -- Links/Rechts: {"%.2f"%(ratio)}')
+        return None
+        
+
+
 
 if __name__ == '__main__':
     pat = pat(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator.xlsx')
     df = pat.run()
+    # df = pat.run()
     df.to_excel(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator_ex.xlsx')
