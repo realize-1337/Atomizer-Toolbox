@@ -62,7 +62,7 @@ result_img = cv2.addWeighted(result_img, 1, cv2.cvtColor(circle_img, cv2.COLOR_G
 
 
 # Display the result
-fig, axs = plt.subplots(1, 2, figsize=(2*result_img.shape[1]/100.0, result_img.shape[0]/100.0), dpi=300)
+fig, axs = plt.subplots(1, 2, figsize=(2*result_img.shape[1]/100.0, result_img.shape[0]/100.0), dpi=50)
 
 axs[0].imshow(cv2.cvtColor(result_img, cv2.COLOR_BGR2RGB))
 axs[0].set_title(f'Highlighted Circle')
