@@ -379,7 +379,7 @@ class pat():
         volume = np.sum(h*area)
         
         if dens == 1236.27:
-                volume = volume*(1-0.0431)
+            volume = volume*(1-0.0431)
         if dens == 1222.96:
             volume = volume*(1-0.0163)
 
@@ -451,4 +451,4 @@ if __name__ == '__main__':
     pat = pat(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator\patternator.xlsx')
     df = pat.run()
     # df = pat.run()
-    df.to_excel(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator\patternator_ex.xlsx')
+    # df.to_excel(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator\patternator_ex.xlsx')
