@@ -6,6 +6,7 @@ import plotly.figure_factory as ff
 from scipy.optimize import curve_fit
 from scipy.integrate import quad
 from sklearn.metrics import r2_score
+import os
 
 
 class pat():
@@ -102,14 +103,16 @@ class pat():
             areas = np.pi*((colCenters+0.5*self.a)**2-(colCenters-0.5*self.a)**2)
             areas[0] = np.pi*(0.5*self.a)**2
         return areas
-
-        
-    def exData(self, glue=2, printIndividual=False):
+     
+    def exData(self, glue=2, printIndividual=False, diagrams=True, diagrams_height=True):
         centers = self.off()
         liq = self.df['m_l'].to_numpy()
         time = self.df['time [s]'].to_numpy()
         dens = self.df['rho_l'].to_numpy()
         rel = []
+        vols = []
+        hs = []
+        fluxs = []
         zero = int(self.current_it-3)
         for i, trip in enumerate(centers):
             m, c, c2 = trip
@@ -127,6 +130,7 @@ class pat():
                 # this are the volumes of liquid in each ring [m**3]
                 volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
                 volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+
             else: 
                 left = np.copy(self.arr[i, :c+1][::-1])
                 left[0] = 0.5*float(left[0])
@@ -149,6 +153,13 @@ class pat():
             
 
             total = np.sum(np.concatenate((volLeft, volRight)))
+            if m == 2:
+                vols.append(np.concatenate((volLeft[::-1], volRight)))
+                hs.append(np.concatenate((left[::-1], right)))
+            else: 
+                volLeft[0] = volLeft[0]*2
+                vols.append(np.concatenate((volLeft[::-1], volRight[1:])))
+                hs.append(np.concatenate((left[::-1], right[1:])))
             input = liq[i]/3600*time[i]/dens[i]
             diff = input-total
             if printIndividual:
@@ -158,7 +169,41 @@ class pat():
                 rel.append(diff/input*100)
         print('----')
         print(f'Average: {"%.3f" % np.mean(np.array(rel))}%')
-    
+
+        if diagrams:
+            t = np.mean(time) 
+            data = []
+            data_flux = []
+            for i, (vol, center, h) in enumerate(zip(vols, centers, hs)):
+                mode, c, c2 = center
+                delta = self.a+self.h
+                if mode == 2: colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta) - 0.5*self.cols*delta
+                else: colCenters = np.arange(0, self.cols*delta, delta) - 0.5*self.cols*delta
+                data.append(go.Scatter(mode='lines', x=colCenters, y=vol*60*dens[0], line_shape='hvh', name=f'Run {i}: Center Points: {m}'))
+                flux = h/1000/time[i]*dens[i]/(self.a*self.b)
+                data_flux.append(go.Scatter(mode='lines', x=colCenters, y=h/1000/time[i]*dens[i]*1e-6, line_shape='hvh', name=f'Run {i}: Center Points: {m}'))
+
+                
+            fig = go.Figure(data)
+            fig.write_html(os.path.join(os.path.dirname(self.path), 'ex', f"Ex_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            fig = go.Figure(data_flux)
+            fig.write_html(os.path.join(os.path.dirname(self.path), 'ex_flux', f"Ex_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            pass
+
+        if diagrams_height:
+            t = np.mean(time) 
+            data = []
+            for i, (h, center) in enumerate(zip(hs, centers)):
+                mode, c, c2 = center
+                delta = self.a+self.h
+                if mode == 2: colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta) - 0.5*self.cols*delta
+                else: colCenters = np.arange(0, self.cols*delta, delta) - 0.5*self.cols*delta
+                data.append(go.Scatter(mode='lines', x=colCenters, y=h/time[i]*60, line_shape='hvh', name=f'Run {i}: Center Points: {m}'))
+                
+            fig = go.Figure(data)
+            fig.write_html(os.path.join(os.path.dirname(self.path), 'ex_height', f"Ex_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            pass
+
     def fit_lorentz(self, centers, r_limit=0.95):
         newCen = self.off()
         def find_nearest(array, value):
@@ -213,7 +258,7 @@ class pat():
 
         return [params, integ, r_2, w]
     
-    def lorentzVolume(self, params, width, glue=2): 
+    def lorentzVolume(self, params, width, glue=2, diagrams=True, diagrams_height=True): 
         a, c, w = params
         delta = self.a+self.h
         liq = self.df['m_l'].to_numpy()[0]
@@ -240,6 +285,43 @@ class pat():
         for i in range(3):
             self.exportDF['fitDelta'].iloc[zero+i] = diff/input*100
         pass
+
+        if diagrams: 
+            delta = self.a+self.h
+            colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta) - 0.5*self.cols*delta
+            
+            y_data = self.lorentz(colCenters, a, 0, w)*time-glue
+            left = y_data[:57][::-1]
+            right = y_data[57:]
+            # print(y_data)
+            areas = self.calcNewArea(2)
+            factor = areas/(self.a*self.b)/2
+
+            # this are the volumes of liquid in each ring [m**3]
+            volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
+            volRight = right*self.a*self.b*factor[:len(right)]*1e-9
+            data = []
+            volLeft[volLeft<0] = 0
+            volRight[volRight<0] = 0
+            data.append(go.Scatter(mode='lines', x=colCenters, y=np.concatenate((volLeft[::-1], volRight))*60*dens, line_shape='hvh', name=f'Fitted with Prams {params}'))
+                
+            fig = go.Figure(data, layout={'title':{'text':f"Fitted with Prams {params}"}})
+            fig.write_html(os.path.join(os.path.dirname(self.path), 'fit', f"Fitted_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            pass
+
+        if diagrams_height:
+            data = []
+            delta = self.a+self.h
+            colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta) - 0.5*self.cols*delta
+            
+            y_data = self.lorentz(colCenters, a, 0, w)*60-glue
+            y_data[y_data<0] = 0
+
+            data.append(go.Scatter(mode='lines', x=colCenters, y=y_data, line_shape='hvh', name=f'Fitted with Prams {params}'))
+                
+            fig = go.Figure(data)
+            fig.write_html(os.path.join(os.path.dirname(self.path), 'fit_height', f"Fitted_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            pass
     
     def exDataPDA(self, centers, glue=2, printIndividual=False):
         areas = self.calcAreas()
@@ -365,9 +447,8 @@ class pat():
         
 
 
-
 if __name__ == '__main__':
-    pat = pat(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator.xlsx')
+    pat = pat(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator\patternator.xlsx')
     df = pat.run()
     # df = pat.run()
-    df.to_excel(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator_ex.xlsx')
+    df.to_excel(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\patternator\patternator_ex.xlsx')

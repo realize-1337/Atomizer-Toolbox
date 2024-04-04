@@ -796,40 +796,40 @@ if __name__ == '__main__':
     time=False
     size=False
     multi_size=True
-    width = 15
+    width = 100
     mode = 'd32'
 
-    # path_ = r'H:\Duese_1\Wasser\2_4,5_68,3\VP'
-    # pda = PDA(path=path_, upperCutOff=179.48)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_1\Wasser\2_4,5_68,3\VP'
+    pda = PDA(path=path_, upperCutOff=179.48)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_1\100\2_9,1_68,3\VP'
-    # pda = PDA(path=path_, upperCutOff=361.24)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_1\100\2_9,1_68,3\VP'
+    pda = PDA(path=path_, upperCutOff=361.24)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_2\Wasser\2_4,5_68,7\VP'
-    # pda = PDA(path=path_, upperCutOff=172.43)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_2\Wasser\2_4,5_68,7\VP'
+    pda = PDA(path=path_, upperCutOff=172.43)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_2\100\2_12,4_68,7\VP'
-    # pda = PDA(path=path_, upperCutOff=423.82)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_2\100\2_12,4_68,7\VP'
+    pda = PDA(path=path_, upperCutOff=423.82)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_3\Wasser\2_11,2_69,9\VP'
-    # pda = PDA(path=path_, upperCutOff=244.26)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_3\Wasser\2_11,2_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=244.26)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_3\100\2_13,7_69,9\VP' 
-    # pda = PDA(path=path_, upperCutOff=527.63)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_3\100\2_13,7_69,9\VP' 
+    pda = PDA(path=path_, upperCutOff=527.63)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_3\100\2_60_69,9\VP'
-    # pda = PDA(path=path_, upperCutOff=689.4)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_3\100\2_60_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=689.4)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
-    # path_ = r'H:\Duese_3\100\2_68,5_69,9\VP'
-    # pda = PDA(path=path_, upperCutOff=723.04)
-    # pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+    path_ = r'H:\Duese_3\100\2_68,5_69,9\VP'
+    pda = PDA(path=path_, upperCutOff=723.04)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
     
     path_ = r'H:\Duese_3\200\2_13,8_69,9\VP'
     pda = PDA(path=path_, upperCutOff=570.03)
