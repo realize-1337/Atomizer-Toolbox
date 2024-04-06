@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import os
 from tqdm import tqdm
 
@@ -58,14 +59,70 @@ class PDA_extractor():
             flux_data.append(go.Scatter(x=x_data, y=flux_y_data, name=f'{names[i]}', line_shape='hvh', mode='lines'))
             ratio.append(go.Scatter(x=x_data, y=ratio_flux, name=f'{names[i]}', line_shape='hvh', mode='lines'))
         
+
         fig = go.Figure(data)
+        fig.update_layout(title=f'Mass distribution {exportName}')
         fig.write_html(os.path.join(exportPath, 'mass', exportName))
         
         fig = go.Figure(flux_data)
+        fig.update_layout(title=f'Mass flux density {exportName}')
         fig.write_html(os.path.join(exportPath, 'flux', exportName))
         
         fig = go.Figure(ratio)
+        fig.update_layout(title=f'm_flux / n_flux ratio  {exportName}')
         fig.write_html(os.path.join(exportPath, 'ratio', exportName))
+
+        fig = self.createMap(x_data, y_data, name=exportName)
+        fig.write_html(os.path.join(exportPath, 'maps', exportName))
+        
+        fig = self.createMap(x_data, flux_y_data, name=exportName, z_name='Qulitative normalized mass flux density')
+        fig.write_html(os.path.join(exportPath, 'maps_flux', exportName))
+
+
+    def createMap(self, x_data:np.ndarray, z_data:np.ndarray, resolution:int = 100, name='Normalized mass distribution', z_name='Qualitative mass'):
+        
+        x = np.copy(x_data[x_data<=0])
+        z = z_data[:len(x)]
+        ang = np.linspace(0, 0.5*np.pi, resolution)
+        fineX = np.linspace(np.min(x), np.max(x), resolution)
+        fineZ = np.interp(fineX, x, z)
+        posCord = np.zeros((len(fineX),len(fineX), 3))
+        
+        for i in range(len(fineX)):
+            for j in range(len(ang)):
+                posCord[i,j,0] = abs(np.cos(ang[j]))*fineX[i]
+                posCord[i,j,1] = abs(np.sin(ang[j])*fineX[i])
+                posCord[i,j,2] = fineZ[i]
+         
+         
+        total = len(fineX)**2
+        arr2d = posCord.reshape((total, 3))
+        arr2d_neg_pos = np.copy(arr2d)
+        arr2d_neg_neg = np.copy(arr2d_neg_pos)
+        arr2d_neg_neg[:,1] = arr2d_neg_neg[:,1]*-1
+        arr2d_pos_neg = np.copy(arr2d_neg_neg)
+        arr2d_pos_neg[:,0] *= -1
+        arr2d_pos_pos = np.copy(arr2d_neg_pos)
+        arr2d_pos_pos[:,0] *= -1
+        arr2d = np.concatenate((arr2d_pos_pos, arr2d_neg_neg, arr2d_pos_neg, arr2d_neg_pos), axis=0)
+        
+        
+        arr2d[:, 2] /= np.max(arr2d[:,2])
+        fig = go.Figure(go.Mesh3d(x=arr2d[:, 0].flatten(), y=arr2d[:, 1].flatten(), z=arr2d[:, 2].flatten(),
+                                   colorscale='rainbow',
+                                   intensity=arr2d[:, 2].flatten(), 
+                                   opacity=0.5))
+        
+        fig.update_layout(scene=dict(xaxis=dict(range=[-100, 100]),
+                              yaxis=dict(range=[-100, 100]),
+                              zaxis_title=z_name, 
+                              xaxis_title='x Position in mm', 
+                              yaxis_title='y Position in mm'), 
+                              title=name)
+        
+        return fig
+
+
 
     def run(self):
         for report in tqdm(self.reports):
