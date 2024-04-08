@@ -112,7 +112,6 @@ class pat():
         rel = []
         vols = []
         hs = []
-        fluxs = []
         zero = int(self.current_it-3)
         for i, trip in enumerate(centers):
             m, c, c2 = trip
@@ -140,9 +139,9 @@ class pat():
                 factor = areas/(self.a*self.b)/2
                 # this are the volumes of liquid in each ring [m**3]
                 volLeft = left*self.a*self.b*factor[:len(left)]*1e-9
-                volLeft[0] = volLeft[0]/2
+                # volLeft[0] = volLeft[0]/2
                 volRight = right*self.a*self.b*factor[:len(right)]*1e-9
-                volRight[0] = volRight[0]/2
+                # volRight[0] = volRight[0]/2
 
             if dens[i] == 1236.27:
                 volLeft = volLeft*(1-0.0431)
@@ -179,10 +178,8 @@ class pat():
                 delta = self.a+self.h
                 if mode == 2: colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta) - 0.5*self.cols*delta
                 else: colCenters = np.arange(0, self.cols*delta, delta) - 0.5*self.cols*delta
-                data.append(go.Scatter(mode='lines', x=colCenters, y=vol*60*dens[0], line_shape='hvh', name=f'Run {i}: Center Points: {m}'))
-                flux = h/1000/time[i]*dens[i]/(self.a*self.b)
+                data.append(go.Scatter(mode='lines', x=colCenters, y=vol/time[i]*3600*dens[0], line_shape='hvh', name=f'Run {i}: Center Points: {m}'))
                 data_flux.append(go.Scatter(mode='lines', x=colCenters, y=h/1000/time[i]*dens[i]*1e-6, line_shape='hvh', name=f'Run {i}: Center Points: {m}'))
-
                 
             fig = go.Figure(data)
             fig.write_html(os.path.join(os.path.dirname(self.path), 'ex', f"Ex_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
@@ -265,8 +262,22 @@ class pat():
         time = np.mean(self.df['time [s]'].to_numpy())
         dens = self.df['rho_l'].to_numpy()[0]
         x_data = np.linspace(0, 0.5*width*delta, 1000)
+        x_data_off = np.linspace(-0.5*width*delta, 0.5*width*delta, 1000)
         gap = x_data[1]
         h = self.lorentz(x_data, a, 0, w)*time-glue
+        h2 = self.lorentz(x_data_off, a, 0, w)*time-glue
+
+        centers = np.linspace(0, 0.5*width*delta, 1000)
+        diffI = np.diff(centers, prepend=0)
+        last = 0.5*width*delta + 0.5*width*delta/(999)*0.5
+        diffO = np.diff(centers, append=last)
+
+        Raw_Area = np.zeros_like(centers)
+        Raw_Area = np.pi * ((centers+diffO)**2 - (centers-diffI)**2)
+
+        flux = h/(self.b*centers[1])
+        vol = np.sum(flux*Raw_Area)*1e-9
+        vol *= 998
 
         area = np.pi*((x_data+gap)**2-(x_data)**2)
         volume = np.sum(h*area)
@@ -288,6 +299,7 @@ class pat():
 
         if diagrams: 
             delta = self.a+self.h
+            data_flux = []
             colCenters = np.arange(0.5*self.h+0.5*self.a, self.cols*delta, delta) - 0.5*self.cols*delta
             
             y_data = self.lorentz(colCenters, a, 0, w)*time-glue
@@ -303,10 +315,14 @@ class pat():
             data = []
             volLeft[volLeft<0] = 0
             volRight[volRight<0] = 0
-            data.append(go.Scatter(mode='lines', x=colCenters, y=np.concatenate((volLeft[::-1], volRight))*60*dens, line_shape='hvh', name=f'Fitted with Prams {params}'))
-                
+            data.append(go.Scatter(mode='lines', x=colCenters, y=np.concatenate((volLeft[::-1], volRight))/time*60*dens, line_shape='hvh', name=f'Fitted with Prams {params}'))
+            data_flux.append(go.Scatter(mode='lines', x=x_data_off, y=h2/1000/time*dens*1e-6, line_shape='hvh'))
             fig = go.Figure(data, layout={'title':{'text':f"Fitted with Prams {params}"}})
             fig.write_html(os.path.join(os.path.dirname(self.path), 'fit', f"Fitted_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            
+            fig = go.Figure(data_flux)
+            fig.write_html(os.path.join(os.path.dirname(self.path), 'fit_flux', f"Ex_{self.df['s_l'][self.current_it-3]}_{self.df['m_g,i'][self.current_it-3]}_{self.df['m_l'][self.current_it-3]}_{self.df['m_g,o'][self.current_it-3]}_{self.df['rho_l'][self.current_it-3]}.html"))
+            
             pass
 
         if diagrams_height:
@@ -354,7 +370,6 @@ class pat():
                 volLeft = volLeft*(1-0.0163)
                 volRight = volRight*(1-0.0163)
             
-
             total = np.sum(np.concatenate((volLeft, volRight)))
             input = liq[i]/3600*time[i]/dens[i]
             diff = input-total

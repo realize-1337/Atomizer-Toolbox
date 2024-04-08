@@ -6,6 +6,7 @@ import os
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from scipy.signal import argrelextrema
+from tqdm import tqdm
 
 class multiAngle():
     def __init__(self, image:str, ref:str|np.ndarray) -> None:
@@ -94,9 +95,13 @@ class SprayAnglePP():
             arr = [arr]
         
         trigger = False
-        if widget.leftPoint and widget.rightPoint:
+
+        if widget != None and widget.leftPoint and widget.rightPoint:
             trigger = True
             flm_preset = [widget.leftPoint, widget.rightPoint]
+        
+        flm_preset = [(913, 10), (1156, 19)]
+        trigger = True
 
         flm = np.zeros(2, dtype=np.uint16)
         angles = np.zeros((4, 2))
@@ -137,7 +142,7 @@ class SprayAnglePP():
             arr = [arr]
 
         trigger = False
-        if widget.leftPoint and widget.rightPoint:
+        if widget != None and widget.leftPoint and widget.rightPoint:
             trigger = True
             flm_preset = [widget.leftPoint, widget.rightPoint]
 
@@ -191,19 +196,22 @@ class SprayAnglePP():
         half = int(len(prob_map_scaled[0,:])/2)
 
         if widget == None:
-            fig, ax = plt.subplots()
+            size = np.shape(prob_map_scaled)
+            fig, ax = plt.subplots(figsize=(size[1]/100.0, size[0]/100.0), dpi=300)
         else:
             fig = widget.figure
             ax = widget.ax
             ax.clear()
-        heatmap = ax.imshow(prob_map_scaled/255*100, cmap='gist_heat_r')
+        heatmap = ax.imshow(prob_map_scaled/255*100, cmap='gist_ncar_r')
         colors = 'blue', 'green', 'yellow', 'purple'
 
         trigger = False
-        if widget.leftPoint and widget.rightPoint:
+        if widget != None and widget.leftPoint and widget.rightPoint:
             trigger = True
             flm_preset = [widget.leftPoint, widget.rightPoint]
 
+        flm_preset = [(913, 10), (1156, 19)]
+        trigger = True
         if not len(fig.axes) > 1:
             fig.colorbar(heatmap, format='%d%%', label='Percentage of Spray Coverage')
         for row, color in enumerate(colors):
@@ -235,8 +243,8 @@ class SprayAnglePP():
         ax.set_xlim(0, size[1])
         ax.set_ylim(size[0], 0)
 
-        fig2, ax2 = plt.subplots()
-        heatmap = ax2.imshow(prob_map_scaled, cmap='gist_heat_r')
+        fig2, ax2 = plt.subplots(figsize=(size[1]/100.0, size[0]/100.0), dpi=300)
+        heatmap = ax2.imshow(prob_map_scaled, cmap='gist_ncar_r')
         size = np.shape(prob_map_scaled)
         ax2.set_xlim(0, size[1])
         ax2.set_ylim(size[0], 0)
@@ -250,8 +258,9 @@ class SprayAnglePP():
         Angles are max, 10, 50, 90.
         '''
         r, l = self.findWidth(binary_map)
-        print(f'Left Preset Point: {widget.leftPoint}')
-        print(f'Right Preset Point: {widget.rightPoint}')
+        if widget != None:
+            print(f'Left Preset Point: {widget.leftPoint}')
+            print(f'Right Preset Point: {widget.rightPoint}')
         if mode == 'maxW':
             angles, pos, flm = self.calculateAnglesMaxWidth([r, l], maxLenForFLM, flmSkip, maxAngleSkip, widget)
         else:
@@ -298,21 +307,33 @@ def handler3(file, ref=r'C:\Users\david\Desktop\Test PDA\Oben_fern_ref.tif'):
 
 if __name__ == '__main__':
     files = []
-    path = r'H:\Duese_1\Wasser\2_60_68,3\Oben_fern'
+    path = r'H:\Duese_4\Wasser\2_100_68,4\Oben_fern'
     files = [x for x in os.listdir(path) if x.endswith('.png')]
     res = []
-    ref = r'H:\Duese_1\Wasser\Oben_fern_ref.tif'
-   
+    ref = r'H:\Duese_4\Wasser\Oben_fern_ref.tif'
     prob_map = np.zeros_like(cv2.imread(os.path.normpath(rf'{ref}'), cv2.IMREAD_GRAYSCALE).astype(np.float32))
-    for file in files:
+    for file in tqdm(files):
         ma = multiAngle(os.path.join(path, file), ref)
         image = ma.imageHandling()
-        plt.imshow(image, interpolation='nearest', cmap='Greys_r')
-        plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False)
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.show()
-        pass
+        prob_map = sumProbMap(prob_map, image)
+    
+    binaryMap, scaledMap = createProbMap(prob_map, np.max(prob_map), int(1/100*255))
+    pp = SprayAnglePP()
+    angles, image, imageRaw = pp.run(binaryMap, scaledMap, None, mode='maxA', draw=[True, False, False, False])
+    print(angles)
+    image[0].show()
+    
+    plt.imshow(prob_map, interpolation='nearest', cmap='gist_ncar_r')
+    plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False)
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
+    
+    plt.imshow(binaryMap, interpolation='nearest', cmap='gist_ncar_r')
+    plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False)
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
+    pass
     
 

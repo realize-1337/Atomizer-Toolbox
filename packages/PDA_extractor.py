@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from scipy.optimize import curve_fit
+from scipy.integrate import quad
+from sklearn.metrics import r2_score
 import os
 from tqdm import tqdm
 
@@ -38,26 +41,39 @@ class PDA_extractor():
             m_flux = df['m_flux [kg/(s mm^2)]'].to_numpy()
             n_flux = df['n_flux [1/(s mm^2)]'].to_numpy()
             r = m_flux/n_flux
-            centers = np.concatenate((np.arange(0, 21, 2), np.arange(25, abs(np.min(x_data))+5, 5)))
-            steps = np.concatenate((np.zeros(1), np.diff(centers)))
-            Raw_Area = np.pi * ((centers+0.5*steps)**2 - (centers-0.5*steps)**2)
-            Raw_Area[0] = np.pi * (0.5*steps[1])**2
+            centers = np.concatenate((np.arange(0, 21, 2), np.arange(25, abs(np.min(x_data))+5, 5))).astype(np.float32)
+            diffI = np.concatenate((np.zeros(1), np.diff(centers)))/2
+            diffO = np.concatenate((np.diff(centers), np.zeros(1)))/2
+            diffO[-1] = 2.5
+            border = np.vstack((diffI, diffO))
+            border = np.vstack((border, centers))
+   
+            Raw_Area = np.zeros_like(centers)
+            Raw_Area = np.pi * ((centers+diffO)**2 - (centers-diffI)**2)
+            
             if np.max(x_data) > 0:
                 Area =  np.concatenate((Raw_Area[::-1], Raw_Area[1:]))/2
                 Area[int(len(Area)/2)] *= 2
-                y_data = m_flux*Area*60
+                y_data = m_flux*Area*3600
                 flux_y_data = m_flux
                 ratio_flux = r
             else:
                 x_data = np.concatenate((x_data, x_data[::-1][1:]*-1))
                 Area = Raw_Area[::-1]/2
                 Area[-1] *= 2
-                y_data = np.concatenate((m_flux*Area, (m_flux*Area)[::-1][1:]))*60
+                y_data = np.concatenate((m_flux*Area, (m_flux*Area)[::-1][1:]))*3600
                 flux_y_data = np.concatenate((m_flux, (m_flux)[::-1][1:]))
                 ratio_flux = np.concatenate((r, (r)[::-1][1:]))
+
+            # fineX = np.linspace(np.min(x_data), np.max(x_data), 1000)
+            # fineZ = np.interp(fineX, x_data, flux_y_data)
+            # fig = go.Figure(go.Scatter(x=fineX, y=fineZ))
+            # fig.show()
+
             data.append(go.Scatter(x=x_data, y=y_data, name=f'{names[i]}', line_shape='hvh', mode='lines'))
             flux_data.append(go.Scatter(x=x_data, y=flux_y_data, name=f'{names[i]}', line_shape='hvh', mode='lines'))
             ratio.append(go.Scatter(x=x_data, y=ratio_flux, name=f'{names[i]}', line_shape='hvh', mode='lines'))
+            # print(np.sum(y_data[:-1]))
         
 
         fig = go.Figure(data)
@@ -71,30 +87,35 @@ class PDA_extractor():
         fig = go.Figure(ratio)
         fig.update_layout(title=f'm_flux / n_flux ratio  {exportName}')
         fig.write_html(os.path.join(exportPath, 'ratio', exportName))
-
-        fig = self.createMap(x_data, y_data, name=exportName)
+        
+        fig, mass = self.createMap(x_data, flux_y_data, name=exportName, z_name='Mass fraction in each annulus in %')
         fig.write_html(os.path.join(exportPath, 'maps', exportName))
-        
-        fig = self.createMap(x_data, flux_y_data, name=exportName, z_name='Qulitative normalized mass flux density')
-        fig.write_html(os.path.join(exportPath, 'maps_flux', exportName))
 
+        return mass
 
-    def createMap(self, x_data:np.ndarray, z_data:np.ndarray, resolution:int = 100, name='Normalized mass distribution', z_name='Qualitative mass'):
+    def createMap(self, x_pos:np.ndarray, flux:np.ndarray, percentageWidth:float = 10, name='Normalized mass distribution', z_name='Qualitative mass'):
         
-        x = np.copy(x_data[x_data<=0])
-        z = z_data[:len(x)]
-        ang = np.linspace(0, 0.5*np.pi, resolution)
-        fineX = np.linspace(np.min(x), np.max(x), resolution)
-        fineZ = np.interp(fineX, x, z)
-        posCord = np.zeros((len(fineX),len(fineX), 3))
+        resolution_x = int(1/percentageWidth*100)
+        x_data, z_data = self.fit_lorentz(x_pos, flux, resolution_x)
+
+        fineZ = z_data[x_data<=0]
+        fineX = x_data[x_data<=0]
+        # x = np.copy(x_data[x_data<=0])
+        # z = z_data[:len(x)]
+        # # m = abs(np.min(x_data))
+        # # fineX = np.arange(np.min(x), np.max(x)+resolution_x, resolution_x)
+        # fineX = np.linspace(np.min(x), np.max(x), resolution_x)
+        ang = np.linspace(0, 0.5*np.pi, len(fineX))
+        # fineZ = np.interp(fineX, x, z)
+        posCord = np.zeros((len(fineX),len(ang), 3))
+        mass = np.sum(fineZ)        
         
         for i in range(len(fineX)):
             for j in range(len(ang)):
                 posCord[i,j,0] = abs(np.cos(ang[j]))*fineX[i]
                 posCord[i,j,1] = abs(np.sin(ang[j])*fineX[i])
                 posCord[i,j,2] = fineZ[i]
-         
-         
+        
         total = len(fineX)**2
         arr2d = posCord.reshape((total, 3))
         arr2d_neg_pos = np.copy(arr2d)
@@ -107,7 +128,10 @@ class PDA_extractor():
         arr2d = np.concatenate((arr2d_pos_pos, arr2d_neg_neg, arr2d_pos_neg, arr2d_neg_pos), axis=0)
         
         
-        arr2d[:, 2] /= np.max(arr2d[:,2])
+        # arr2d[:, 2] /= np.max(arr2d[:,2])
+        arr2d[:, 2] /= mass
+        arr2d[:, 2] *= 100
+        # print(vol)
         fig = go.Figure(go.Mesh3d(x=arr2d[:, 0].flatten(), y=arr2d[:, 1].flatten(), z=arr2d[:, 2].flatten(),
                                    colorscale='rainbow',
                                    intensity=arr2d[:, 2].flatten(), 
@@ -115,22 +139,68 @@ class PDA_extractor():
         
         fig.update_layout(scene=dict(xaxis=dict(range=[-100, 100]),
                               yaxis=dict(range=[-100, 100]),
-                              zaxis_title=z_name, 
+                              zaxis_title=f'{z_name} with annulus of {"%.1f" %(1/resolution_x*100/2)} % of full width', 
                               xaxis_title='x Position in mm', 
                               yaxis_title='y Position in mm'), 
-                              title=name)
+                              title=f'{name} Spray width: {"%.2f" %(abs(np.min(x_pos))*2)} mm. Annulus width = {"%.2f" %(abs(np.min(x_pos))/resolution_x)} mm')
         
-        return fig
+        return [fig, mass]
+
+    def fit_lorentz(self, x_pos:np.ndarray, flux:np.ndarray, res=100):
+        def find_nearest(array, value):
+            array = np.asarray(array)
+            idx = (np.abs(array - value)).argmin()
+            return array[idx]
+
+        max_point = int(len(x_pos)/2)
+        max = flux[max_point]
+        FWHM = abs(find_nearest(x_pos[x_pos<x_pos[max_point]], max/2) - find_nearest(x_pos[x_pos>x_pos[max_point]], max/2))
 
 
+        popt, pcov, id, mesg, ier  = curve_fit(self.lorentz, xdata=x_pos, ydata=flux, method='lm', p0=[max, x_pos[max_point], FWHM], xtol=1e-9, gtol=1e-9, full_output=True)
+        
 
-    def run(self):
-        for report in tqdm(self.reports):
+        centers = np.linspace(0, abs(np.min(x_pos)), res)
+        diffI = np.diff(centers, prepend=0)
+        last = abs(np.min(x_pos)) + abs(np.min(x_pos))/(res-1)*0.5
+        diffO = np.diff(centers, append=last)
+        y_fit = self.lorentz(centers, *popt)
+        y_fit = np.concatenate((y_fit[::-1], y_fit[1:]))
+        # fig = go.Figure(go.Scatter(x=centers, y=y_fit))
+        # fig.show()
+
+        Raw_Area = np.zeros_like(centers)
+        Raw_Area = np.pi * ((centers+diffO)**2 - (centers-diffI)**2)
+
+        Area =  np.concatenate((Raw_Area[::-1], Raw_Area[1:]))/2
+        Area[int(len(Area)/2)] *= 2
+        y_data = y_fit*Area*3600
+    
+        centers = np.concatenate((centers[::-1]*-1, centers[1:]))
+        return [centers, y_data]
+    
+    @staticmethod
+    def lorentz(x, A, xc, w):
+            return A*(w/(4*(x-xc)**2+w**2))
+
+    def run(self, debug=False):
+        av = []
+        for report in (self.reports):
             dfs = self.readReport(report)
             name = f'{os.path.dirname(report)}'[2:].replace('\\', '-')
-            try:
+            if debug:
+                print('\n' + name)
                 self.createGraphs(dfs, r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\PDA_extractor\export', f'{name}.html')
-            except: print(f'WARNING: {name}')
+            else:
+                try:
+                    print('\n' + name)
+                    liq = float(name.split('-')[2].split('_')[1].replace(',', '.'))
+                    mass = self.createGraphs(dfs, r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\PDA_extractor\export', f'{name}.html')
+                    av.append((liq-mass)/liq)
+                except: print(f'WARNING: {name}')
+        
+        arr = np.array(av)
+        print(f'Average: {np.mean(arr)}')
 
 
 

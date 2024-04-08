@@ -146,8 +146,8 @@ class PDA():
         fit_x = edges_middle[np.isfinite(mean_burstlensquared)]
         fit_y = mean_burstlensquared[np.isfinite(mean_burstlensquared)]
 
-        fit_x_raw = fit_x
-        fit_y_raw = fit_y
+        # fit_x_raw = fit_x
+        # fit_y_raw = fit_y
 
         anz_pro_bin = np.transpose(N)
         anz_pro_bin = anz_pro_bin[np.isfinite(mean_burstlensquared)]
@@ -156,8 +156,8 @@ class PDA():
         if sort_anz_pro_bin[-1] < bincount:
             bincount = np.mean(anz_pro_bin)
 
-        # fit_x = fit_x[anz_pro_bin >= bincount]
-        # fit_y = fit_y[anz_pro_bin >= bincount]
+        fit_x = fit_x[anz_pro_bin >= bincount]
+        fit_y = fit_y[anz_pro_bin >= bincount]
 
         powA, powB = createPowerFit(fit_x, fit_y)
         logA, logB = createLogFit(fit_x, fit_y)
@@ -174,9 +174,10 @@ class PDA():
         sorted_x = x[I]
         x_pow_max = np.max(sorted_x)
 
-        # df_push = pd.DataFrame(np.array([fit_x_raw, fit_y_raw, y_log_full, y_power_full]).transpose(), columns=['fit_x', 'fit_y', 'y_log', 'y_power'])
+        # df_push = pd.DataFrame(np.array([fit_x_raw, fit_y_raw, y_log_full, y_power_full, anz_pro_bin]).transpose(), columns=['fit_x', 'fit_y', 'y_log', 'y_power', 'count'])
         # df_push = df_push.set_index('fit_x', drop=True)
 
+        # df_push.to_clipboard(header=False, index=True)
         # fig = px.line(df_push, labels={'0':'fit_x_raw', 'value':'y'}, markers=True)
         # fig.show()
 
@@ -790,6 +791,9 @@ class PDA():
 
 if __name__ == '__main__':
 
+    path_ = r'H:\Duese_4\Wasser\2_100_68,4\1H'
+    pda = PDA(path_, 783.68, mode='py')
+    pda.run()
     std=False
     multi=False
     time=False
