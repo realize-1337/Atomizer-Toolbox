@@ -236,7 +236,10 @@ class UI(QDialog):
         self.ui.pbar.setMaximum(100)
         self.ui.pbar.setValue(100)
         self.ui.pbar.setFormat('Compile in progress. This will take a while. You can track the progress in the command window.')
-        self.run_batch_file(os.path.join(folder, "setup.bat"))
+        if self.ui.matlab.isChecked():
+            self.run_batch_file(os.path.join(folder, "setup.bat"))
+        else: 
+            self.run_batch_file(os.path.join(folder, 'setup_no_matlab.bat'))
                 
     def compileComplete(self):
         self.ui.pbar.setMaximum(100)

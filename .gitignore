@@ -158,3 +158,5 @@ cython_debug/
 /installer/resources
 /installer/certificate.pfx
 /test
+/sign
+/release.zip

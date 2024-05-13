@@ -11,7 +11,7 @@ print(dir_path)
 
 FILE = f'{os.path.join(dir_path, "main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.68.4'
+VERSION = '1.69.0'
 AUTHOR = 'David Maerker'
 
 
@@ -33,7 +33,7 @@ makeSpec = [
     "--onedir",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
     "--noconsole", 
-    "--noconfirm", 
+    # "--noconfirm", 
     # "--windowed",
     "--name", f"{PROJECTNAME}",
     "--icon", f"{os.path.join(dir_path, 'assets/ATT_LOGO.ico')}",

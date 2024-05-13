@@ -2,7 +2,7 @@ import pyinstaller_versionfile
 
 pyinstaller_versionfile.create_versionfile(
     output_file="version_sign/versionfile_installer.txt",
-    version="1.2.0.0",
+    version="1.3.0.0",
     company_name="David Maerker",
     file_description="Installer for Atomiuzer ToolBox Software",
     internal_name="Atomizer Toolbox",

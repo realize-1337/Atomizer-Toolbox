@@ -33,7 +33,7 @@ import logging
 UI_FILE = os.path.abspath('GUI\mainWindow.ui')
 UI_FILE = 'GUI\mainWindow.ui'
 PY_FILE = 'GUI\mainWindow.py'
-subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 # The subprocess is used to compile the .ui file to a .py file. 
 # This is only neccessary after changes in the .ui file with qt designer or qt creator, make sure to comment it out before compiling
 from GUI.mainWindow import Ui_MainWindow as main

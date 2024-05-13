@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(575, 311)
+        Dialog.resize(578, 311)
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
         self.buttonBox = QtWidgets.QDialogButtonBox(parent=Dialog)
@@ -51,6 +51,9 @@ class Ui_Dialog(object):
         self.startmenuShortcut.setChecked(True)
         self.startmenuShortcut.setObjectName("startmenuShortcut")
         self.horizontalLayout.addWidget(self.startmenuShortcut)
+        self.matlab = QtWidgets.QCheckBox(parent=Dialog)
+        self.matlab.setObjectName("matlab")
+        self.horizontalLayout.addWidget(self.matlab)
         self.gridLayout.addLayout(self.horizontalLayout, 2, 0, 1, 3)
         self.output_textedit = QtWidgets.QPlainTextEdit(parent=Dialog)
         self.output_textedit.setReadOnly(True)
@@ -70,6 +73,7 @@ class Ui_Dialog(object):
         self.label_2.setText(_translate("Dialog", "Installation Path"))
         self.desktopShortcut.setText(_translate("Dialog", "Create Desktop Shortcut"))
         self.startmenuShortcut.setText(_translate("Dialog", "Create Startmenu Shortcut"))
+        self.matlab.setText(_translate("Dialog", "Install Matlab Functions (Matlab R2023b required)"))
 
 
 if __name__ == "__main__":
