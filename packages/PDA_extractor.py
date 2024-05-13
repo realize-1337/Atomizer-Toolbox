@@ -90,31 +90,39 @@ class PDA_extractor():
         
         fig, mass = self.createMap(x_data, flux_y_data, name=exportName, z_name='Mass fraction in each annulus in %')
         fig.write_html(os.path.join(exportPath, 'maps', exportName))
+        
+        fig, mass = self.createMap(x_data, flux_y_data, name=exportName, z_name='Cumulative mass fraction within the diameter', mode='cumulative')
+        fig.write_html(os.path.join(exportPath, 'maps_cumulative', exportName))
 
         return mass
 
-    def createMap(self, x_pos:np.ndarray, flux:np.ndarray, percentageWidth:float = 10, name='Normalized mass distribution', z_name='Qualitative mass'):
+    def createMap(self, x_pos:np.ndarray, flux:np.ndarray, percentageWidth:float = 0.5, name='Normalized mass distribution', z_name='Qualitative mass', mode='regular', drawCricles=False):
         
         resolution_x = int(1/percentageWidth*100)
         x_data, z_data = self.fit_lorentz(x_pos, flux, resolution_x)
 
         fineZ = z_data[x_data<=0]
+        mass = np.sum(fineZ)  
+        if mode == 'cumulative':
+            fineZ = np.cumsum(fineZ[::-1])[::-1]
+            mass = np.max(fineZ)
         fineX = x_data[x_data<=0]
-        # x = np.copy(x_data[x_data<=0])
-        # z = z_data[:len(x)]
-        # # m = abs(np.min(x_data))
-        # # fineX = np.arange(np.min(x), np.max(x)+resolution_x, resolution_x)
-        # fineX = np.linspace(np.min(x), np.max(x), resolution_x)
+        if drawCricles:
+            circles = []
         ang = np.linspace(0, 0.5*np.pi, len(fineX))
-        # fineZ = np.interp(fineX, x, z)
-        posCord = np.zeros((len(fineX),len(ang), 3))
-        mass = np.sum(fineZ)        
+        posCord = np.zeros((len(fineX),len(ang), 3))     
         
         for i in range(len(fineX)):
+            circ = np.zeros((len(ang),3))
             for j in range(len(ang)):
                 posCord[i,j,0] = abs(np.cos(ang[j]))*fineX[i]
                 posCord[i,j,1] = abs(np.sin(ang[j])*fineX[i])
                 posCord[i,j,2] = fineZ[i]
+                circ[j,0] = abs(np.cos(ang[j]))*fineX[i]
+                circ[j,1] = abs(np.sin(ang[j])*fineX[i])
+                circ[j,2] = fineZ[i]
+            if drawCricles: circles.append(circ)
+
         
         total = len(fineX)**2
         arr2d = posCord.reshape((total, 3))
@@ -132,18 +140,83 @@ class PDA_extractor():
         arr2d[:, 2] /= mass
         arr2d[:, 2] *= 100
         # print(vol)
-        fig = go.Figure(go.Mesh3d(x=arr2d[:, 0].flatten(), y=arr2d[:, 1].flatten(), z=arr2d[:, 2].flatten(),
-                                   colorscale='rainbow',
-                                   intensity=arr2d[:, 2].flatten(), 
-                                   opacity=0.5))
-        
-        fig.update_layout(scene=dict(xaxis=dict(range=[-100, 100]),
-                              yaxis=dict(range=[-100, 100]),
-                              zaxis_title=f'{z_name} with annulus of {"%.1f" %(1/resolution_x*100/2)} % of full width', 
-                              xaxis_title='x Position in mm', 
-                              yaxis_title='y Position in mm'), 
-                              title=f'{name} Spray width: {"%.2f" %(abs(np.min(x_pos))*2)} mm. Annulus width = {"%.2f" %(abs(np.min(x_pos))/resolution_x)} mm')
-        
+        # df = pd.DataFrame(arr2d)
+        # df.to_excel(r'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\PDA_extractor\test.xlsx')
+        if mode != 'cumulative':
+            fig = go.Figure(go.Mesh3d(x=arr2d[:, 0].flatten(), y=arr2d[:, 1].flatten(), z=arr2d[:, 2].flatten(),
+                                    colorscale='rainbow',
+                                    intensity=arr2d[:, 2].flatten(), 
+                                    opacity=0.5))
+                        
+            fig.update_layout(scene=dict(xaxis=dict(range=[-100, 100]),
+                                yaxis=dict(range=[-100, 100]),
+                                zaxis_title=f'{z_name} with annulus of {"%.1f" %(1/resolution_x*100/2)} % of full width', 
+                                xaxis_title='x Position in mm', 
+                                yaxis_title='y Position in mm'), 
+                                title=f'{name} Spray width: {"%.2f" %(abs(np.min(x_pos))*2)} mm. Annulus width = {"%.2f" %(abs(np.min(x_pos))/resolution_x)} mm')
+
+            if drawCricles:
+                for circ in circles:
+                    fig.add_trace(go.Scatter3d(
+                        x=circ[:,0],
+                        y=circ[:,1],
+                        z=circ[:,2]/mass*100,
+                        mode='lines',
+                        marker=dict(
+                            color='black',  # You can adjust the color as needed
+                            opacity=0.2,    # You can adjust the opacity as needed
+                            line=dict(width=0)  # Remove marker border
+                        ),
+                        showlegend=False
+                    ))
+                    fig.add_trace(go.Scatter3d(
+                        x=circ[:,0]*-1,
+                        y=circ[:,1],
+                        z=circ[:,2]/mass*100,
+                        mode='lines',
+                        marker=dict(
+                            color='black',  # You can adjust the color as needed
+                            opacity=0.2,    # You can adjust the opacity as needed
+                            line=dict(width=0)  # Remove marker border
+                        ),
+                        showlegend=False
+                    ))
+                    fig.add_trace(go.Scatter3d(
+                        x=circ[:,0],
+                        y=circ[:,1]*-1,
+                        z=circ[:,2]/mass*100,
+                        mode='lines',
+                        marker=dict(
+                            color='black',  # You can adjust the color as needed
+                            opacity=0.2,    # You can adjust the opacity as needed
+                            line=dict(width=0)  # Remove marker border
+                        ),
+                        showlegend=False
+                    ))
+                    fig.add_trace(go.Scatter3d(
+                        x=circ[:,0]*-1,
+                        y=circ[:,1]*-1,
+                        z=circ[:,2]/mass*100,
+                        mode='lines',
+                        marker=dict(
+                            color='black',  # You can adjust the color as needed
+                            opacity=0.2,    # You can adjust the opacity as needed
+                            line=dict(width=0)  # Remove marker border
+                        ),
+                        showlegend=False
+                    ))
+        else:
+            fig = go.Figure(go.Mesh3d(x=arr2d[:, 0].flatten(), y=arr2d[:, 1].flatten(), z=arr2d[:, 2].flatten(),
+                                    colorscale='rainbow',
+                                    intensity=arr2d[:, 2].flatten(), 
+                                    opacity=0.5))
+            
+            fig.update_layout(scene=dict(xaxis=dict(range=[-100, 100]),
+                                yaxis=dict(range=[-100, 100]),
+                                zaxis_title=f'{z_name}', 
+                                xaxis_title='x Position in mm', 
+                                yaxis_title='y Position in mm'), 
+                                title=f'{name} Cumulative mass fraction within the diameter')
         return [fig, mass]
 
     def fit_lorentz(self, x_pos:np.ndarray, flux:np.ndarray, res=100):
@@ -160,7 +233,11 @@ class PDA_extractor():
         popt, pcov, id, mesg, ier  = curve_fit(self.lorentz, xdata=x_pos, ydata=flux, method='lm', p0=[max, x_pos[max_point], FWHM], xtol=1e-9, gtol=1e-9, full_output=True)
         
 
+        borders = np.linspace(0, abs(np.min(x_pos)), res)
         centers = np.linspace(0, abs(np.min(x_pos)), res)
+        # diff = np.diff(borders)
+        # borders = borders[1:]
+        # centers = borders-diff/2
         diffI = np.diff(centers, prepend=0)
         last = abs(np.min(x_pos)) + abs(np.min(x_pos))/(res-1)*0.5
         diffO = np.diff(centers, append=last)

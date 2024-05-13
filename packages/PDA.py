@@ -707,6 +707,8 @@ class PDA():
                 pos.append(x)
                 totalTime.append(np.max(df['AT'])/1000)
                 totalCount.append(len(df))
+                export = pd.DataFrame(np.concatenate((bin_counts, mean_size), axis=1))
+                export.to_excel(rf'C:\Users\david\Documents\Dev\Atomizer-Toolbox\test\PDA_ex_vis_20\vel_{x}_mm.xlsx')
 
                 # fft = True
                 # if fft == True:
@@ -796,15 +798,19 @@ if __name__ == '__main__':
     time=False
     size=False
     multi_size=True
-    width = 7
-    mode = 'd32'
+    width = 15
+    mode = 'vel'
 
-    path_ = r'H:\Duese_3\Wasser\2_11,2_69,9\2H'
-    pda = PDA(path=path_, upperCutOff=244.26)
+    path_ = r'H:\Duese_4\Wasser\2_20_68,4\VP'
+    pda = PDA(path=path_, upperCutOff=444.86)
     pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
     path_ = r'H:\Duese_4\Wasser\2_45_68,4\2H'
     pda = PDA(path=path_, upperCutOff=526.52)
+    pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
+
+    path_ = r'H:\Duese_3\Wasser\2_11,2_69,9\2H'
+    pda = PDA(path=path_, upperCutOff=244.26)
     pda.plot(bin_width=width, show_multi=multi, show_std=std, show_totalTime=time, show_size=size, multi_size=multi_size, mode=mode)
 
     path_ = r'H:\Duese_3\100\2_60_69,9\1H'

@@ -30,7 +30,7 @@ for contour in contours:
         circularity = (4 * 3.1416 * area) / (perimeter * perimeter)
         
         # Define circularity threshold (adjust as needed)
-        circularity_threshold = 0.85
+        circularity_threshold = 0.9
         
         if circularity > circularity_threshold:
             round_contours.append(contour)

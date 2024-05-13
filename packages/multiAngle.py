@@ -100,9 +100,6 @@ class SprayAnglePP():
             trigger = True
             flm_preset = [widget.leftPoint, widget.rightPoint]
         
-        flm_preset = [(913, 10), (1156, 19)]
-        trigger = True
-
         flm = np.zeros(2, dtype=np.uint16)
         angles = np.zeros((4, 2))
         pos = np.zeros((4, 2), dtype=np.uint16)
@@ -210,8 +207,6 @@ class SprayAnglePP():
             trigger = True
             flm_preset = [widget.leftPoint, widget.rightPoint]
 
-        flm_preset = [(913, 10), (1156, 19)]
-        trigger = True
         if not len(fig.axes) > 1:
             fig.colorbar(heatmap, format='%d%%', label='Percentage of Spray Coverage')
         for row, color in enumerate(colors):

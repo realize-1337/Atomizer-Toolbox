@@ -42,3 +42,8 @@ def IR(rho1, vel1, a1, rho2, vel2, a2):
     '''
     return (impuls(rho1, vel1, a1)/impuls(rho2, vel2, a2))
 
+def We_GLR(rho, sigma, Lc, GLI, GLO, v_i, v_o):
+    '''
+    Returns GLR weighted Weber number
+    '''
+    return (rho*Lc/sigma*(GLI*v_i**2+GLO*v_o**2))

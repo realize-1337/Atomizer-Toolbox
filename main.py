@@ -20,18 +20,20 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import QRunnable, QThreadPool, pyqtSignal, QObject, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPen, QColor
 from openpyxl import load_workbook
+from openpyxl.comments import Comment
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import packages.dimLess as dL
 from packages.calculator import Calculator as ca
 import packages.multiAngle as mA
+import packages.patternator_rework as pat
 from packages.createMatlabScripts import MLS
 from pyfluids import Fluid, FluidsList, Input
 import logging
 UI_FILE = os.path.abspath('GUI\mainWindow.ui')
 UI_FILE = 'GUI\mainWindow.ui'
 PY_FILE = 'GUI\mainWindow.py'
-# subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
+subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
 # The subprocess is used to compile the .ui file to a .py file. 
 # This is only neccessary after changes in the .ui file with qt designer or qt creator, make sure to comment it out before compiling
 from GUI.mainWindow import Ui_MainWindow as main
@@ -469,10 +471,6 @@ class UI(QMainWindow):
         self.ui.prevPic.clicked.connect(self.prevPic)
         self.ui.plus10.clicked.connect(self.next10Pic)
         self.ui.minus10.clicked.connect(self.prev10Pic)
-        self.ui.LLL.clicked.connect(self.moveLLL)
-        self.ui.LLR.clicked.connect(self.moveLLR)
-        self.ui.RLL.clicked.connect(self.moveRLL)
-        self.ui.RLR.clicked.connect(self.moveRLR)
         self.ui.lineDown.clicked.connect(self.moveLineDown)
         self.ui.lineUp.clicked.connect(self.moveLineUp)
         self.ui.line10Down.clicked.connect(self.moveLine10Down)
@@ -501,6 +499,8 @@ class UI(QMainWindow):
         self.ui.PDA_vel.setDisabled(True)
         self.ui.PDA_D32_mean.setDisabled(True)
         self.ui.PDA_Vel_mean.setDisabled(True)
+        self.ui.runPat.clicked.connect(self.patternatorRun)
+        self.ui.createExcel.clicked.connect(self.createExcel)
         # ---- End of button functions ----
         self.currentPDAFolder = None
         self.settings_dict = {}
@@ -513,6 +513,7 @@ class UI(QMainWindow):
         self.loadStyles()
         self.checkMatlabInstalled()
         self.sprayAngleInit()
+        self.patternatorInit()
         self.ui.angleRun.clicked.connect(self.angleRun)
 
 # ---- Annular atomizer calculator from here ----
@@ -677,47 +678,48 @@ class UI(QMainWindow):
         '''
         Initialize list of labels of the calculator to be used for filling them with values
         '''
-        resutlLabels = []
-        resutlLabels.append(self.ui.innerMFR)
-        resutlLabels.append(self.ui.sheetMFR)
-        resutlLabels.append(self.ui.outerMFR)
+        resultLabels = []
+        resultLabels.append(self.ui.innerMFR)
+        resultLabels.append(self.ui.sheetMFR)
+        resultLabels.append(self.ui.outerMFR)
 
-        resutlLabels.append(self.ui.innerVel)
-        resutlLabels.append(self.ui.sheetVel)
-        resutlLabels.append(self.ui.outerVel)
+        resultLabels.append(self.ui.innerVel)
+        resultLabels.append(self.ui.sheetVel)
+        resultLabels.append(self.ui.outerVel)
 
-        resutlLabels.append(self.ui.innerMom_flux)
-        resutlLabels.append(self.ui.sheetMom_flux)
-        resutlLabels.append(self.ui.outerMom_flux)
+        resultLabels.append(self.ui.innerMom_flux)
+        resultLabels.append(self.ui.sheetMom_flux)
+        resultLabels.append(self.ui.outerMom_flux)
 
-        resutlLabels.append(self.ui.innerMom)
-        resutlLabels.append(self.ui.sheetMom)
-        resutlLabels.append(self.ui.outerMom)
+        resultLabels.append(self.ui.innerMom)
+        resultLabels.append(self.ui.sheetMom)
+        resultLabels.append(self.ui.outerMom)
 
-        resutlLabels.append(self.ui.innerRe)
-        resutlLabels.append(self.ui.innerWe)
-        resutlLabels.append(self.ui.innerOh)
+        resultLabels.append(self.ui.innerRe)
+        resultLabels.append(self.ui.innerWe)
+        resultLabels.append(self.ui.innerOh)
         self.ui.innerOh.setHidden(True)
 
-        resutlLabels.append(self.ui.sheetRe)
-        resutlLabels.append(self.ui.sheetWe)
-        resutlLabels.append(self.ui.sheetOh)
+        resultLabels.append(self.ui.sheetRe)
+        resultLabels.append(self.ui.sheetWe)
+        resultLabels.append(self.ui.sheetOh)
         self.ui.outerOh.setHidden(True)
     
-        resutlLabels.append(self.ui.outerRe)
-        resutlLabels.append(self.ui.outerWe)
-        resutlLabels.append(self.ui.outerOh)
+        resultLabels.append(self.ui.outerRe)
+        resultLabels.append(self.ui.outerWe)
+        resultLabels.append(self.ui.outerOh)
         
-        resutlLabels.append(self.ui.totalGLR)
-        resutlLabels.append(self.ui.totalMom)
-        resutlLabels.append(self.ui.innerSheetGLR)
-        resutlLabels.append(self.ui.outerSheetGLR)
-        resutlLabels.append(self.ui.innerSheetMom)
-        resutlLabels.append(self.ui.outerSheetMom)
+        resultLabels.append(self.ui.totalGLR)
+        resultLabels.append(self.ui.totalMom)
+        resultLabels.append(self.ui.innerSheetGLR)
+        resultLabels.append(self.ui.outerSheetGLR)
+        resultLabels.append(self.ui.innerSheetMom)
+        resultLabels.append(self.ui.outerSheetMom)
+        resultLabels.append(self.ui.weberGLR)
 
-        for label in resutlLabels:
+        for label in resultLabels:
             label.setText('-')
-        return resutlLabels
+        return resultLabels
 
     # readValues(self) is important and handles the most tasks
     def readValues(self)-> None:
@@ -921,6 +923,11 @@ class UI(QMainWindow):
         self.sheetDimless.append(dL.Oh(visc[self.streamValues[1][5]], rhos[self.streamValues[1][5]], self.Lc[1], sigmas[self.streamValues[1][5]]))
         self.outerDimless.append(dL.Oh(visc[self.streamValues[2][5]], rhos[self.streamValues[2][5]], self.Lc[2], sigmas[self.streamValues[2][5]]))
 
+        try:
+            self.We_GLR = dL.We_GLR(rhos[self.streamValues[1][5]], sigmas[self.streamValues[1][5]], self.Lc[1], self.streamValues[0][1]/self.streamValues[1][1], 
+                                    self.streamValues[2][1]/self.streamValues[1][1], self.streamValues[0][2], self.streamValues[2][2])
+        except: self.We_GLR = 0
+
         def ReWeOhDF()->pd.DataFrame:
             '''
             Creates a dict of dataframes with diml. numbers for each stream
@@ -929,7 +936,8 @@ class UI(QMainWindow):
                 'type': ['inner Stream', 'middle Stream', 'outer Stream'], 
                 'Reynolds': [self.innerDimless[0], self.sheetDimless[0], self.outerDimless[0]],
                 'Weber': [self.innerDimless[1], self.sheetDimless[1], self.outerDimless[1]],
-                'Ohnesorge': [self.innerDimless[2], self.sheetDimless[2], self.outerDimless[2]]
+                'Ohnesorge': [self.innerDimless[2], self.sheetDimless[2], self.outerDimless[2]],
+                'Weber GLR': [None, self.We_GLR, None]
             }
 
             return pd.DataFrame(dict).set_index('type')
@@ -960,6 +968,11 @@ class UI(QMainWindow):
 
         for i in range(len(strings)):
             self.resultLabels[12+i].setText(strings[i])
+        
+        if self.We_GLR > 1000:
+            self.resultLabels[27].setText("%.3e" % self.We_GLR)
+        else: 
+            self.resultLabels[27].setText("%.2f" % self.We_GLR)
 
         # GLR and momentum flux calculation 
 
@@ -985,27 +998,33 @@ class UI(QMainWindow):
             if self.streamValues[0][-1] == 'gas' and self.streamValues[1][-1] == 'liquid' and self.streamValues[2][-1] == 'gas':
                 self.GLI = self.streamValues[0][0]/self.streamValues[1][0]
                 self.GLO = self.streamValues[2][0]/self.streamValues[1][0]
-                self.mom_i = self.streamValues[0][3]/self.streamValues[1][3]
-                self.mom_o = self.streamValues[2][3]/self.streamValues[1][3]
+                self.mom_flux_i = self.streamValues[0][3]/self.streamValues[1][3]
+                self.mom_flux_o = self.streamValues[2][3]/self.streamValues[1][3]
+                self.mom_i = self.streamValues[0][4]/self.streamValues[1][4]
+                self.mom_o = self.streamValues[2][4]/self.streamValues[1][4]
+                self.mom_tot = (self.streamValues[0][4]+self.streamValues[2][4])/self.streamValues[1][4]
 
                 dict = {
                     'GLR': [self.GLR_total],
                     'GLI': [self.GLI],
                     'GLO': [self.GLO],
+                    'Total Mometum Ratio J': [self.mom_tot],
+                    'Inner Mometum Ratio J_i': [self.mom_i],
+                    'Outer Mometum Ratio J_o': [self.mom_o],
                     'Momentum Flux Ratio': [self.mom_flux_total],
-                    'Inner Momentum Flux Ratio': [self.mom_i],
-                    'Outer Momentum Flux Ratio': [self.mom_o],
+                    'Inner Momentum Flux Ratio': [self.mom_flux_i],
+                    'Outer Momentum Flux Ratio': [self.mom_flux_o],
                     'Total Gas Momentum [kg m/s²]': [self.streamValues[0][4]+self.streamValues[2][4]]
                 }
                 self.RatiosDf = pd.DataFrame(dict)
             else: 
                 self.GLI = 0
                 self.GLO = 0
-                self.mom_i = 0
-                self.mom_o = 0
+                self.mom_flux_i = 0
+                self.mom_flux_o = 0
                   
             self.resultLabels[21].setText("%.2f" % self.GLR_total)
-            self.resultLabels[22].setText("%.2f" % self.mom_flux_total)
+            self.resultLabels[22].setText("%.2f" % self.mom_tot)
             self.resultLabels[23].setText("%.2f" % self.GLI)
             self.resultLabels[24].setText("%.2f" % self.GLO)
             self.resultLabels[25].setText("%.2f" % self.mom_i)
@@ -1018,11 +1037,15 @@ class UI(QMainWindow):
             self.resultLabels[24].setText('Error')
             self.resultLabels[25].setText('Error')
             self.resultLabels[26].setText('Error')
+            
 
             dict = {
                     'GLR': ['--'],
                     'GLI': ['--'],
                     'GLO': ['--'],
+                    'Total Mometum Ratio J': ['--'],
+                    'Inner Mometum Ratio J_i': ['--'],
+                    'Outer Mometum Ratio J_o': ['--'],
                     'Momentum Flux Ratio': ['--'],
                     'Inner Momentum Flux Ratio': ['--'],
                     'Outer Momentum Flux Ratio': ['--'],
@@ -1076,7 +1099,13 @@ class UI(QMainWindow):
                     'PDA_full_export': True,
                     'PDA_diagrams': 'False',
                     'SpA_norm': 'True',
-                    'SpA_maxW': 'True'
+                    'SpA_maxW': 'False',
+                    'patChan': 114, 
+                    'patA': 5.5, 
+                    'patB': 5.5, 
+                    'patH': 0.35, 
+                    'patOpTotal': 50, 
+                    'patOp': 3, 
                 }
                 if not os.path.exists(os.path.join(self.path, 'global')): os.mkdir(os.path.join(self.path, 'global'))
                 if not os.path.exists(os.path.join(self.path, 'global', 'share')):
@@ -1558,7 +1587,7 @@ class UI(QMainWindow):
         scene = QGraphicsScene()
         id = self.ui.picID.value()
         pixmap = QPixmap(os.path.join(self.path, 'global', 'currentCine', f'frame_{"%04d" % id}.jpeg'))
-        
+
         if not pixmap.isNull():
             item = scene.addPixmap(pixmap)
             self.ui.graphicsView.setScene(scene)
@@ -1573,8 +1602,8 @@ class UI(QMainWindow):
         self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
         self.line.setZValue(1) 
 
-        self.line_x1 = 400
-        self.line_x2 = pixmap.width() - 400
+        self.line_x1 = 0
+        self.line_x2 = pixmap.width()
         self.linex1 = scene.addLine(self.line_x1, 0, self.line_x1, pixmap.height(), pen)
         self.linex2 = scene.addLine(self.line_x2, 0, self.line_x2, pixmap.height(), pen)
         self.linex1.setZValue(1)
@@ -1599,12 +1628,8 @@ class UI(QMainWindow):
         self.line = scene.addLine(0, self.line_y, pixmap.width(), 100, pen)
         self.line.setZValue(1) 
 
-        self.line_x1 = 400
-        self.line_x2 = pixmap.width() - 400
-        self.linex1 = scene.addLine(self.line_x1, 0, self.line_x1, pixmap.height(), pen)
-        self.linex2 = scene.addLine(self.line_x2, 0, self.line_x2, pixmap.height(), pen)
-        self.linex1.setZValue(1)
-        self.linex2.setZValue(1)
+        self.line_x1 = 0
+        self.line_x2 = pixmap.width()
 
     def moveLineUp(self):
         self.line_y -= 1
@@ -1621,22 +1646,6 @@ class UI(QMainWindow):
     def moveLine10Down(self):
         self.line_y += 10
         self.line.setLine(0, self.line_y, self.line.line().x2(), self.line_y)
-
-    def moveLLL(self):
-        self.line_x1 -= 10
-        self.linex1.setLine(self.line_x1, 0, self.line_x1, self.linex1.line().y2())
-    
-    def moveLLR(self):
-        self.line_x1 += 10
-        self.linex1.setLine(self.line_x1, 0, self.line_x1, self.linex1.line().y2())
-    
-    def moveRLL(self):
-        self.line_x2 -= 10
-        self.linex2.setLine(self.line_x2, 0, self.line_x2, self.linex2.line().y2())
-    
-    def moveRLR(self):
-        self.line_x2 += 10
-        self.linex2.setLine(self.line_x2, 0, self.line_x2, self.linex2.line().y2())
 
     def loadInput(self):
         if not self.lastFolder:
@@ -1724,15 +1733,16 @@ class UI(QMainWindow):
         i = 0
         # ref = r'M:\Duese_4\Wasser\Oben_fern_ref.tif'
         ref = self.ui.currentRef.text()
-        x_start = int(self.linex1.line().x1())
-        x_end = int(self.linex2.line().x1())
+        x_start = int(self.line_x1)
+        x_end = int(self.line_x2)
         y = int(self.line.line().y1())
         print(x_start, x_end, y)
         self.ui.cineLoadBar.setMaximum(len(files))
         self.ui.cineLoadBar.setValue(0)
         self.ui.clearRef.setDisabled(True)
         try:
-            refImage = cv2.imread(os.path.normpath(rf'{ref}', cv2.IMREAD_GRAYSCALE))
+            if ref == 'Select Reference File': raise ValueError
+            refImage = cv2.imread(os.path.normpath(rf'{ref}'), cv2.IMREAD_GRAYSCALE)
         except:
             QMessageBox.information(self, 'Error', 'Please select reference image')
             return
@@ -2161,7 +2171,7 @@ class UI(QMainWindow):
         fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
                                           'value':'D32 [µm]'}, markers=True)
         fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
-        if mode == 'show':
+        if mode == 'show' or mode == False:
             fig.show()
         else: return fig
 
@@ -2172,11 +2182,11 @@ class UI(QMainWindow):
         fig = px.line(df_push, labels={'0':'Hozizontal Position [mm]',
                                           'value':'Axial Velocity [m/s]'}, markers=True)
         fig.update_layout(yaxis=dict(range=[0, df_push[self.names[0]].max()*1.1]))
-        if mode == 'show':
+        if mode == 'show' or mode == False:
             fig.show()
         else: return fig
 
-    def createD32MeanGraph(self, mode='show'):
+    def createD32MeanGraph(self, mode:str='show'):
         df = self.createDataFramePDA('D32')
         df = df.reindex(sorted(df.columns), axis=1)
         rowMeans = df.mean(axis=1)
@@ -2189,7 +2199,7 @@ class UI(QMainWindow):
         fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
                                           'value':'Mean D32 [µm]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
-        if mode == 'show':
+        if mode == 'show' or mode == False:
             fig.show()
         else: return fig
 
@@ -2206,7 +2216,7 @@ class UI(QMainWindow):
         fig = px.line(df['mean'], labels={'0':'Hozizontal Position [mm]',
                                           'value':'Mean Axial Velocity [m/s]'}, error_y=df['pos'], error_y_minus=df['neg'], markers=True)
         fig.update_layout(yaxis=dict(range=[0, df[self.names[0]].max()*1.1]))
-        if mode == 'show':
+        if mode == 'show' or mode == False:
             fig.show()
         else: return fig
 
@@ -2475,6 +2485,97 @@ class UI(QMainWindow):
             self.settings.set('SpA_norm', True)
         else: self.settings.set('SpA_norm', False)
 
+    # Patternator
+
+    def patternatorInit(self):
+        try: self.ui.pat_chan.setValue(self.settings.get('patChan'))
+        except: pass
+
+        try: self.ui.pat_a.setValue(self.settings.get('patA'))
+        except: pass
+
+        try: self.ui.pat_b.setValue(self.settings.get('patB'))
+        except: pass
+
+        try: self.ui.pat_h.setValue(self.settings.get('patH'))
+        except: pass
+        
+        try: self.ui.pat_op_total.setValue(self.settings.get('patOpTotal'))
+        except: pass
+        
+        try: self.ui.pat_op.setValue(self.settings.get('patOp'))
+        except: pass
+
+        self.ui.pat_chan.valueChanged.connect(self.patternatorSaveSettings)
+        self.ui.pat_a.valueChanged.connect(self.patternatorSaveSettings)
+        self.ui.pat_b.valueChanged.connect(self.patternatorSaveSettings)
+        self.ui.pat_h.valueChanged.connect(self.patternatorSaveSettings)
+        self.ui.pat_op_total.valueChanged.connect(self.patternatorSaveSettings)
+        self.ui.pat_op.valueChanged.connect(self.patternatorSaveSettings)
+
+    def patternatorSaveSettings(self):
+        try: self.settings.set('patChan', self.ui.pat_chan.value())
+        except: pass
+
+        try: self.settings.set('patA', self.ui.pat_a.value())
+        except: pass
+
+        try: self.settings.set('patB', self.ui.pat_b.value())
+        except: pass
+
+        try: self.settings.set('patH', self.ui.pat_h.value())
+        except: pass
+
+        try: self.settings.set('patOpTotal', self.ui.pat_op_total.value())
+        except: pass
+
+        try: self.settings.set('patOp', self.ui.pat_op.value())
+        except: pass
+
+    def createExcel(self):
+        filename, null = QFileDialog.getSaveFileName(self, directory=os.path.join(self.path, 'patternator.xlsx'), filter='*.xlsx')
+        if filename:
+            try:
+                pat.createExcel(filename, cols=self.ui.pat_chan.value(), tests=self.ui.pat_op_total.value(), steps=self.ui.pat_op.value())
+            except:
+                QMessageBox.critical(self, 'Error', 'Error during creation of the Excel template.')
+
+    def patternatorRun(self):
+
+        def setTooltips(sheet, tt, row=1, col=1):
+            for i, t in enumerate(tt):
+                sheet.cell(row, col+i).comment = Comment(t, 'DM')
+        self.ui.runPat.setText('Running')
+        self.ui.runPat.setDisabled(True)
+        filename, null = QFileDialog.getOpenFileName(self, directory=self.path, filter='*.xlsx')
+        if filename:
+            try:
+                patternator = pat.pat(filename, self.ui.pat_a.value(), self.ui.pat_b.value(), self.ui.pat_h.value())
+                
+                df = patternator.run()
+                saveLoc, null = QFileDialog.getSaveFileName(self, directory=os.path.join(self.path, 'export_patternator.xlsx'), filter='*.xlsx')
+                if saveLoc.endswith('.xlsx'):
+                    df.to_excel(saveLoc)
+                    wb = load_workbook(saveLoc)
+                    ws = wb.active
+                    tooltips = ['Liquid sheet thickness or nozzle name', 'Inner gas mass flow rate [kg h-1]', 'Liquid mass flow rate (important!) [kg h-1]', 
+                    'Outer gas mass flow rate [kg h-1]', 'Liquid mass density (important!) [kg m-3]', 'Measuring time [s]', 'Width of PDA measurement (optional) [mm]',
+                    'Width of the patternator measurement [mm]', 
+                    'Relative mass loss towards the outside of the patternator measurement width [%]',
+                    'Absolute mass loss towards the outside of the patternator measurement width [kg h-1]',
+                    'Relative mass loss towards the outside of the patternator measurement width using the Lorentz-fitted fluxes [%]',
+                    'Relative mass loss towards the outside of the PDA measurement width using the Lorentz-fitted fluxes [%]',
+                    'R^2 Value of the Lorentz-Fit']
+
+                    setTooltips(ws, tooltips, 1, 2)
+                    wb.save(saveLoc)
+                else: raise PermissionError
+            except: 
+                QMessageBox.critical(self, 'Error', 'Error during creation handling of the data.')
+            
+            self.ui.runPat.setText('Select Measurement Data')
+            self.ui.runPat.setEnabled(True)
+
 def show_error_popup():
     # app = QApplication([])
     error_popup = QMessageBox()
@@ -2509,7 +2610,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    sys.excepthook = excepthook
+    # sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
