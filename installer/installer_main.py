@@ -1,5 +1,5 @@
-LATEST_URL = r'https://github.com/realize-1337/Atomizer-Toolbox/releases/latest/download/release.zip'
-LATEST_SC = 'https://api.github.com/repos/realize-1337/Atomizer-Toolbox/releases/latest'
+LATEST_URL = r'https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/raw/d936e9d19f785d4b333d53fa1d04b3ebdfa0f1c6/release.zip?inline=false'
+LATEST_SC = 'https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/releases/permalink/latest/Atomizer-Toolbox-1.69.0.zip'
 
 import os
 import sys
