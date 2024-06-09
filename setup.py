@@ -1,9 +1,15 @@
 import subprocess
 import os
 import sys
-import packages.editMatlabEngine as edit
 import json
 import shutil
+# Edit matlab engine arch file, which otherwise would cause issues
+try:
+    import matlab.engine
+    import packages.editMatlabEngine as edit
+    edit.edit()
+except:
+    pass
 sys.setrecursionlimit(sys.getrecursionlimit()*5)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -11,7 +17,7 @@ print(dir_path)
 
 FILE = f'{os.path.join(dir_path, "main.py")}'
 PROJECTNAME = 'AtomizerToolbox'
-VERSION = '1.69.0'
+VERSION = '1.69'
 AUTHOR = 'David Maerker'
 
 
@@ -20,11 +26,6 @@ versionInfo = os.path.join(dir_path, 'assets/versioninfo.json')
 with open(versionInfo, 'w') as file:
     json.dump(settings, file, indent=4)
 
-# Edit matlab engine arch file, which otherwise would cause issues
-try:
-    edit.edit()
-except:
-    raise ModuleNotFoundError()
 
 # Führe PyInstaller aus
 print("Running PyInstaller ...")

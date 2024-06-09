@@ -1,5 +1,6 @@
-LATEST_URL = r'https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/raw/d936e9d19f785d4b333d53fa1d04b3ebdfa0f1c6/release.zip?inline=false'
-LATEST_SC = 'https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/releases/permalink/latest/Atomizer-Toolbox-1.69.0.zip'
+LATEST_URL = r'https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/raw/be07017afca37614b15a9fadd5fec45630c879e3/release.zip?inline=false'
+TAG_NAME = '1.69'
+LATEST_SC = f'https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/archive/{TAG_NAME}/Atomizer-Toolbox-{TAG_NAME}.zip'
 
 import os
 import sys
@@ -14,7 +15,7 @@ import json
 import winshell
 from win32com.client import Dispatch
 import ctypes
-from subprocess import Popen
+from subprocess import Popen, run
 UI_FILE = 'installer\installer.ui'
 PY_FILE = 'installer\installer.py'
 # subprocess.run(['pyuic6', '-x', UI_FILE, '-o', PY_FILE])
@@ -44,11 +45,11 @@ class UI(QDialog):
         self.initInstaller()
         self.running = False
         print(sys.executable)
-        self.ui.output_textedit.setVisible(False)
+        # self.ui.output_textedit.setVisible(False)
 
         self.process = QProcess()
-        self.process.readyRead.connect(self.read_output)
-        self.process.finished.connect(self.compileComplete)
+        self.process.readyReadStandardOutput.connect(self.read_output)
+        # self.process.finished.connect(self.compileComplete)
         
     def initInstaller(self):
         self.ui.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Install')
@@ -214,16 +215,16 @@ class UI(QDialog):
         self.ui.path.removeEventFilter(self)
         if not os.path.exists(self.ui.path.text()):
             os.mkdir(self.ui.path.text())
-        response = requests.get(LATEST_SC)
-        release_info = response.json()
+        # response = requests.get(LATEST_SC)
+        # release_info = response.json()
 
-        tag_name = release_info['tag_name']
-        self.tag_name = tag_name
-        print(tag_name)
-        zip_url = rf"https://github.com/realize-1337/Atomizer-Toolbox/archive/{tag_name}.zip"
+        # tag_name = release_info['tag_name']
+        # https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/archive/1.69/Atomizer-Toolbox-1.69.zip
+        # zip_url = rf"https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/archive/{tag_name}.zip"
+        # zip_url = rf"https://gitlab.kit.edu/uuyqx/Atomizer-Toolbox/-/archive/{tag_name}.zip"
         zip_file_path = os.path.join(self.ui.path.text(), 'source.zip')
 
-        self.download_file_with_progress(zip_url, zip_file_path)
+        self.download_file_with_progress(LATEST_SC, zip_file_path)
         self.ui.pbar.setMaximum(100)
         self.ui.pbar.setValue(100)
         self.ui.pbar.setFormat('Download complete. Unpacking download')
@@ -231,21 +232,30 @@ class UI(QDialog):
             zip_ref.extractall(os.path.dirname(zip_file_path)
                                )
         os.remove(zip_file_path)
-        folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{tag_name}')
+        folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{TAG_NAME}')
         
         self.ui.pbar.setMaximum(100)
         self.ui.pbar.setValue(100)
         self.ui.pbar.setFormat('Compile in progress. This will take a while. You can track the progress in the command window.')
-        if self.ui.matlab.isChecked():
-            self.run_batch_file(os.path.join(folder, "setup.bat"))
-        else: 
-            self.run_batch_file(os.path.join(folder, 'setup_no_matlab.bat'))
+        self.base_folder = folder
+        print(folder)
+        self.ui.output_textedit.setVisible(True)
+        # self.venv_activate_script = os.path.join(self.base_folder, "venv", "Scripts", "activate") if sys.platform == "win32" else os.path.join(self.base_folder, "venv", "bin", "activate")
+        self.create_venv()
+        # self.install_requirements()
+        # self.run_script()
+        # if self.ui.matlab.isChecked():
+        #     print('Installing with matlab')
+        #     self.run_batch_file(os.path.join(folder, "setup.bat"))
+        # else: 
+        #     self.run_batch_file(os.path.join(folder, 'setup_no_matlab.bat'))
+        # self.run_command()
                 
     def compileComplete(self):
         self.ui.pbar.setMaximum(100)
         self.ui.pbar.setValue(100)
         self.ui.pbar.setFormat('Compile in completed.')
-        folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{self.tag_name}')
+        folder = os.path.join(self.ui.path.text(), f'Atomizer-Toolbox-{TAG_NAME}')
         shutil.copytree(os.path.join(folder, 'AtomizerToolbox'), os.path.dirname(folder), dirs_exist_ok=True)
         files = os.listdir(os.path.join(folder, 'AtomizerToolbox'))
         shutil.rmtree(folder)
@@ -258,6 +268,7 @@ class UI(QDialog):
     def run_batch_file(self, path):
         self.ui.output_textedit.setVisible(True)
         try:
+            self.process.setWorkingDirectory(os.path.dirname(path))
             self.process.start("cmd.exe", ["/c", path])
             self.ui.output_textedit.clear()
         except:
@@ -266,7 +277,31 @@ class UI(QDialog):
     def read_output(self):
         output = self.process.readAllStandardOutput().data().decode()
         self.ui.output_textedit.insertPlainText(output)
+        print(output)
         self.ui.output_textedit.verticalScrollBar().setValue(self.ui.output_textedit.verticalScrollBar().maximum())
+
+    def create_venv(self):
+        print('VENV')
+        self.process.finished.connect(self.install_requirements)
+        self.process.setWorkingDirectory(os.path.dirname(self.base_folder))
+        self.process.start("python", [f"-m", "venv", f"{self.base_folder}\\venv"])
+        # cmd.exe python -m venv "C:\Users\david\Desktop\test\venv"
+        # self.ui.output_textedit.insertPlainText(10*"***Virtual Environment created***\n")
+        # subprocess.run([sys.executable, "-m", "venv", "venv"])
+
+    def install_requirements(self):
+        print('REQ')
+        # subprocess.run([f"{self.base_folder}\\venv\\Scripts\\pip", "install", "-r", f"{self.base_folder}\\requirements.txt"])
+        self.process.finished.disconnect()
+        self.process.finished.connect(self.run_script)
+        self.process.start(f"{self.base_folder}\\venv\\Scripts\\pip.exe", ["/c", "-m", "venv", f"{self.base_folder}\\venv"])
+
+    def run_script(self):
+        print('SETUP')
+        self.process.finished.disconnect()
+        self.process.finished.connect(self.compileComplete)
+        subprocess.run([f"{self.base_folder}\\venv\\Scripts\\python", f"{self.base_folder}\\setup.py"])
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

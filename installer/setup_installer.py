@@ -20,7 +20,7 @@ makeSpec = [
     "pyi-makespec",
     "--onefile",   # Eine einzelne ausführbare Datei erstellen
     # Hier können Sie weitere PyInstaller-Optionen hinzufügen
-    "--noconsole", 
+    # "--noconsole", 
     # "--windowed",
     "--name", f"{PROJECTNAME}",
     "--icon", f"{os.path.relpath('../../assets/ATT_LOGO.ico')}",

@@ -2610,7 +2610,7 @@ if __name__ == '__main__':
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-    # sys.excepthook = excepthook
+    sys.excepthook = excepthook
 
     app = QApplication(sys.argv)
     app.setStyle('Fusion')

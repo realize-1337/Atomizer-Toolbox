@@ -2,7 +2,6 @@ import sys
 import os
 
 
-
 def edit():
     python_interpreter_path = sys.executable
     print("Python interpreter path:", python_interpreter_path)
